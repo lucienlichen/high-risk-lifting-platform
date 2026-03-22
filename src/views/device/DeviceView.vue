@@ -1,6 +1,6 @@
 <template>
   <!-- Device detail: data tabs at top, content scrollable, service menu in layout -->
-  <div style="display:flex;flex-direction:column;height:100%;overflow:hidden">
+  <div class="device-view-root">
 
     <!-- ─── Layer 2: Data Category Tabs ─── -->
     <div class="data-tabs">
@@ -250,8 +250,8 @@
         </div>
       </template>
 
-      <!-- ── Service Content Panel (when service selected) ── -->
-      <div v-if="store.activeService" class="service-content-panel">
+      <!-- ── Service Content Panel（远程监测使用底部大面板，其余服务走此区域）── -->
+      <div v-if="store.activeService && store.activeService !== 'remote'" class="service-content-panel">
         <div class="service-content-header">
           <span class="section-card-title">{{ serviceLabels[store.activeService] }} · 智能分析</span>
           <el-button size="small" text @click="store.setService(null)">
@@ -265,6 +265,8 @@
 
       <div style="height:16px"></div>
     </div>
+
+    <RemoteMonitoringPanel v-if="store.activeService === 'remote' && device" :device="device" />
   </div>
 </template>
 
@@ -272,6 +274,7 @@
 import { ref, computed, watch, onMounted, onUnmounted, nextTick, defineComponent, h } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useSceneStore } from '@/stores/scene'
+import RemoteMonitoringPanel from '@/components/RemoteMonitoringPanel.vue'
 import { getDeviceById, getDeviceRunData, getDeviceAlarms } from '@/mock'
 import type { Device } from '@/mock'
 import * as echarts from 'echarts'
@@ -487,6 +490,16 @@ watch(activeTab, initCharts)
 </script>
 
 <style scoped>
+.device-view-root {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 .info-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

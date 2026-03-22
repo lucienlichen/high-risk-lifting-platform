@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-高风险起重装备智能运维与风险防控服务平台 — A frontend demo prototype for an industrial IoT lifting equipment intelligent operation & risk prevention platform. **All work is frontend-only.**
+高风险起重装备智能运维与事故防控云服务平台 — A frontend demo prototype for an industrial IoT lifting equipment intelligent operation & accident prevention cloud platform. **All work is frontend-only.**
 
 ## Commands
 
@@ -62,4 +62,4 @@ Use CSS variables for all colors and spacing — do not hardcode hex values in c
 
 ### Service Panel
 
-`ServiceMenu` (bottom bar) has 7 services in 2 groups: **智能运维** (remote, health, crack, fault) and **事故防控** (risk, hazard, issue). Services are disabled until a device is selected. When active, `DeviceView` renders a service-specific panel alongside device detail tabs.
+`ServiceMenu` (bottom bar) has 7 services in 2 groups: **智能运维服务** (remote, health, crack, fault) and **事故防控服务** (risk, hazard, issue). Services are disabled until a device is selected. When active, `DeviceView` renders a service-specific panel alongside device detail tabs.

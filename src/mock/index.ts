@@ -18,9 +18,9 @@ export interface Device {
   manufacturer: string
   installDate: string
   location: string
-  /** 集团，仅部分场景有（如冶金） */
+  /** 集团（场景演示：港口/冶金/造船/建筑等企业主体） */
   group?: string
-  /** 子公司，仅部分场景有 */
+  /** 子公司或下属作业单元（港区、车间、分公司等） */
   subsidiary?: string
   /** 技术参数前6项 */
   technicalParams?: { name: string; value: string }[]
@@ -79,11 +79,45 @@ const SCENE_CODES: Record<SceneId, string> = {
   metallurgy: 'YJ', port: 'GK', construction: 'JZ', shipbuilding: 'ZC'
 }
 
-/** 冶金场景演示：集团与子公司 */
-const METALLURGY_GROUPS = ['本溪钢铁', '江苏荣刚'] as const
-const METALLURGY_SUBSIDIARIES: Record<string, string[]> = {
-  '本溪钢铁': ['炼钢一厂', '轧钢二厂', '高炉分厂'],
-  '江苏荣刚': ['特钢分公司', '棒线分厂']
+/**
+ * 各场景企业筛选演示数据：集团 + 下属单元（与 SceneView 标签筛选联动）
+ * - 冶金：本溪钢铁、江苏荣刚
+ * - 港口：青岛港集团（示例）+ 宁波舟山港集团
+ * - 造船：仪征造船厂（示例）+ 外高桥造船
+ * - 建筑：中国建筑、上海建工（中国大陆大型建工企业）
+ */
+const SCENE_ENTERPRISE: Record<
+  SceneId,
+  { groups: readonly string[]; subsidiaries: Record<string, string[]> }
+> = {
+  metallurgy: {
+    groups: ['本溪钢铁', '江苏荣刚'],
+    subsidiaries: {
+      '本溪钢铁': ['炼钢一厂', '轧钢二厂', '高炉分厂'],
+      '江苏荣刚': ['特钢分公司', '棒线分厂']
+    }
+  },
+  port: {
+    groups: ['青岛港集团', '宁波舟山港集团'],
+    subsidiaries: {
+      '青岛港集团': ['前湾港区', '董家口港区', '黄岛油港区'],
+      '宁波舟山港集团': ['北仑港区', '穿山港区', '梅山港区']
+    }
+  },
+  shipbuilding: {
+    groups: ['仪征造船厂', '外高桥造船'],
+    subsidiaries: {
+      '仪征造船厂': ['船体车间', '舾装分厂', '涂装车间'],
+      '外高桥造船': ['总装部', '搭载分部', '舾装码头']
+    }
+  },
+  construction: {
+    groups: ['中国建筑', '上海建工'],
+    subsidiaries: {
+      '中国建筑': ['一局华东公司', '三局总承包', '八局基础设施'],
+      '上海建工': ['一建集团', '机施集团', '基础集团']
+    }
+  }
 }
 
 /** 技术参数前6项名称（起重装备通用） */
@@ -137,14 +171,11 @@ function generateDevice(sceneId: SceneId, index: number, rng: ReturnType<typeof 
   const installYear = 2010 + rng(0, 12)
   const installMonth = rng(1, 12)
 
-  let group: string | undefined
-  let subsidiary: string | undefined
-  if (sceneId === 'metallurgy') {
-    const g = METALLURGY_GROUPS[rng(0, METALLURGY_GROUPS.length - 1)]
-    group = g
-    const subs = METALLURGY_SUBSIDIARIES[g]
-    subsidiary = subs[rng(0, subs.length - 1)]
-  }
+  const ent = SCENE_ENTERPRISE[sceneId]
+  const g = ent.groups[rng(0, ent.groups.length - 1)]
+  const subs = ent.subsidiaries[g]
+  const group = g
+  const subsidiary = subs[rng(0, subs.length - 1)]
 
   const technicalParams: { name: string; value: string }[] = TECH_PARAM_NAMES.map((name, i) => {
     const u = TECH_PARAM_UNITS[name]
@@ -183,17 +214,16 @@ function generateDevice(sceneId: SceneId, index: number, rng: ReturnType<typeof 
   }
 }
 
-/** 获取场景可选的集团列表（如冶金：本溪钢铁、江苏荣刚） */
+/** 获取场景可选的集团列表 */
 export function getSceneGroups(sceneId: SceneId): string[] {
-  if (sceneId === 'metallurgy') return [...METALLURGY_GROUPS]
-  return []
+  return [...SCENE_ENTERPRISE[sceneId].groups]
 }
 
 /** 获取场景下集团对应的子公司列表；不传 group 时返回该场景全部子公司 */
 export function getSceneSubsidiaries(sceneId: SceneId, group?: string): string[] {
-  if (sceneId !== 'metallurgy') return []
-  if (group) return METALLURGY_SUBSIDIARIES[group] ?? []
-  return Object.values(METALLURGY_SUBSIDIARIES).flat()
+  const { subsidiaries } = SCENE_ENTERPRISE[sceneId]
+  if (group) return subsidiaries[group] ?? []
+  return Object.values(subsidiaries).flat()
 }
 
 // Cache generated devices
@@ -304,3 +334,13 @@ export function getRecentAlarmDevices(sceneId: SceneId) {
     })
     .slice(0, 6)
 }
+
+export {
+  getRemoteMonitoringData,
+  type RemoteMonitoringData,
+  type RemoteSectionId,
+  type RemoteStatusItem,
+  type RemoteItemHistory,
+  type RemoteTrendHistory,
+  type RemoteListHistory
+} from './remoteMonitoring'

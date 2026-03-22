@@ -99,9 +99,6 @@
                 <div class="device-card-name">{{ device.name }}</div>
                 <div class="device-card-code">{{ device.code }}</div>
               </div>
-              <span :class="`badge badge-${device.status}`">
-                <span class="badge-dot"></span>{{ statusLabels[device.status] }}
-              </span>
             </div>
             <div class="device-card-body">
               <div class="device-card-row">
@@ -112,13 +109,19 @@
                 <span class="device-card-row-label">投用日期</span>
                 <span>{{ device.installDate }}</span>
               </div>
-              <div class="device-card-row">
-                <span class="device-card-row-label">运行时长(h)</span>
-                <span>{{ device.operatingHours.toLocaleString() }}</span>
-              </div>
               <div class="device-card-row device-card-row--tech">
                 <span class="device-card-row-label">技术参数前6项</span>
                 <span class="device-card-tech">{{ formatTechParams(device.technicalParams) }}</span>
+              </div>
+              <div class="device-card-row">
+                <span class="device-card-row-label">设备运行状态</span>
+                <span :class="`badge badge-${device.status}`">
+                  <span class="badge-dot"></span>{{ statusLabels[device.status] }}
+                </span>
+              </div>
+              <div class="device-card-row">
+                <span class="device-card-row-label">已运行时长(h)</span>
+                <span>{{ device.operatingHours.toLocaleString() }}</span>
               </div>
             </div>
           </div>
@@ -140,17 +143,7 @@
             <el-table-column prop="code" label="设备编号" width="130" />
             <el-table-column prop="name" label="设备名称" min-width="200" />
             <el-table-column prop="type" label="设备类型" width="160" />
-            <el-table-column label="设备运行状态" width="110">
-              <template #default="{ row }">
-                <span :class="`badge badge-${row.status}`">
-                  <span class="badge-dot"></span>{{ statusLabels[row.status] }}
-                </span>
-              </template>
-            </el-table-column>
             <el-table-column prop="installDate" label="投用日期" width="110" />
-            <el-table-column label="运行时长(h)" width="110">
-              <template #default="{ row }">{{ row.operatingHours.toLocaleString() }}</template>
-            </el-table-column>
             <el-table-column
               v-for="(paramName, idx) in techParamColumnNames"
               :key="paramName"
@@ -161,6 +154,16 @@
               <template #default="{ row }">
                 {{ row.technicalParams?.[idx]?.value ?? '—' }}
               </template>
+            </el-table-column>
+            <el-table-column label="设备运行状态" width="110">
+              <template #default="{ row }">
+                <span :class="`badge badge-${row.status}`">
+                  <span class="badge-dot"></span>{{ statusLabels[row.status] }}
+                </span>
+              </template>
+            </el-table-column>
+            <el-table-column label="已运行时长(h)" width="120">
+              <template #default="{ row }">{{ row.operatingHours.toLocaleString() }}</template>
             </el-table-column>
             <el-table-column label="操作" width="90" fixed="right">
               <template #default="{ row }">
