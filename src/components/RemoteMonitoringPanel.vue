@@ -5,22 +5,30 @@
     <div class="remote-panel" :class="{ 'remote-panel--open': panelOpen }">
       <header class="remote-header">
         <div class="remote-header-main">
-          <h2 class="remote-title">远程监测服务</h2>
           <div v-if="device" class="remote-header-meta">
             <span class="remote-meta-item">
-              <span class="remote-meta-label">设备</span>{{ device.name }}
+              <span class="remote-meta-label">设备</span>
+              <span class="remote-meta-value">{{ device.name }}</span>
             </span>
+            <span class="remote-meta-sep" aria-hidden="true" />
             <span class="remote-meta-item">
-              <span class="remote-meta-label">编号</span>{{ device.code }}
+              <span class="remote-meta-label">编号</span>
+              <span class="remote-meta-value">{{ device.code }}</span>
             </span>
+            <span class="remote-meta-sep" aria-hidden="true" />
             <span class="remote-meta-item">
-              <span class="remote-meta-label">运行</span>{{ statusLabels[device.status] }}
+              <span class="remote-meta-label">运行</span>
+              <span class="remote-meta-value">{{ statusLabels[device.status] }}</span>
             </span>
+            <span class="remote-meta-sep" aria-hidden="true" />
             <span class="remote-meta-item">
-              <span class="remote-meta-label">风险</span>{{ riskLabels[device.riskLevel] }}
+              <span class="remote-meta-label">风险</span>
+              <span class="remote-meta-value">{{ riskLabels[device.riskLevel] }}</span>
             </span>
-            <span v-if="monitoringData" class="remote-meta-item remote-meta-time">
-              <span class="remote-meta-label">刷新</span>{{ monitoringData.lastRefresh }}
+            <span class="remote-meta-sep" aria-hidden="true" />
+            <span v-if="monitoringData" class="remote-meta-item remote-meta-item--refresh">
+              <span class="remote-meta-label">刷新</span>
+              <span class="remote-meta-value">{{ monitoringData.lastRefresh }}</span>
             </span>
           </div>
         </div>
@@ -31,15 +39,16 @@
       </header>
 
       <div v-if="monitoringData" class="remote-body">
-        <nav class="remote-nav">
+        <nav class="remote-section-tabs" aria-label="监测分类">
           <button
             v-for="item in navItems"
             :key="item.id"
             type="button"
-            :class="['remote-nav-item', { active: activeSection === item.id }]"
+            :title="item.label"
+            :class="['remote-section-tab', { active: activeSection === item.id }]"
             @click="activeSection = item.id"
           >
-            {{ item.label }}
+            {{ item.tabLabel }}
           </button>
         </nav>
 
@@ -139,12 +148,12 @@ const riskLabels: Record<string, string> = {
   high: '高风险'
 }
 
-const navItems: { id: RemoteSectionId; label: string }[] = [
-  { id: 'structure', label: '结构健康监测' },
-  { id: 'mechanism', label: '机构健康监测' },
-  { id: 'electric', label: '电控系统监测' },
-  { id: 'rope', label: '钢丝绳监测' },
-  { id: 'other', label: '其他部件监测' }
+const navItems: { id: RemoteSectionId; label: string; tabLabel: string }[] = [
+  { id: 'structure', label: '结构健康监测', tabLabel: '结构' },
+  { id: 'mechanism', label: '机构健康监测', tabLabel: '机构' },
+  { id: 'electric', label: '电控系统监测', tabLabel: '电控' },
+  { id: 'rope', label: '钢丝绳监测', tabLabel: '钢丝绳' },
+  { id: 'other', label: '其他部件监测', tabLabel: '其他部件' }
 ]
 
 const monitoringData = computed(() => getRemoteMonitoringData(props.device))
@@ -379,36 +388,74 @@ onUnmounted(() => {
 .remote-header {
   flex-shrink: 0;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 16px;
+  padding: 14px 18px;
   border-bottom: 1px solid var(--color-border-light);
   background: rgba(22, 119, 255, 0.04);
 }
 
-.remote-title {
-  margin: 0 0 6px;
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--color-text-primary);
+.remote-header-main {
+  flex: 1;
+  min-width: 0;
 }
 
 .remote-header-meta {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px 16px;
-  font-size: 12px;
-  color: var(--color-text-secondary);
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.remote-header-meta::-webkit-scrollbar {
+  height: 4px;
+}
+
+.remote-header-meta::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 2px;
+}
+
+.remote-meta-item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .remote-meta-label {
+  font-size: 13px;
+  font-weight: 600;
   color: var(--color-text-muted);
-  margin-right: 4px;
 }
 
-.remote-meta-time {
-  flex-basis: 100%;
+.remote-meta-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.remote-meta-item--refresh .remote-meta-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.remote-meta-sep {
+  width: 1px;
+  height: 18px;
+  margin: 0 14px;
+  flex-shrink: 0;
+  background: var(--color-border);
+  opacity: 0.85;
+  align-self: center;
 }
 
 .remote-close {
@@ -419,51 +466,60 @@ onUnmounted(() => {
 .remote-body {
   flex: 1;
   min-height: 0;
-  display: grid;
-  grid-template-columns: 168px minmax(0, 1fr);
-  gap: 0;
-}
-
-.remote-nav {
-  border-right: 1px solid var(--color-border-light);
-  padding: 10px 8px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  background: var(--color-border-light);
+  overflow: hidden;
 }
 
-.remote-nav-item {
-  text-align: left;
-  padding: 10px 12px;
-  font-size: 13px;
+.remote-section-tabs {
+  flex-shrink: 0;
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  padding: 0 16px;
+  background: var(--color-card-bg);
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  overflow-x: auto;
+}
+
+.remote-section-tabs::-webkit-scrollbar {
+  height: 0;
+}
+
+.remote-section-tab {
+  flex-shrink: 0;
+  padding: 12px 18px;
+  font-size: 14px;
+  font-weight: 500;
   color: var(--color-text-secondary);
   background: transparent;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
-  line-height: 1.35;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  white-space: nowrap;
 }
 
-.remote-nav-item:hover {
+.remote-section-tab:hover {
   color: var(--color-primary);
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(22, 119, 255, 0.04);
 }
 
-.remote-nav-item.active {
+.remote-section-tab.active {
   color: var(--color-primary);
   font-weight: 600;
-  background: var(--color-card-bg);
-  border-color: rgba(22, 119, 255, 0.35);
-  box-shadow: 0 1px 4px rgba(22, 119, 255, 0.08);
+  border-bottom-color: var(--color-primary);
+  background: rgba(22, 119, 255, 0.06);
 }
 
 .remote-workspace {
+  flex: 1;
+  min-height: 0;
   display: grid;
   grid-template-columns: minmax(260px, 300px) minmax(0, 1fr);
   gap: 0;
-  min-height: 0;
   min-width: 0;
 }
 
@@ -634,9 +690,6 @@ onUnmounted(() => {
 @media (max-width: 1100px) {
   .remote-workspace {
     grid-template-columns: minmax(220px, 1fr) minmax(0, 1.2fr);
-  }
-  .remote-body {
-    grid-template-columns: 148px minmax(0, 1fr);
   }
 }
 </style>
