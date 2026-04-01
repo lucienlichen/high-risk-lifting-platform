@@ -36,7 +36,7 @@ All routes are children of `MainLayout` (the persistent shell). The layout is a 
 - **Left scene nav** (108px): switches between the 4 operational scenes
 - **Content area**: `<router-view />` + bottom `<ServiceMenu />`
 
-Routes: `/home` → HomeView, `/scene/:id` → SceneView, `/device/:id` → DeviceView.
+Routes: `/` redirects to `/scene/metallurgy`（冶金场景设备列表）; `/scene/:id` → SceneView, `/device/:id` → DeviceView.
 
 ### State (Pinia — `src/stores/scene.ts`)
 
@@ -62,4 +62,4 @@ Use CSS variables for all colors and spacing — do not hardcode hex values in c
 
 ### Service Panel
 
-`ServiceMenu` (bottom bar) has 7 services in 2 groups: **智能运维服务** (remote, health, crack, fault) and **事故防控服务** (risk, hazard, issue). Services are disabled until a device is selected. When active, `DeviceView` renders a service-specific panel alongside device detail tabs.
+`ServiceMenu` (bottom bar) has 7 services in 2 groups: **智能运维服务** (remote, health, crack, fault) and **事故防控服务** (risk, hazard, issue). Services are disabled until a device is selected. **远程监测** clears any active service and navigates to the current device route with `?tab=monitor`, opening the **监测数据** tab: **左侧数据区**（监测点位表 + `DeviceMonitoringWorkspace`：按文档分 8 类 Tab——结构应力/损伤、减速机、大车车轮、电控、制动器、钢丝绳、其他；制动器与钢丝绳为图像占位无曲线）与 **右侧数字孪生推演区** 分栏；电控 Tab 下可展示 `public/assets/electric-monitoring-schematic.png` 示意配图。其他服务 toggle `activeService`；当设置时，`DeviceView` 在设备详情旁渲染对应服务面板。

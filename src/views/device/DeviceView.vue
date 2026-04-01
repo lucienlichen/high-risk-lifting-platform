@@ -2,6 +2,30 @@
   <!-- Device detail: data tabs at top, content scrollable, service menu in layout -->
   <div class="device-view-root">
 
+    <!-- ─── Layer 1: Device Info Header — above tabs ─── -->
+    <div class="device-info-header device-info-header--compact" v-if="device">
+      <div class="device-info-inline">
+        <span class="device-info-name-compact">{{ device.name }}</span>
+        <span :class="`badge badge-${device.status}`">
+          <span class="badge-dot"></span>{{ statusLabels[device.status] }}
+        </span>
+        <span class="device-info-meta-sep">·</span>
+        <span class="device-info-meta-item">编号：{{ device.code }}</span>
+        <span class="device-info-meta-item">类型：{{ device.type }}</span>
+        <span class="device-info-meta-item">位置：{{ device.location }}</span>
+        <span class="device-info-meta-item">使用单位：{{ device.subsidiary || device.group || '—' }}</span>
+        <span class="device-info-meta-item">投用：{{ device.installDate }}</span>
+      </div>
+      <div style="display:flex;gap:8px;flex-shrink:0">
+        <el-button size="small" @click="router.back()">
+          <el-icon class="el-icon--left"><ArrowLeft /></el-icon>返回
+        </el-button>
+        <el-button size="small" type="primary">
+          <el-icon class="el-icon--left"><Refresh /></el-icon>刷新数据
+        </el-button>
+      </div>
+    </div>
+
     <!-- ─── Layer 2: Data Category Tabs ─── -->
     <div class="data-tabs">
       <div
@@ -13,140 +37,10 @@
     </div>
 
     <!-- ─── Layer 3: Scrollable Core Content ─── -->
-    <div class="content-scrollable" style="flex:1">
-
-      <!-- Device Info Header -->
-      <div class="device-info-header" v-if="device">
-        <div class="device-info-main">
-          <div class="device-info-name">
-            {{ device.name }}
-            <span :class="`badge badge-${device.status}`">
-              <span class="badge-dot"></span>{{ statusLabels[device.status] }}
-            </span>
-            <span :class="`badge badge-${device.riskLevel}`">
-              <span class="badge-dot"></span>{{ riskLabels[device.riskLevel] }}
-            </span>
-          </div>
-          <div class="device-info-meta">
-            <span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              编号：{{ device.code }}
-            </span>
-            <span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
-              类型：{{ device.type }}
-            </span>
-            <span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-              位置：{{ device.location }}
-            </span>
-            <span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 10c-.83 0-1.5-.67-1.5-1.5v-5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5z"/></svg>
-              制造商：{{ device.manufacturer }}
-            </span>
-            <span>投用日期：{{ device.installDate }}</span>
-          </div>
-        </div>
-        <div style="display:flex;gap:8px">
-          <el-button size="small" @click="router.back()">
-            <el-icon class="el-icon--left"><ArrowLeft /></el-icon>返回
-          </el-button>
-          <el-button size="small" type="primary">
-            <el-icon class="el-icon--left"><Refresh /></el-icon>刷新数据
-          </el-button>
-        </div>
-      </div>
-
-      <!-- ── 运行数据 ── -->
-      <template v-if="activeTab === 'operation'">
-        <!-- Metric Cards -->
-        <div class="metric-row">
-          <div class="metric-card">
-            <div class="metric-card-label">运行时长</div>
-            <div class="metric-card-value">
-              {{ device?.operatingHours.toLocaleString() }}<span class="metric-card-unit">h</span>
-            </div>
-            <div class="metric-card-trend" style="color:var(--color-success)">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/></svg>
-              累计运行正常
-            </div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-card-label">当前负荷</div>
-            <div class="metric-card-value" :style="{ color: device?.status === 'running' ? loadColor : 'var(--color-text-secondary)' }">
-              {{ device?.status === 'running' ? device.load : '—' }}<span class="metric-card-unit" v-if="device?.status === 'running'">%</span>
-            </div>
-            <div class="metric-card-trend" :style="{ color: device?.status === 'running' ? loadColor : 'var(--color-text-muted)' }">
-              {{ device?.status === 'running' ? (device!.load > 80 ? '⚠ 负荷偏高' : '● 负荷正常') : '设备未运行' }}
-            </div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-card-label">健康评分</div>
-            <div class="metric-card-value" :style="{ color: scoreColor(device?.healthScore ?? 0) }">
-              {{ device?.healthScore }}<span class="metric-card-unit">分</span>
-            </div>
-            <div class="metric-card-trend" :style="{ color: scoreColor(device?.healthScore ?? 0) }">
-              {{ scoreLabel(device?.healthScore ?? 0) }}
-            </div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-card-label">告警次数</div>
-            <div class="metric-card-value" style="color:var(--color-warning)">
-              {{ alarms.filter(a => a.status === '待处置').length }}<span class="metric-card-unit">条</span>
-            </div>
-            <div class="metric-card-trend" style="color:var(--color-text-muted)">待处置告警</div>
-          </div>
-        </div>
-
-        <!-- Charts Row -->
-        <div class="chart-row">
-          <div class="section-card">
-            <div class="section-card-header">
-              <span class="section-card-title">24h 负荷趋势</span>
-              <span style="font-size:11px;color:var(--color-text-muted)">单位：%</span>
-            </div>
-            <div class="section-card-body" style="padding:8px 12px">
-              <div ref="loadChartRef" class="chart-container"></div>
-            </div>
-          </div>
-          <div class="section-card">
-            <div class="section-card-header">
-              <span class="section-card-title">24h 温度 / 振动监测曲线</span>
-            </div>
-            <div class="section-card-body" style="padding:8px 12px">
-              <div ref="monitorChartRef" class="chart-container"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Alarm History Table -->
-        <div class="section-card" style="margin-bottom:16px">
-          <div class="section-card-header">
-            <span class="section-card-title">告警历史记录</span>
-            <el-tag size="small" type="warning">{{ alarms.length }} 条</el-tag>
-          </div>
-          <el-table :data="alarms" style="width:100%" size="small">
-            <el-table-column prop="type"        label="告警类型" width="120" />
-            <el-table-column label="严重程度"   width="90">
-              <template #default="{ row }">
-                <span :style="{ color: severityColor(row.severity) }">● {{ row.severity }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column prop="time"        label="告警时间"  width="170" />
-            <el-table-column label="处置状态"   width="90">
-              <template #default="{ row }">
-                <span :style="{ color: row.status === '已处置' ? 'var(--color-success)' : 'var(--color-danger)' }">
-                  {{ row.status }}
-                </span>
-              </template>
-            </el-table-column>
-            <el-table-column prop="description" label="说明" show-overflow-tooltip />
-          </el-table>
-        </div>
-      </template>
+    <div :class="['content-scrollable', { 'monitor-tab-content': activeTab === 'monitor' }]" style="flex:1">
 
       <!-- ── 基础信息 ── -->
-      <template v-else-if="activeTab === 'basic'">
+      <template v-if="activeTab === 'basic'">
         <div class="section-card" style="margin-bottom:14px">
           <div class="section-card-header">
             <span class="section-card-title">设备基本信息</span>
@@ -201,32 +95,30 @@
 
       <!-- ── 监测数据 ── -->
       <template v-else-if="activeTab === 'monitor'">
-        <div class="metric-row">
-          <div class="metric-card">
-            <div class="metric-card-label">当前温度</div>
-            <div class="metric-card-value" style="color:var(--color-warning)">72<span class="metric-card-unit">°C</span></div>
+
+        <!-- 内容区（与其他标签内容区宽度对齐） -->
+        <div class="monitor-workspace-wrapper">
+          <!-- 工作循环面板 -->
+          <div class="monitor-filter-bar">
+            <WorkCyclePicker
+              v-model="monitorCycleId"
+              v-model:date="monitorOpDate"
+              :cycles="monitorWorkCycles"
+              :device-id="device?.id ?? ''"
+            />
           </div>
-          <div class="metric-card">
-            <div class="metric-card-label">振动加速度</div>
-            <div class="metric-card-value">0.82<span class="metric-card-unit">g</span></div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-card-label">噪声分贝</div>
-            <div class="metric-card-value">68<span class="metric-card-unit">dB</span></div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-card-label">倾斜角度</div>
-            <div class="metric-card-value" style="color:var(--color-success)">0.3<span class="metric-card-unit">°</span></div>
-          </div>
+
+          <!-- 内联监测工作区 -->
+          <DeviceMonitoringWorkspace
+            v-if="device"
+            :device="device"
+            :hide-op-list="true"
+            :model-op-id="monitorOpId"
+            :model-op-date="monitorOpDate"
+            class="monitor-workspace-inline"
+          />
         </div>
-        <div class="section-card">
-          <div class="section-card-header">
-            <span class="section-card-title">多维监测曲线</span>
-          </div>
-          <div class="section-card-body" style="padding:8px 12px">
-            <div ref="multiMonitorRef" style="width:100%;height:260px"></div>
-          </div>
-        </div>
+
       </template>
 
       <!-- ── Other Tabs (Placeholder) ── -->
@@ -250,8 +142,8 @@
         </div>
       </template>
 
-      <!-- ── Service Content Panel（远程监测使用底部大面板，其余服务走此区域）── -->
-      <div v-if="store.activeService && store.activeService !== 'remote'" class="service-content-panel">
+      <!-- ── Service Content Panel ── -->
+      <div v-if="store.activeService" class="service-content-panel">
         <div class="service-content-header">
           <span class="section-card-title">{{ serviceLabels[store.activeService] }} · 智能分析</span>
           <el-button size="small" text @click="store.setService(null)">
@@ -266,18 +158,122 @@
       <div style="height:16px"></div>
     </div>
 
-    <RemoteMonitoringPanel v-if="store.activeService === 'remote' && device" :device="device" />
+    <!-- ─── Layer 4: 远程监测弹出面板 (Bottom Drawer 风格) ─── -->
+    <div
+      v-if="store.activeService === 'remote'"
+      class="remote-monitor-drawer"
+    >
+      <div class="rm-drawer-body">
+        <div class="rm-layout">
+          <!-- 全宽：报警流水核心区 -->
+          <div class="rm-alarms-pane">
+            <div class="rm-pane-header">
+              <div class="rm-pane-header-left">
+                <span class="rm-pane-title">监控告警列表</span>
+                <el-radio-group v-model="alarmFilter" size="small">
+                  <el-radio-button value="pending">
+                    未处理 <el-tag size="small" type="danger" round style="margin-left:4px;transform:scale(0.9)">{{ mockAlarms.filter(a => a.status === 'pending').length }}</el-tag>
+                  </el-radio-button>
+                  <el-radio-button value="resolved">历史记录</el-radio-button>
+                </el-radio-group>
+              </div>
+              <div class="rm-pane-header-right">
+                <el-button v-if="alarmFilter === 'pending'" type="danger" size="small" plain>
+                  <el-icon class="el-icon--left"><Warning /></el-icon>一键消警
+                </el-button>
+                <el-button size="small" @click="store.setService(null)" circle>
+                  <el-icon><Close /></el-icon>
+                </el-button>
+              </div>
+            </div>
+            
+            <div class="rm-alarms-list">
+              <el-table
+                v-if="filteredAlarms.length > 0"
+                :data="filteredAlarms"
+                style="width: 100%; height: 100%"
+                row-key="id"
+                :expand-row-keys="activeAlarmId ? [activeAlarmId] : []"
+                @expand-change="handleExpandChange"
+                :row-class-name="tableRowClassName"
+                height="100%"
+              >
+                <!-- 展开列：展示图表 -->
+                <el-table-column type="expand">
+                  <template #default="{ row }">
+                    <div class="rm-alarm-card-body" style="padding: 16px; background: transparent; border-top: none;">
+                      <div class="rm-alarm-desc" style="margin-bottom: 12px; padding: 8px 12px; background: rgba(0,0,0,0.02); border-radius: 4px;">
+                        <el-icon style="margin-right: 4px; vertical-align: -2px;"><InfoFilled /></el-icon>
+                        {{ row.desc }}
+                      </div>
+                      <div v-if="row.times?.length" class="rm-chart-container">
+                        <div ref="alarmChartRef" class="rm-alarm-chart"></div>
+                      </div>
+                      <div v-else class="rm-no-chart">
+                        暂无关联的趋势数据
+                      </div>
+                    </div>
+                  </template>
+                </el-table-column>
+
+                <!-- 数据列 -->
+                <el-table-column prop="time" label="发生时间" width="160" />
+                
+                <el-table-column label="告警级别" width="100">
+                  <template #default="{ row }">
+                    <el-tag :type="row.level === 'danger' ? 'danger' : row.level === 'warning' ? 'warning' : 'info'" size="small" effect="light">
+                      {{ row.level === 'danger' ? '危险' : row.level === 'warning' ? '警告' : '提示' }}
+                    </el-tag>
+                  </template>
+                </el-table-column>
+                
+                <el-table-column prop="title" label="告警内容" min-width="200">
+                  <template #default="{ row }">
+                    <span :class="`rm-text-${row.level}`" style="font-weight: 600;">{{ row.title }}</span>
+                  </template>
+                </el-table-column>
+                
+                <el-table-column v-if="alarmFilter === 'resolved'" prop="handler" label="处理人" width="120" />
+                <el-table-column v-if="alarmFilter === 'resolved'" prop="resolveTime" label="处理时间" width="160" />
+                
+                <el-table-column label="操作" width="120" fixed="right">
+                  <template #default="{ row }">
+                    <el-button 
+                      v-if="row.status === 'pending'" 
+                      type="primary" 
+                      link
+                      size="small" 
+                      @click.stop="resolveAlarm(row)"
+                    >
+                      处理告警
+                    </el-button>
+                    <span v-else class="rm-alarm-resolve-info" style="border: none; padding: 0; margin: 0;">已处理</span>
+                  </template>
+                </el-table-column>
+              </el-table>
+              
+              <div v-else class="rm-empty-state">
+                <el-icon :size="40" color="#cbd5e1"><Select /></el-icon>
+                <p>当前没有{{ alarmFilter === 'pending' ? '未处理的告警' : '历史告警记录' }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted, nextTick, defineComponent, h } from 'vue'
+import { ref, computed, watch, onMounted, nextTick, defineComponent, h } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useSceneStore } from '@/stores/scene'
-import RemoteMonitoringPanel from '@/components/RemoteMonitoringPanel.vue'
-import { getDeviceById, getDeviceRunData, getDeviceAlarms } from '@/mock'
-import type { Device } from '@/mock'
+import { Monitor, Warning, Select, Close, InfoFilled } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
+import DeviceMonitoringWorkspace from '@/components/DeviceMonitoringWorkspace.vue'
+import WorkCyclePicker from '@/components/WorkCyclePicker.vue'
+import { getDeviceById, getOperationList, getWorkCycles } from '@/mock'
+import type { Device, WorkCycle } from '@/mock'
 
 // ─── Sub-component for service panel content ─────────────────────────
 const ServiceDetailContent = defineComponent({
@@ -287,7 +283,6 @@ const ServiceDetailContent = defineComponent({
   },
   setup(props) {
     const contents: Record<string, string[]> = {
-      remote:  ['实时在线状态：正常', '数据采集频率：1Hz', '传感器在线数：12 / 12', '通信延迟：8 ms', '最近数据上报：刚刚'],
       health:  [`综合健康评分：${props.device?.healthScore ?? 0} 分`, '关键部件老化程度：轻微', '润滑状态：良好', '结构应力评估：正常', '建议下次保养：30天后'],
       crack:   ['钢结构裂纹风险：低', '主梁应力分布：正常', '焊缝监测：未发现异常', '疲劳寿命预测：剩余 78%', '建议检测周期：6个月'],
       fault:   ['当前运行状态：正常', '减速器温度：偏高（72°C）', '主电机电流：稳定', '传感器状态：全部在线', '近期故障概率：8%'],
@@ -310,17 +305,36 @@ const router = useRouter()
 const route  = useRoute()
 const store  = useSceneStore()
 
-const device     = ref<Device | null>(null)
-const alarms     = ref<ReturnType<typeof getDeviceAlarms>>([])
-const activeTab  = ref('point')
-const runData    = ref<ReturnType<typeof getDeviceRunData>>([])
+const device    = ref<Device | null>(null)
+const activeTab = ref('point')
 
-const loadChartRef    = ref<HTMLElement>()
-const monitorChartRef = ref<HTMLElement>()
-const multiMonitorRef = ref<HTMLElement>()
-let loadChart: echarts.ECharts | null = null
-let monitorChart: echarts.ECharts | null = null
-let multiChart: echarts.ECharts | null = null
+// ── 监测数据工作循环筛选 ──
+const monitorOpDate  = ref<Date>(new Date())
+/** 下拉选中的 WorkCycle id，'all' 表示全天监测 */
+const monitorCycleId = ref<string>('all')
+
+/** 含完整字段的工作循环列表（倒序，最新在前）*/
+const monitorWorkCycles = computed((): WorkCycle[] => {
+  if (!device.value) return []
+  return getWorkCycles(device.value.id, monitorOpDate.value).slice().reverse()
+})
+
+/** 用于 workspace 内部过滤的 OperationRecord id：seq-1 映射到 OP-xxx */
+const monitorOperationList = computed(() =>
+  getOperationList(device.value?.id ?? '', monitorOpDate.value)
+)
+
+const monitorOpId = computed(() => {
+  if (monitorCycleId.value === 'all') return 'all'
+  const cycle = monitorWorkCycles.value.find(c => c.id === monitorCycleId.value)
+  if (!cycle) return 'all'
+  return monitorOperationList.value[cycle.seq - 1]?.id ?? 'all'
+})
+
+// 切换日期时，默认选中最新一次循环
+watch(monitorWorkCycles, (list) => {
+  monitorCycleId.value = list.length > 0 ? list[0].id : 'all'
+})
 
 const dataTabs = [
   { key: 'point',       label: '点巡检数据' },
@@ -329,8 +343,6 @@ const dataTabs = [
   { key: 'inspect',     label: '检验数据' },
   { key: 'detect',      label: '检测数据' },
   { key: 'risk',        label: '风险数据' },
-  { key: 'operation',   label: '运行数据' },
-  { key: 'measure',     label: '监控数据' },
   { key: 'monitor',     label: '监测数据' },
   { key: 'basic',       label: '基础信息' },
   { key: 'factory',     label: '出厂数据' },
@@ -345,38 +357,165 @@ const serviceLabels: Record<string,string> = {
   risk:'风险监测', hazard:'隐患排查', issue:'问题处理'
 }
 
-function scoreColor(s: number) {
-  if (s >= 85) return 'var(--color-success)'
-  if (s >= 70) return 'var(--color-warning)'
-  return 'var(--color-danger)'
-}
-function scoreLabel(s: number) {
-  if (s >= 85) return '● 设备健康'
-  if (s >= 70) return '▲ 注意关注'
-  return '▼ 需要维护'
-}
-const loadColor = computed(() => {
-  const l = device.value?.load ?? 0
-  if (l > 85) return 'var(--color-danger)'
-  if (l > 70) return 'var(--color-warning)'
-  return 'var(--color-success)'
-})
-function severityColor(s: string) {
-  if (s === '严重') return 'var(--color-danger)'
-  if (s === '一般') return 'var(--color-warning)'
-  return 'var(--color-text-secondary)'
-}
-
 const basicFields = computed(() => device.value ? [
   { label: '设备名称',   value: device.value.name },
   { label: '设备编号',   value: device.value.code },
   { label: '设备类型',   value: device.value.type },
   { label: '所属场景',   value: { metallurgy:'冶金起重装备', port:'港口起重装备', construction:'建筑起重装备', shipbuilding:'造船起重装备' }[device.value.scene] },
   { label: '所在位置',   value: device.value.location },
-  { label: '制造商',     value: device.value.manufacturer },
+  { label: '使用单位',   value: device.value.subsidiary || device.value.group || '—' },
   { label: '投用日期',   value: device.value.installDate },
   { label: '累计运行时长', value: `${device.value.operatingHours.toLocaleString()} h` },
 ] : [])
+
+// ── 远程监测：告警数据模拟与曲线 ──
+const activeAlarmId = ref<string>('')
+const alarmFilter = ref('pending') // 'pending' | 'resolved'
+
+const mockAlarms = ref([
+  { id: 'a1', level: 'danger', time: '10:45:22', title: '大车运行偏斜超限', desc: '大车运行偏斜量达到 12.5mm，超过限值 10mm，已触发安全联锁停机。',
+    metric: '大车偏斜量 (mm)', limit: 10,
+    times: ['10:40', '10:41', '10:42', '10:43', '10:44', '10:45'],
+    values: [4.2, 5.8, 7.5, 9.1, 10.8, 12.5],
+    status: 'pending', handler: '', resolveTime: ''
+  },
+  { id: 'a2', level: 'warning', time: '10:42:15', title: '起升力矩预警', desc: '当前起升力矩达到额定力矩的 92%，请注意载荷变化，避免超载。',
+    metric: '起升力矩 (%)', limit: 90,
+    times: ['10:37', '10:38', '10:39', '10:40', '10:41', '10:42'],
+    values: [65, 78, 85, 88, 90, 92],
+    status: 'pending', handler: '', resolveTime: ''
+  },
+  { id: 'a3', level: 'warning', time: '09:15:00', title: '环境风速过大', desc: '当前风速 9.8m/s，接近限值 10.8m/s，请持续关注气象变化。',
+    metric: '环境风速 (m/s)', limit: 10.8,
+    times: ['09:10', '09:11', '09:12', '09:13', '09:14', '09:15'],
+    values: [6.5, 7.2, 8.5, 8.9, 9.5, 9.8],
+    status: 'resolved', handler: '自动恢复', resolveTime: '09:45:00'
+  },
+  { id: 'a4', level: 'danger', time: '昨天 16:20', title: '制动器异常', desc: '起升机构制动器未完全闭合，存在溜钩风险。',
+    metric: '制动器行程', limit: null,
+    times: ['16:15', '16:16', '16:17', '16:18', '16:19', '16:20'],
+    values: [100, 100, 100, 80, 40, 20],
+    status: 'resolved', handler: '李工', resolveTime: '昨天 16:50'
+  },
+])
+
+const filteredAlarms = computed(() => mockAlarms.value.filter(a => a.status === alarmFilter.value))
+const activeAlarm = computed(() => mockAlarms.value.find(a => a.id === activeAlarmId.value))
+
+function handleExpandChange(row: any, expandedRows: any[]) {
+  const isExpanded = expandedRows.some(r => r.id === row.id)
+  if (isExpanded) {
+    activeAlarmId.value = row.id
+  } else {
+    if (activeAlarmId.value === row.id) {
+      activeAlarmId.value = ''
+    }
+  }
+}
+
+function tableRowClassName({ row }: { row: any }) {
+  return `rm-table-row-${row.level}`
+}
+
+function resolveAlarm(alarm: any) {
+  alarm.status = 'resolved'
+  alarm.handler = '当前用户'
+  const d = new Date()
+  alarm.resolveTime = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`
+  if (activeAlarmId.value === alarm.id) activeAlarmId.value = ''
+}
+
+// ECharts 实例引用
+const alarmChartRef = ref<HTMLElement>()
+let alarmChart: echarts.ECharts | null = null
+
+function renderAlarmChart() {
+  if (!alarmChartRef.value || !activeAlarm.value || activeAlarm.value.times.length === 0) {
+    if (alarmChart) {
+      alarmChart.dispose()
+      alarmChart = null
+    }
+    return
+  }
+
+  if (!alarmChart) {
+    alarmChart = echarts.init(alarmChartRef.value)
+  }
+
+  const alarm = activeAlarm.value
+  const isDanger = alarm.level === 'danger'
+  const color = isDanger ? '#ff4d4f' : '#faad14'
+  const areaColor = isDanger ? 'rgba(255, 77, 79, 0.2)' : 'rgba(250, 173, 20, 0.2)'
+
+  alarmChart.setOption({
+    backgroundColor: 'transparent',
+    tooltip: { trigger: 'axis' },
+    grid: { left: 40, right: 20, top: 40, bottom: 30 },
+    xAxis: {
+      type: 'category',
+      data: alarm.times,
+      axisLine: { lineStyle: { color: '#e8edf3' } },
+      axisLabel: { color: '#64748b', fontSize: 11 }
+    },
+    yAxis: {
+      type: 'value',
+      name: alarm.metric,
+      nameTextStyle: { color: '#64748b', fontSize: 11, padding: [0, 0, 0, 20] },
+      axisLabel: { color: '#64748b', fontSize: 11 },
+      splitLine: { lineStyle: { color: '#f1f5f9', type: 'dashed' } }
+    },
+    series: [
+      {
+        name: alarm.metric,
+        type: 'line',
+        data: alarm.values,
+        smooth: true,
+        symbol: 'circle',
+        symbolSize: 6,
+        itemStyle: { color: color },
+        lineStyle: { color: color, width: 3 },
+        areaStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: areaColor },
+            { offset: 1, color: 'rgba(255,255,255,0)' }
+          ])
+        },
+        markLine: alarm.limit ? {
+          data: [{ yAxis: alarm.limit, name: '限值' }],
+          lineStyle: { color: '#ff4d4f', type: 'dashed', width: 2 },
+          label: { position: 'insideEndTop', formatter: '限值 {c}', color: '#ff4d4f' }
+        } : null
+      }
+    ]
+  }, true)
+}
+
+watch(activeAlarmId, (newId) => {
+  nextTick(() => {
+    if (newId) {
+      renderAlarmChart()
+      setTimeout(() => alarmChart?.resize(), 50)
+    } else {
+      if (alarmChart) {
+        alarmChart.dispose()
+        alarmChart = null
+      }
+    }
+  })
+})
+
+watch(() => store.activeService, (newVal) => {
+  if (newVal === 'remote') {
+    // 每次打开面板，默认重置为待处理列表并清空选中状态
+    alarmFilter.value = 'pending'
+    activeAlarmId.value = ''
+  } else {
+    if (alarmChart) {
+      alarmChart.dispose()
+      alarmChart = null
+    }
+  }
+})
 
 const techFields = [
   { label: '额定起重量', value: '50 t' },
@@ -397,96 +536,39 @@ const faultRecords = computed(() => [
   { date:'2026-03-10 08:30', type:'电气故障',   desc:'主接触器触点烧蚀', duration:'—', resolution:'等待备件', resolved:false },
 ])
 
-function initCharts() {
-  nextTick(() => {
-    if (loadChartRef.value) {
-      loadChart?.dispose()
-      loadChart = echarts.init(loadChartRef.value)
-      loadChart.setOption({
-        backgroundColor: 'transparent',
-        tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
-        grid: { left: 36, right: 12, top: 8, bottom: 28 },
-        xAxis: {
-          type: 'category',
-          data: runData.value.map(d => d.time),
-          axisLine: { lineStyle: { color: '#e8edf3' } },
-          axisLabel: { color: '#94a3b8', fontSize: 10 }
-        },
-        yAxis: {
-          type: 'value', min: 0, max: 100,
-          axisLabel: { color: '#94a3b8', fontSize: 10, formatter: '{value}%' },
-          splitLine: { lineStyle: { color: '#f0f4f8' } }
-        },
-        series: [{
-          type: 'line', data: runData.value.map(d => d.load),
-          smooth: true, symbol: 'none',
-          areaStyle: { color: { type:'linear', x:0,y:0,x2:0,y2:1, colorStops: [{ offset:0, color:'rgba(22,119,255,0.15)' }, { offset:1, color:'rgba(22,119,255,0)' }] } },
-          lineStyle: { color: '#1677ff', width: 2 },
-          markLine: { silent:true, data: [{ yAxis:80, lineStyle:{ color:'#fa8c16', type:'dashed' } }] }
-        }]
-      })
-    }
-
-    if (monitorChartRef.value) {
-      monitorChart?.dispose()
-      monitorChart = echarts.init(monitorChartRef.value)
-      monitorChart.setOption({
-        backgroundColor: 'transparent',
-        tooltip: { trigger: 'axis' },
-        legend: { data:['温度(°C)','振动(×0.1g)'], bottom:0, textStyle:{ color:'#94a3b8', fontSize:10 }, itemWidth:12, itemHeight:12 },
-        grid: { left: 36, right: 12, top: 8, bottom: 36 },
-        xAxis: {
-          type: 'category', data: runData.value.map(d => d.time),
-          axisLine: { lineStyle: { color: '#e8edf3' } },
-          axisLabel: { color: '#94a3b8', fontSize: 10 }
-        },
-        yAxis: { type:'value', axisLabel:{ color:'#94a3b8', fontSize:10 }, splitLine:{ lineStyle:{ color:'#f0f4f8' } } },
-        series: [
-          { name:'温度(°C)',   type:'line', data:runData.value.map(d => d.temperature), smooth:true, symbol:'none', lineStyle:{ color:'#fa8c16', width:2 } },
-          { name:'振动(×0.1g)', type:'line', data:runData.value.map(d => Math.round(d.vibration*10)), smooth:true, symbol:'none', lineStyle:{ color:'#722ed1', width:2 } }
-        ]
-      })
-    }
-
-    if (multiMonitorRef.value && activeTab.value === 'monitor') {
-      multiChart?.dispose()
-      multiChart = echarts.init(multiMonitorRef.value)
-      multiChart.setOption({
-        backgroundColor: 'transparent',
-        tooltip: { trigger: 'axis' },
-        legend: { data:['温度','噪声','振动'], bottom:0, textStyle:{ color:'#94a3b8', fontSize:10 } },
-        grid: { left: 36, right: 12, top: 8, bottom: 36 },
-        xAxis: {
-          type: 'category', data: runData.value.map(d => d.time),
-          axisLine: { lineStyle: { color:'#e8edf3' } }, axisLabel:{ color:'#94a3b8', fontSize:10 }
-        },
-        yAxis: { type:'value', axisLabel:{ color:'#94a3b8', fontSize:10 }, splitLine:{ lineStyle:{ color:'#f0f4f8' } } },
-        series: [
-          { name:'温度', type:'line', data:runData.value.map(d=>d.temperature), smooth:true, symbol:'none', lineStyle:{ color:'#fa8c16', width:2 } },
-          { name:'噪声', type:'line', data:runData.value.map((_,i)=>60+Math.sin(i/3)*8+Math.random()*4), smooth:true, symbol:'none', lineStyle:{ color:'#1677ff', width:2 } },
-          { name:'振动', type:'line', data:runData.value.map(d=>Math.round(d.vibration*100)), smooth:true, symbol:'none', lineStyle:{ color:'#52c41a', width:2 } }
-        ]
-      })
-    }
-  })
+function applyTabFromQuery() {
+  if (route.query.tab === 'monitor') {
+    activeTab.value = 'monitor'
+    nextTick(() => {
+      router.replace({ path: route.path })
+    })
+  } else {
+    activeTab.value = 'point'
+  }
 }
 
 function loadDevice() {
   const id = route.params.id as string
-  activeTab.value = 'point'
   device.value = getDeviceById(id)
   if (device.value) {
     store.setDevice(id)
-    runData.value = getDeviceRunData(id)
-    alarms.value  = getDeviceAlarms(id)
   }
-  initCharts()
+  applyTabFromQuery()
 }
 
 onMounted(loadDevice)
-onUnmounted(() => { loadChart?.dispose(); monitorChart?.dispose(); multiChart?.dispose() })
 watch(() => route.params.id, loadDevice)
-watch(activeTab, initCharts)
+watch(
+  () => route.query.tab,
+  tab => {
+    if (tab === 'monitor' && device.value) {
+      activeTab.value = 'monitor'
+      nextTick(() => {
+        router.replace({ path: route.path })
+      })
+    }
+  }
+)
 </script>
 
 <style scoped>
@@ -500,6 +582,86 @@ watch(activeTab, initCharts)
   overflow: hidden;
 }
 
+/* monitor tab：去掉 padding，flex 纵向布局让工作区可撑满 */
+.monitor-tab-content {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── 紧凑单行设备信息头 ── */
+.device-info-header--compact {
+  padding: 8px 16px;
+  margin-bottom: 0;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  border-bottom: 1px solid var(--color-border-light);
+  box-shadow: none;
+  backdrop-filter: none;
+  background: var(--color-card-bg);
+}
+
+.device-info-inline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-width: 0;
+  flex: 1;
+}
+
+.device-info-name-compact {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+.device-info-meta-sep {
+  color: var(--color-border);
+  font-size: 12px;
+}
+
+.device-info-meta-item {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+/* ── 监测数据筛选栏 ── */
+.monitor-filter-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  margin-bottom: 12px;
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-card-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--color-card-shadow);
+}
+
+
+/* ── 内联监测工作区包裹层：提供与其他标签一致的 20px 侧边距 ── */
+.monitor-workspace-wrapper {
+  flex: 1;
+  min-height: 0;
+  padding: 20px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* 内联工作区：还原 dmw-root 的卡片样式（在 wrapper 内正常显示） */
+.monitor-workspace-inline {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── 其他保留样式 ── */
 .info-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -548,4 +710,186 @@ watch(activeTab, initCharts)
 .service-content-body {
   padding: 16px 18px;
 }
+
+/* ════════════════════════════════════════════════════════
+   远程监测 Bottom Drawer 样式
+   ════════════════════════════════════════════════════════ */
+.remote-monitor-drawer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: calc(100% - 50px); /* 留出顶部信息栏高度 */
+  background: rgba(248, 250, 252, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(22, 119, 255, 0.2);
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  animation: slideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.rm-drawer-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: rgba(255, 255, 255, 0.6);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.rm-drawer-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.rm-drawer-icon {
+  font-size: 18px;
+  color: var(--color-primary);
+}
+
+.rm-drawer-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rm-drawer-body {
+  flex: 1;
+  min-height: 0;
+  padding: 16px;
+  background: transparent;
+}
+
+.rm-layout {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── 全宽告警流水区 ── */
+.rm-alarms-pane {
+  flex: 1;
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-card-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--color-card-shadow);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.rm-pane-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-border-light);
+  background: rgba(248, 250, 252, 0.5);
+}
+
+.rm-pane-header-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.rm-pane-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.rm-alarms-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 告警表格样式 */
+:deep(.el-table) {
+  --el-table-bg-color: transparent;
+  --el-table-tr-bg-color: transparent;
+  --el-table-row-hover-bg-color: var(--color-bg-subtle);
+  --el-table-border-color: var(--color-border-light);
+  --el-table-header-bg-color: rgba(248, 250, 252, 0.5);
+  font-size: 13px;
+}
+
+:deep(.el-table th.el-table__cell) {
+  background-color: var(--el-table-header-bg-color);
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+:deep(.rm-table-row-danger) {
+  border-left: 3px solid var(--color-danger);
+}
+:deep(.rm-table-row-warning) {
+  border-left: 3px solid var(--color-warning);
+}
+:deep(.rm-table-row-info) {
+  border-left: 3px solid var(--color-primary);
+}
+
+:deep(.el-table__expanded-cell) {
+  padding: 0 !important;
+  background-color: var(--color-card-bg) !important;
+}
+
+.rm-chart-container {
+  margin-top: 12px;
+  height: 260px;
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+}
+
+.rm-alarm-chart {
+  width: 100%;
+  height: 100%;
+}
+
+.rm-no-chart {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  background: var(--color-bg-subtle);
+  border: 1px dashed var(--color-border-light);
+  border-radius: var(--radius-sm);
+  min-height: 120px;
+}
+
+.rm-empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--color-text-muted);
+  font-size: 14px;
+  padding: 40px;
+}
 </style>
+

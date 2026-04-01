@@ -5,7 +5,7 @@
     <header class="top-bar">
       <div class="top-bar-left">
         <!-- Platform logo mark -->
-        <div class="platform-logo" title="返回首页" @click="router.push('/home')">
+        <div class="platform-logo" title="冶金起重装备场景" @click="router.push('/scene/metallurgy')">
           <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
             <rect x="1" y="8" width="5" height="13" rx="1" fill="rgba(255,255,255,0.9)"/>
             <rect x="8" y="4" width="5" height="17" rx="1" fill="rgba(255,255,255,0.9)"/>

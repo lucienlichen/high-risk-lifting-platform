@@ -19,9 +19,6 @@
             列表
           </button>
         </div>
-        <el-button size="small" @click="router.push('/home')" plain>
-          <el-icon class="el-icon--left"><House /></el-icon>返回首页
-        </el-button>
       </div>
     </div>
 

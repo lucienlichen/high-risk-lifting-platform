@@ -335,12 +335,93 @@ export function getRecentAlarmDevices(sceneId: SceneId) {
     .slice(0, 6)
 }
 
+export interface WorkCycle {
+  id: string
+  seq: number
+  startTime: string
+  stopTime: string
+  loadWeight: number
+  liftDuration: number
+  totalCycles: number
+  totalWorkHours: number
+}
+
+/**
+ * 按设备 ID + 日期确定性生成工作循环记录（8-15 条）
+ */
+export function getWorkCycles(deviceId: string, date: Date): WorkCycle[] {
+  const dateStr = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}`
+  const seed = deviceId.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) + parseInt(dateStr, 10) % 10000
+  const rng = mkRng(seed)
+
+  // 让历史日期存在稳定的“无工作循环”场景，便于日历底色区分。
+  if (rng(0, 99) < 28) {
+    return []
+  }
+
+  const count = 8 + rng(0, 7)
+  const cycles: WorkCycle[] = []
+  let hour = rng(6, 8)
+  let minute = rng(0, 30)
+  let cumulativeCycles = rng(100, 500)
+  let cumulativeHours = parseFloat((rng(200, 2000) / 10).toFixed(1))
+
+  for (let i = 0; i < count; i++) {
+    const startH = hour
+    const startM = minute
+    const durationMin = 15 + rng(5, 45)
+    minute += durationMin
+    if (minute >= 60) { hour += Math.floor(minute / 60); minute = minute % 60 }
+    const stopH = hour
+    const stopM = minute
+    hour += rng(0, 1)
+    minute = rng(0, 59)
+
+    const loadWeight = parseFloat((rng(5, 95) + rng(0, 9) / 10).toFixed(1))
+    const liftMin = 3 + rng(1, 12)
+    cumulativeCycles += rng(1, 5)
+    cumulativeHours = parseFloat((cumulativeHours + durationMin / 60).toFixed(1))
+
+    const ymd = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+    cycles.push({
+      id: `${deviceId}-cycle-${dateStr}-${i + 1}`,
+      seq: i + 1,
+      startTime: `${ymd} ${String(startH).padStart(2, '0')}:${String(startM).padStart(2, '0')}`,
+      stopTime: `${ymd} ${String(Math.min(stopH, 23)).padStart(2, '0')}:${String(stopM).padStart(2, '0')}`,
+      loadWeight,
+      liftDuration: liftMin,
+      totalCycles: cumulativeCycles,
+      totalWorkHours: cumulativeHours
+    })
+
+    if (hour >= 20) break
+  }
+
+  return cycles
+}
+
 export {
+  getOperationList,
+  type OperationRecord,
   getRemoteMonitoringData,
+  getDeviceMonitoringPoints,
+  getDeviceTwinInferenceStub,
   type RemoteMonitoringData,
   type RemoteSectionId,
   type RemoteStatusItem,
   type RemoteItemHistory,
   type RemoteTrendHistory,
-  type RemoteListHistory
+  type RemoteDualTrendHistory,
+  type RemoteTripleTrendHistory,
+  type RemoteListHistory,
+  type RemotePlaceholderHistory,
+  type MonitoringPointRow,
+  type MonitoringPointStatus,
+  type TwinInferenceStub,
+  type ElectricBoardData,
+  type ElectricRunningItem,
+  type ElectricGearBlock,
+  type ElectricGearSlot,
+  type ElectricCurrentRow,
+  type ElectricLimitItem
 } from './remoteMonitoring'

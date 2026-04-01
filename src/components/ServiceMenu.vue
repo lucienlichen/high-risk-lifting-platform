@@ -3,14 +3,6 @@
 
     <!-- ── 智能运维 ─────────────────────────────── -->
     <div class="service-group ops-group">
-      <!-- 分类标题 -->
-      <div class="group-header ops">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
-          <circle cx="12" cy="12" r="3"/>
-          <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
-        </svg>
-        智能运维服务
-      </div>
       <!-- 按钮区 -->
       <div class="group-btns">
         <div
@@ -33,13 +25,6 @@
 
     <!-- ── 事故防控 ─────────────────────────────── -->
     <div class="service-group prevention-group">
-      <!-- 分类标题 -->
-      <div class="group-header prevention">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-        </svg>
-        事故防控服务
-      </div>
       <!-- 按钮区 -->
       <div class="group-btns">
         <div
@@ -70,15 +55,22 @@
 
 <script setup lang="ts">
 import { computed, defineComponent, h } from 'vue'
+import { useRouter } from 'vue-router'
 import { useSceneStore } from '@/stores/scene'
 
-const store = useSceneStore()
+const store  = useSceneStore()
+const router = useRouter()
 
 const hasDevice     = computed(() => !!store.currentDeviceId)
 const activeService = computed(() => store.activeService)
 
 function handleClick(key: string) {
   if (!hasDevice.value) return
+  if (key === 'remote') {
+    // 远程监测：直接设置 activeService 弹出 Bottom Drawer，而不跳转页面或清空 activeService
+    store.setService(activeService.value === 'remote' ? null : 'remote')
+    return
+  }
   store.setService(activeService.value === key ? null : key)
 }
 
@@ -179,45 +171,17 @@ const preventionServices = [
 /* ── 分组容器 ── */
 .service-group {
   display: flex;
-  flex-direction: column;
-  min-width: 0;
+  align-items: stretch;
+  gap: 12px; /* 间距 */
+  background: rgba(255, 255, 255, 0.4);
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: inset 0 1px 3px rgba(255, 255, 255, 0.8), 0 2px 6px rgba(0, 0, 0, 0.02);
 }
 
 .ops-group        { flex: 4; }
 .prevention-group { flex: 3; }
-
-/* ── 分类标题行：居中 + 大字号 ── */
-.group-header {
-  display: flex;
-  align-items: center;
-  justify-content: center;   /* 居中 */
-  gap: 6px;
-  padding: 7px 12px 6px;
-  font-size: 13.5px;           /* 加大 */
-  font-weight: 700;
-  letter-spacing: 1px;
-  border-bottom: 1px solid transparent;
-  white-space: nowrap;
-  user-select: none;
-}
-
-.group-header.ops {
-  color: #1677ff;
-  background: rgba(22, 119, 255, 0.06);
-  border-bottom-color: rgba(22, 119, 255, 0.14);
-}
-
-.group-header.prevention {
-  color: #cf1322;
-  background: rgba(207, 19, 34, 0.05);
-  border-bottom-color: rgba(207, 19, 34, 0.14);
-}
-
-.group-count {
-  font-size: 11px;
-  font-weight: 500;
-  opacity: 0.55;
-}
 
 /* ── 按钮行：带内边距，按钮间留缝 ── */
 .group-btns {
