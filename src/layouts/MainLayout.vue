@@ -68,7 +68,6 @@
             <component :is="sceneIcons[scene.id]" />
           </div>
           <span class="scene-nav-label">{{ scene.name }}</span>
-          <span class="scene-nav-count">{{ scene.totalDevices }}</span>
         </div>
       </aside>
 

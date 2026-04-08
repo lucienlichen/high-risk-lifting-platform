@@ -79,17 +79,6 @@
       </el-popover>
     </div>
 
-      <!-- ④ 累计统计 -->
-      <div class="wcp-block wcp-block--stat">
-        <span class="wcp-block-label">累计循环次数</span>
-      <span class="wcp-stat-value">{{ latestCumCycles }}<em> 次</em></span>
-    </div>
-
-    <div class="wcp-block wcp-block--stat">
-        <span class="wcp-block-label">累计工作时间</span>
-        <span class="wcp-stat-value">{{ latestCumHours }}<em> h</em></span>
-      </div>
-
   </div>
 </template>
 
@@ -193,12 +182,6 @@ function isPastDay(day: string) {
   return date.getTime() < today.getTime()
 }
 
-const latestCumCycles = computed(() =>
-  props.cycles.length > 0 ? props.cycles[0].totalCycles : '—'
-)
-const latestCumHours = computed(() =>
-  props.cycles.length > 0 ? props.cycles[0].totalWorkHours : '—'
-)
 </script>
 
 <style scoped>
@@ -227,7 +210,7 @@ const latestCumHours = computed(() =>
 }
 
 .wcp-block-label {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--color-text-muted);
   white-space: nowrap;
   line-height: 1;
@@ -248,7 +231,7 @@ const latestCumHours = computed(() =>
 }
 
 .wcp-date-value {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--color-primary);
   white-space: nowrap;
@@ -291,7 +274,7 @@ const latestCumHours = computed(() =>
 .wcp-cycle-header .wcp-cr-seq,
 .wcp-cycle-header .wcp-cr-time,
 .wcp-cycle-header .wcp-cr-field {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--color-text-muted);
 }
@@ -343,7 +326,7 @@ const latestCumHours = computed(() =>
 }
 
 .wcp-cr-seq {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--color-text-secondary);
   white-space: nowrap;
@@ -351,7 +334,7 @@ const latestCumHours = computed(() =>
 }
 
 .wcp-cr-time {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--color-text-primary);
   white-space: nowrap;
@@ -359,7 +342,7 @@ const latestCumHours = computed(() =>
 }
 
 .wcp-cr-field {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-text-secondary);
   white-space: nowrap;
   min-width: 0;
@@ -386,7 +369,7 @@ const latestCumHours = computed(() =>
   border-radius: var(--radius-sm);
   cursor: pointer;
   color: var(--color-text-secondary);
-  font-size: 12px;
+  font-size: 13px;
   border: 1px solid var(--color-border-light);
   transition: all 0.15s;
   white-space: nowrap;
@@ -394,7 +377,7 @@ const latestCumHours = computed(() =>
 }
 
 .wcp-history-btn .el-icon {
-  font-size: 16px;
+  font-size: 18px;
 }
 
 .wcp-history-btn:hover,
@@ -402,29 +385,6 @@ const latestCumHours = computed(() =>
   color: var(--color-primary);
   border-color: var(--color-primary);
   background: color-mix(in srgb, var(--color-primary) 6%, transparent);
-}
-
-/* ── ④ 统计（横排：标题在左，数值在右） ── */
-.wcp-block--stat {
-  flex-direction: column;
-  justify-content: center;
-  gap: 4px;
-  flex-shrink: 0;
-}
-
-.wcp-stat-value {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  line-height: 1.2;
-}
-
-.wcp-stat-value em {
-  font-style: normal;
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--color-text-muted);
-  margin-left: 2px;
 }
 
 /* ── 日历面板容器 ── */

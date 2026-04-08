@@ -231,80 +231,119 @@
       </div><!-- /dmw-rs-body -->
     </div>
 
-    <!-- ── 结构应力监测：两大列，每列含标题 + 点位/图表 ── -->
-    <div v-else-if="activeSection === 'stress'" class="dmw-stress-full-layout">
-      <section class="dmw-monitor-column">
-        <div class="dmw-monitor-column-head">
-          <span class="dmw-monitor-column-title">结构关键位置应力实时监测</span>
-          <span class="dmw-monitor-column-subtitle">实测测点与 24h 应变趋势</span>
-        </div>
-        <div class="dmw-monitor-column-body">
-          <div class="dmw-monitor-panel dmw-monitor-panel--points">
-            <div class="dmw-stress-col-table-scroll">
-              <el-table
-                ref="pointsTableRef"
-                :data="unifiedTableRows"
-                row-key="key"
-                size="small"
-                class="dmw-points-table"
-                highlight-current-row
-                empty-text="暂无测点"
-                @row-click="onPointsRowClick"
-              >
-                <el-table-column prop="pointLabel" label="测点编号" width="90" align="center" />
-                <el-table-column prop="position" label="测点位置" min-width="110" show-overflow-tooltip />
-              </el-table>
-            </div>
+    <!-- ── 结构应力监测：左侧上下两表（实测+孪生），右侧上示意图、下数据曲线 ── -->
+    <div v-else-if="activeSection === 'stress'" class="dmw-stress-new-layout">
+      <!-- 左侧列表区 -->
+      <section class="dmw-stress-new-left">
+        <!-- 实测点位表（固定 6 个） -->
+        <div class="dmw-stress-new-panel">
+          <div class="dmw-stress-new-panel-header">
+            <span class="dmw-stress-new-panel-title">结构关键位置应力实测点位</span>
           </div>
+          <div class="dmw-stress-new-table-wrap">
+            <el-table
+              ref="pointsTableRef"
+              :data="unifiedTableRows"
+              row-key="key"
+              size="small"
+              class="dmw-points-table"
+              highlight-current-row
+              empty-text="暂无实测测点"
+              @row-click="onPointsRowClick"
+            >
+              <el-table-column prop="pointLabel" label="测点编号" width="90" align="center" />
+              <el-table-column prop="position" label="测点位置" min-width="110" show-overflow-tooltip />
+            </el-table>
+          </div>
+        </div>
 
-          <div class="dmw-monitor-panel dmw-monitor-panel--chart">
-            <div class="dmw-stress-chart-area">
-              <template v-if="selectedMetric && selectedMetric.item.history.kind === 'trend'">
-                <div class="dmw-stress-chart-header">
-                  <span class="dmw-stress-chart-title">应变监测数据（24h）</span>
-                  <span class="dmw-stress-chart-unit">单位：με</span>
-                </div>
-                <div ref="sectionChartRef" class="dmw-stress-chart"></div>
-              </template>
-              <div v-else class="dmw-stress-chart-empty">← 选择测点查看 24h 趋势</div>
-            </div>
+        <!-- 孪生点位表（动态数量） -->
+        <div class="dmw-stress-new-panel dmw-stress-new-panel--twin">
+          <div class="dmw-stress-new-panel-header">
+            <span class="dmw-stress-new-panel-title">结构其他位置数字孪生点位</span>
+          </div>
+          <div class="dmw-stress-new-table-wrap">
+            <el-table
+              :data="stressTwinMetrics"
+              row-key="code"
+              size="small"
+              class="dmw-points-table dmw-twin-points-table"
+              highlight-current-row
+              empty-text="暂无孪生测点"
+              @row-click="onTwinRowClick"
+            >
+              <el-table-column prop="code" label="测点编号" width="90" align="center" />
+              <el-table-column prop="position" label="测点位置" min-width="110" show-overflow-tooltip />
+            </el-table>
           </div>
         </div>
       </section>
 
-      <section class="dmw-monitor-column dmw-monitor-column--accent">
-        <div class="dmw-monitor-column-head">
-          <span class="dmw-monitor-column-title">结构其他位置数字孪生监测数据</span>
-          <span class="dmw-monitor-column-subtitle">增强测点与 24h 推演趋势</span>
-        </div>
-        <div class="dmw-monitor-column-body">
-          <div class="dmw-monitor-panel dmw-monitor-panel--points">
-            <div class="dmw-stress-col-table-scroll">
-              <el-table
-                :data="stressTwinMetrics"
-                row-key="code"
-                size="small"
-                class="dmw-points-table dmw-twin-points-table"
-                highlight-current-row
-                empty-text="暂无孪生测点"
-                @row-click="onTwinRowClick"
+      <!-- 右侧图表与示意区 -->
+      <section class="dmw-stress-new-right">
+        <!-- 上方：点位示意图 -->
+        <div class="dmw-stress-new-panel dmw-stress-new-map-panel">
+          <div class="dmw-stress-new-map-body dmw-stress-new-map-split">
+            <!-- 左栏：实测点位分布 -->
+            <div class="dmw-map-container dmw-map-container-left">
+              <div class="dmw-map-title">实测点位分布</div>
+              <!-- 起重机简易骨架 -->
+              <div class="dmw-crane-skeleton">
+                <div class="dmw-crane-beam"></div>
+                <div class="dmw-crane-leg dmw-crane-leg-left"></div>
+                <div class="dmw-crane-leg dmw-crane-leg-right"></div>
+                <div class="dmw-crane-hoist"></div>
+              </div>
+              <!-- 实测点位 Marker 列表 -->
+              <div
+                v-for="(row, i) in unifiedTableRows"
+                :key="'real-'+row.key"
+                :class="['dmw-crane-marker', { active: selectedMetricKey === row.key }]"
+                :style="getRealPointStyle(i)"
+                @click="onPointsRowClick(row)"
               >
-                <el-table-column prop="code" label="测点编号" width="90" align="center" />
-                <el-table-column prop="position" label="测点位置" min-width="110" show-overflow-tooltip />
-              </el-table>
+                <span>{{ i + 1 }}</span>
+              </div>
+            </div>
+            
+            <!-- 分割线 -->
+            <div class="dmw-map-divider"></div>
+
+            <!-- 右栏：数字孪生点位分布 -->
+            <div class="dmw-map-container dmw-map-container-right">
+              <div class="dmw-map-title">数字孪生点位分布</div>
+              <!-- 起重机简易骨架 -->
+              <div class="dmw-crane-skeleton dmw-crane-skeleton-twin">
+                <div class="dmw-crane-beam"></div>
+                <div class="dmw-crane-leg dmw-crane-leg-left"></div>
+                <div class="dmw-crane-leg dmw-crane-leg-right"></div>
+                <div class="dmw-crane-hoist"></div>
+              </div>
+              <!-- 孪生点位 Marker 列表 -->
+              <div
+                v-for="(twin, i) in stressTwinMetrics"
+                :key="'twin-'+twin.code"
+                :class="['dmw-crane-marker', 'dmw-crane-marker-twin', { active: selectedTwinKey === twin.code }]"
+                :style="getTwinPointStyle(i)"
+                @click="onTwinRowClick(twin)"
+              >
+                <span>{{ twin.code }}</span>
+              </div>
             </div>
           </div>
+        </div>
 
-          <div class="dmw-monitor-panel dmw-monitor-panel--chart">
-            <div class="dmw-stress-chart-area dmw-stress-chart-area--twin">
-              <template v-if="selectedTwinKey && selectedTwinMetric">
-                <div class="dmw-stress-chart-header dmw-stress-chart-header--twin">
-                  <span class="dmw-stress-chart-title">孪生推演数据（24h）</span>
-                  <span class="dmw-stress-chart-unit dmw-stress-chart-unit--twin">单位：με</span>
-                </div>
-                <div ref="twinChartRef" class="dmw-stress-chart"></div>
-              </template>
-              <div v-else class="dmw-stress-chart-empty">← 选择孪生测点查看推演趋势</div>
+        <!-- 下方：数据曲线图 -->
+        <div class="dmw-stress-new-panel dmw-stress-new-chart-panel">
+          <div class="dmw-stress-new-panel-header">
+            <span class="dmw-stress-new-panel-title">24h 监测/推演数据曲线</span>
+            <span class="dmw-stress-chart-unit" style="margin-left:auto;font-size:12px;color:var(--color-text-muted);">单位：με</span>
+          </div>
+          <div class="dmw-stress-new-chart-body">
+            <div v-show="selectedMetric && selectedMetric.item.history.kind === 'trend'" ref="sectionChartRef" class="dmw-stress-chart" style="width:100%;height:100%;"></div>
+            <div v-show="selectedTwinKey && selectedTwinMetric" ref="twinChartRef" class="dmw-stress-chart" style="width:100%;height:100%;"></div>
+            <div v-show="!(selectedMetric && selectedMetric.item.history.kind === 'trend') && !(selectedTwinKey && selectedTwinMetric)" class="dmw-stress-chart-empty">
+              ← 请在左侧选择实测点位或孪生点位
             </div>
           </div>
         </div>
@@ -894,14 +933,14 @@ const crackPointRows = computed(() => {
 const damageCurrentStrain = computed(() => {
   const h = selectedMetric.value?.item.history
   if (h?.kind !== 'dualTrend') return '--'
-  const v = h.strain.values.at(-1) ?? '--'
+  const v = h.strain.values[h.strain.values.length - 1] ?? '--'
   return `${v} ${h.strain.valueLabel}`
 })
 
 const damageCurrentAcoustic = computed(() => {
   const h = selectedMetric.value?.item.history
   if (h?.kind !== 'dualTrend') return '--'
-  const v = h.acoustic.values.at(-1) ?? '--'
+  const v = h.acoustic.values[h.acoustic.values.length - 1] ?? '--'
   return `${v} ${h.acoustic.valueLabel}`
 })
 
@@ -922,6 +961,37 @@ const STRESS_TWIN_POSITIONS: readonly string[] = [
   '支腿与主梁·孪生',
   '大车轨道侧·孪生'
 ]
+
+// 预定义 6 个实测点位的相对坐标 (top, left)
+const REAL_POINT_COORDS = [
+  { top: '35%', left: '48%' }, // 主梁跨中
+  { top: '35%', left: '25%' }, // 主梁支座
+  { top: '45%', left: '22%' }, // 支腿顶部
+  { top: '35%', left: '78%' }, // 端梁连接
+  { top: '38%', left: '60%' }, // 主梁加强
+  { top: '30%', left: '55%' }  // 小车轨道
+]
+
+function getRealPointStyle(index: number) {
+  const coord = REAL_POINT_COORDS[index] || { top: '50%', left: '50%' }
+  return { top: coord.top, left: coord.left }
+}
+
+// 预定义 14 个孪生点位的相对坐标 (top, left)
+const TWIN_POINT_COORDS = [
+  { top: '35%', left: '50%' }, { top: '35%', left: '28%' },
+  { top: '48%', left: '24%' }, { top: '35%', left: '80%' },
+  { top: '38%', left: '40%' }, { top: '36%', left: '62%' },
+  { top: '30%', left: '58%' }, { top: '60%', left: '20%' },
+  { top: '65%', left: '85%' }, { top: '32%', left: '45%' },
+  { top: '38%', left: '45%' }, { top: '45%', left: '78%' },
+  { top: '50%', left: '26%' }, { top: '75%', left: '18%' }
+]
+
+function getTwinPointStyle(index: number) {
+  const coord = TWIN_POINT_COORDS[index] || { top: '50%', left: '50%' }
+  return { top: coord.top, left: coord.left }
+}
 
 /** 确定性哈希，用于孪生趋势生成 */
 function twinSeedHash(s: string): number {
@@ -974,19 +1044,19 @@ const selectedTwinMetric = computed(() =>
 const tripleCurrentTemp = computed(() => {
   const h = selectedMetric.value?.item.history
   if (h?.kind !== 'tripleTrend') return '--'
-  const v = h.temperature.values.at(-1) ?? '--'
+  const v = h.temperature.values[h.temperature.values.length - 1] ?? '--'
   return `${v} ${h.temperature.valueLabel ?? ''}`
 })
 const tripleCurrentSound = computed(() => {
   const h = selectedMetric.value?.item.history
   if (h?.kind !== 'tripleTrend') return '--'
-  const v = h.sound.values.at(-1) ?? '--'
+  const v = h.sound.values[h.sound.values.length - 1] ?? '--'
   return `${v} ${h.sound.valueLabel ?? ''}`
 })
 const tripleCurrentVibration = computed(() => {
   const h = selectedMetric.value?.item.history
   if (h?.kind !== 'tripleTrend') return '--'
-  const v = h.vibration.values.at(-1) ?? '--'
+  const v = h.vibration.values[h.vibration.values.length - 1] ?? '--'
   return `${v} ${h.vibration.valueLabel ?? ''}`
 })
 
@@ -1279,7 +1349,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 10px;
   padding: 10px 16px;
-  font-size: 13px;
+  font-size: 14px;
   border-bottom: 1px solid var(--color-border-light);
   background: rgba(22, 119, 255, 0.04);
 }
@@ -1345,11 +1415,11 @@ onUnmounted(() => {
 }
 
 .dmw-op-list-header :deep(.el-input__inner) {
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .dmw-op-list-count {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--color-text-muted);
   padding-left: 2px;
   line-height: 1.2;
@@ -1388,7 +1458,7 @@ onUnmounted(() => {
 .dmw-op-row-seq {
   flex-shrink: 0;
   width: 20px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--color-text-muted);
   text-align: center;
@@ -1408,7 +1478,7 @@ onUnmounted(() => {
 }
 
 .dmw-op-row-load {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--color-text-primary);
   white-space: nowrap;
@@ -1417,7 +1487,7 @@ onUnmounted(() => {
 }
 
 .dmw-op-row-dur {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--color-text-muted);
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
@@ -1484,7 +1554,7 @@ onUnmounted(() => {
 .dmw-rs-card--wide { width: 100%; }
 
 .dmw-rs-card-sub {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--color-text-muted);
   margin-left: 6px;
 }
@@ -1497,25 +1567,25 @@ onUnmounted(() => {
 }
 
 .dmw-rs-params-grid--dense {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 4px 6px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px 10px;
 }
 
 @media (max-width: 1400px) {
-  .dmw-rs-params-grid--dense {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 1100px) {
   .dmw-rs-params-grid--dense {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 1100px) {
   .dmw-rs-params-grid--dense {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .dmw-rs-params-grid--dense {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1537,10 +1607,15 @@ onUnmounted(() => {
 }
 
 .dmw-rs-param {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  padding: 4px 6px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'label value'
+    'sub value';
+  column-gap: 12px;
+  row-gap: 4px;
+  align-items: center;
+  padding: 8px 10px;
   min-height: 0;
   background: var(--color-border-light);
   border-radius: var(--radius-sm);
@@ -1559,9 +1634,10 @@ onUnmounted(() => {
 .dmw-rs-param--danger  { border-left-color: var(--color-danger);  background: color-mix(in srgb, var(--color-danger)  8%, transparent); }
 
 .dmw-rs-param-label {
-  font-size: 10px;
+  grid-area: label;
+  font-size: 12px;
   color: var(--color-text-muted);
-  line-height: 1.2;
+  line-height: 1.35;
   white-space: normal;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -1570,11 +1646,14 @@ onUnmounted(() => {
 }
 
 .dmw-rs-param-value {
-  font-size: 13px;
+  grid-area: value;
+  font-size: 15px;
   font-weight: 700;
   color: var(--color-text-primary);
   font-variant-numeric: tabular-nums;
   line-height: 1.15;
+  justify-self: end;
+  text-align: right;
 }
 
 .dmw-rs-param--warning .dmw-rs-param-value { color: var(--color-warning); }
@@ -1582,25 +1661,24 @@ onUnmounted(() => {
 
 .dmw-rs-param-value em {
   font-style: normal;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 400;
   color: var(--color-text-muted);
   margin-left: 1px;
 }
 
 .dmw-rs-param-value--text {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--color-primary);
 }
 
 .dmw-rs-param-sub {
-  font-size: 10px;
+  grid-area: sub;
+  font-size: 11px;
   color: var(--color-text-muted);
-  line-height: 1.2;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.35;
+  white-space: normal;
 }
 
 /* ── 卡片 B：限位保护 ── */
@@ -1693,7 +1771,7 @@ onUnmounted(() => {
 }
 
 .dmw-rs-status-label {
-  font-size: 14px;
+  font-size: 15px;
   color: var(--color-text-muted);
   white-space: nowrap;
   overflow: hidden;
@@ -1811,13 +1889,13 @@ onUnmounted(() => {
 }
 
 .dmw-rs-op-label {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--color-text-muted);
   white-space: nowrap;
 }
 
 .dmw-rs-op-value {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--color-text-secondary);
   white-space: nowrap;
@@ -1888,13 +1966,13 @@ onUnmounted(() => {
 }
 
 .dmw-rs-stat-label {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--color-text-muted);
   white-space: nowrap;
 }
 
 .dmw-rs-stat-value {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 700;
   color: var(--color-text-primary);
   font-variant-numeric: tabular-nums;
@@ -1903,7 +1981,7 @@ onUnmounted(() => {
 
 .dmw-rs-stat-value em {
   font-style: normal;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 400;
   color: var(--color-text-muted);
   margin-left: 2px;
@@ -2169,7 +2247,7 @@ onUnmounted(() => {
 .remote-section-tab {
   flex-shrink: 0;
   padding: 12px 18px;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
   color: var(--color-text-secondary);
   background: transparent;
@@ -2201,6 +2279,7 @@ onUnmounted(() => {
   grid-template-columns: fit-content(310px) minmax(220px, 1fr);
   gap: 0;
   min-width: 0;
+  overflow: hidden; /* 确保子元素不会撑破产生截断问题 */
 }
 
 .remote-workspace--brake-only {
@@ -2218,7 +2297,201 @@ onUnmounted(() => {
   flex-direction: column;
 }
 
-/* ── 结构应力/损伤监测：两大列，每列含标题 + 点位/图表 ── */
+/* ===== 新结构应力布局 ===== */
+.dmw-stress-new-layout {
+  display: flex;
+  gap: 16px;
+  height: 100%;
+  padding: 16px;
+  padding-bottom: 24px; /* 强制底部留白 */
+  box-sizing: border-box;
+}
+
+.dmw-stress-new-left {
+  flex: 0 0 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100%;
+}
+
+.dmw-stress-new-right {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100%;
+}
+
+.dmw-stress-new-panel {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.dmw-stress-new-left .dmw-stress-new-panel {
+  height: 50%;
+}
+
+.dmw-stress-new-panel-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(248, 250, 252, 0.8);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.dmw-stress-new-panel-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.dmw-stress-new-table-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.dmw-stress-new-map-panel {
+  height: 45%;
+}
+
+.dmw-stress-new-map-body {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  background: linear-gradient(to bottom, #f8fafc, #f1f5f9);
+}
+
+.dmw-stress-new-map-split {
+  display: flex;
+  flex-direction: row;
+}
+
+.dmw-map-divider {
+  width: 1px;
+  background: var(--color-border-light);
+  margin: 16px 0;
+}
+
+.dmw-map-container-left, .dmw-map-container-right {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.dmw-map-title {
+  position: absolute;
+  top: 12px;
+  left: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  z-index: 10;
+}
+
+/* 简易起重机骨架 */
+.dmw-crane-skeleton {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+}
+.dmw-crane-skeleton-twin {
+  opacity: 0.7; /* 孪生侧稍微透明一点 */
+}
+
+.dmw-crane-beam {
+  position: absolute;
+  top: 35%;
+  left: 15%;
+  width: 70%;
+  height: 12px;
+  background: #cbd5e1;
+  border-radius: 6px;
+  box-shadow: inset 0 -2px 4px rgba(0,0,0,0.1);
+}
+
+.dmw-crane-leg {
+  position: absolute;
+  top: 35%;
+  width: 8px;
+  height: 50%;
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+.dmw-crane-leg-left { left: 25%; transform: rotate(5deg); }
+.dmw-crane-leg-right { right: 25%; transform: rotate(-5deg); }
+
+.dmw-crane-hoist {
+  position: absolute;
+  top: 35%;
+  left: 50%;
+  width: 20px;
+  height: 16px;
+  background: #94a3b8;
+  border-radius: 4px;
+  transform: translateX(-50%);
+}
+
+/* 点位 Marker */
+.dmw-crane-marker {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background: var(--color-primary);
+  border: 2px solid #fff;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  transition: all 0.3s ease;
+  z-index: 20;
+}
+
+.dmw-crane-marker-twin {
+  background: var(--color-warning);
+}
+
+.dmw-crane-marker:hover {
+  transform: translate(-50%, -50%) scale(1.2);
+  z-index: 30;
+}
+
+.dmw-crane-marker.active {
+  transform: translate(-50%, -50%) scale(1.3);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3);
+  z-index: 40;
+}
+.dmw-crane-marker-twin.active {
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.3);
+}
+
+.dmw-stress-new-chart-panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.dmw-stress-new-chart-body {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+/* ── 结构损伤监测：两大列，每列含标题 + 点位/图表 ── */
 .dmw-stress-full-layout {
   flex: 1;
   min-height: 0;
@@ -2255,7 +2528,7 @@ onUnmounted(() => {
 }
 
 .dmw-monitor-column-title {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--color-text-primary);
   flex: 1;
@@ -2263,7 +2536,7 @@ onUnmounted(() => {
 }
 
 .dmw-monitor-column-subtitle {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--color-text-muted);
   white-space: nowrap;
   text-align: center;
@@ -2297,7 +2570,7 @@ onUnmounted(() => {
 .dmw-monitor-panel-title {
   flex-shrink: 0;
   padding: 10px 14px 0;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--color-text-secondary);
   text-align: center;
@@ -2540,14 +2813,14 @@ onUnmounted(() => {
 }
 
 .dmw-damage-chart-title {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--color-text-primary);
   white-space: nowrap;
 }
 
 .dmw-damage-chart-curr {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--color-text-secondary);
   white-space: nowrap;
 }
@@ -2617,7 +2890,7 @@ onUnmounted(() => {
 }
 
 .dmw-table-toolbar-title {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--color-text-primary);
   width: 100%;
@@ -2625,7 +2898,7 @@ onUnmounted(() => {
 }
 
 .dmw-table-toolbar-hint {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--color-text-muted);
   text-align: center;
 }
@@ -2651,6 +2924,7 @@ onUnmounted(() => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-size: 13px;
   line-height: 1.35;
   padding-top: 5px;
   padding-bottom: 5px;
@@ -2658,6 +2932,8 @@ onUnmounted(() => {
 
 .dmw-points-table :deep(.el-table th .cell) {
   white-space: nowrap;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .dmw-points-table :deep(.el-table__body .el-table__cell) {

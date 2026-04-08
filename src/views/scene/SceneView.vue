@@ -5,7 +5,7 @@
     <div class="scene-header">
       <div class="scene-header-left">
         <div class="scene-header-title">
-          {{ sceneInfo?.name }}场景起重机接入数量
+          {{ sceneTitleBase }} <el-tag type="primary" size="large" effect="light" class="scene-header-badge">{{ allDevices.length }}</el-tag>
         </div>
       </div>
       <div style="display:flex;gap:10px;align-items:center">
@@ -35,7 +35,7 @@
           >{{ g.label }}</span>
         </div>
       </div>
-      <div class="filter-tags-row">
+      <div class="filter-tags-row" v-if="filters.group">
         <span class="filter-tags-label">子公司：</span>
         <div class="filter-tags-wrap">
           <span
@@ -48,23 +48,9 @@
       </div>
     </div>
 
-    <!-- 统计（左） + 搜索（右）：同一行 -->
-    <div class="filter-bar filter-bar-with-stats">
-      <div class="filter-bar-stats scene-list-footer">
-        <span class="scene-list-footer-item">
-          <span class="scene-list-footer-label">设备总数</span>
-          <span class="scene-list-footer-value">{{ listFooterTotal }}</span>
-        </span>
-        <span class="scene-list-footer-item">
-          <span class="scene-list-footer-label">运行中设备数</span>
-          <span class="scene-list-footer-value scene-list-footer-value--running">{{ listFooterRunning }}</span>
-        </span>
-        <span class="scene-list-footer-item">
-          <span class="scene-list-footer-label">未运行设备数</span>
-          <span class="scene-list-footer-value scene-list-footer-value--stopped">{{ listFooterStopped }}</span>
-        </span>
-      </div>
-      <div class="filter-bar-right">
+    <!-- 搜索：居左对齐 -->
+    <div class="filter-bar">
+      <div class="filter-bar-right" style="flex: 1; justify-content: flex-start;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
         <el-input v-model="filters.name" placeholder="设备名称" size="small" clearable style="width:160px" />
         <el-select v-model="filters.status" placeholder="设备运行状态" size="small" clearable style="width:120px">
@@ -213,14 +199,33 @@ const subsidiaryOptions = computed(() =>
     ? getSceneSubsidiaries(sceneId.value, filters.value.group)
     : getSceneSubsidiaries(sceneId.value)
 )
-const groupTagOptions = computed(() => [
-  { label: '全部', value: '' },
-  ...sceneGroups.value.map(g => ({ label: g, value: g }))
-])
-const subsidiaryTagOptions = computed(() => [
-  { label: '全部', value: '' },
-  ...subsidiaryOptions.value.map(s => ({ label: s, value: s }))
-])
+const groupTagOptions = computed(() => {
+  const allCount = allDevices.value.length
+  return [
+    { label: `全部 (${allCount})`, value: '' },
+    ...sceneGroups.value.map(g => {
+      const count = allDevices.value.filter(d => d.group === g).length
+      return { label: `${g} (${count})`, value: g }
+    })
+  ]
+})
+const subsidiaryTagOptions = computed(() => {
+  const baseDevices = filters.value.group ? allDevices.value.filter(d => d.group === filters.value.group) : allDevices.value
+  const allCount = baseDevices.length
+  return [
+    { label: `全部 (${allCount})`, value: '' },
+    ...subsidiaryOptions.value.map(s => {
+      const count = baseDevices.filter(d => d.subsidiary === s).length
+      return { label: `${s} (${count})`, value: s }
+    })
+  ]
+})
+
+const sceneTitleBase = computed(() => {
+  if (!sceneInfo.value) return ''
+  const name = sceneInfo.value.name.replace('起重装备', '')
+  return `${name}场景起重装备接入数量`
+})
 
 const statusLabels: Record<string, string> = { running:'运行中', standby:'待机', stopped:'停机', maintenance:'维修中' }
 const statusOptions = ['running','standby','stopped','maintenance'].map(v => ({ value:v, label:statusLabels[v] }))
@@ -240,9 +245,6 @@ const filteredDevices = computed(() =>
   })
 )
 const filteredTotal = computed(() => filteredDevices.value.length)
-const listFooterTotal   = computed(() => filteredTotal.value)
-const listFooterRunning = computed(() => filteredDevices.value.filter(d => d.status === 'running').length)
-const listFooterStopped = computed(() => filteredDevices.value.filter(d => d.status !== 'running').length)
 
 const pagedDevices = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
@@ -277,6 +279,23 @@ watch(() => route.params.id, loadData)
 </script>
 
 <style scoped>
+.scene-header-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.scene-header-badge {
+  font-size: 16px;
+  font-weight: 700;
+  border-radius: var(--radius-full);
+  padding: 0 16px;
+  height: 28px;
+}
+
 .filter-tags-section {
   margin-bottom: 16px;
   padding: 14px 16px;
@@ -340,24 +359,22 @@ watch(() => route.params.id, loadData)
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.filter-bar-with-stats {
+.filter-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
+  gap: 16px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md, 8px);
 }
-.filter-bar-stats {
-  flex-shrink: 0;
-}
+
 .filter-bar-right {
   display: flex;
   align-items: center;
-  gap: 12px;
   flex-wrap: wrap;
-  flex: 1;
-  min-width: 0;
-  justify-content: flex-end;
+  gap: 10px;
 }
 .filter-bar-total {
   font-size: 12px;
@@ -383,29 +400,5 @@ watch(() => route.params.id, loadData)
   justify-content: flex-end;
   padding: 12px 16px;
   border-top: 1px solid var(--color-border-light);
-}
-.scene-list-footer {
-  display: flex;
-  gap: 32px;
-  align-items: center;
-  font-size: 13px;
-}
-.scene-list-footer-item {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 8px;
-}
-.scene-list-footer-label {
-  color: var(--color-text-muted);
-}
-.scene-list-footer-value {
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-.scene-list-footer-value--running {
-  color: var(--color-success);
-}
-.scene-list-footer-value--stopped {
-  color: var(--color-text-secondary);
 }
 </style>

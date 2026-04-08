@@ -38,19 +38,19 @@ export const SCENES: SceneInfo[] = [
     id: 'metallurgy',
     name: '冶金起重装备',
     description: '面向钢铁、有色金属等冶金行业起重装备的智能运维与风险防控服务',
-    totalDevices: 1600
+    totalDevices: 1950
   },
   {
     id: 'port',
     name: '港口起重装备',
     description: '面向港口、码头装卸作业起重装备的智能运维与安全监测服务',
-    totalDevices: 1000
+    totalDevices: 1008
   },
   {
     id: 'shipbuilding',
     name: '造船起重装备',
     description: '面向船舶建造行业大型起重装备的智能运维与健康评估服务',
-    totalDevices: 100
+    totalDevices: 120
   },
   {
     id: 'construction',
@@ -79,46 +79,88 @@ const SCENE_CODES: Record<SceneId, string> = {
   metallurgy: 'YJ', port: 'GK', construction: 'JZ', shipbuilding: 'ZC'
 }
 
-/**
- * 各场景企业筛选演示数据：集团 + 下属单元（与 SceneView 标签筛选联动）
- * - 冶金：本溪钢铁、江苏荣刚
- * - 港口：青岛港集团（示例）+ 宁波舟山港集团
- * - 造船：仪征造船厂（示例）+ 外高桥造船
- * - 建筑：中国建筑、上海建工（中国大陆大型建工企业）
- */
-const SCENE_ENTERPRISE: Record<
-  SceneId,
-  { groups: readonly string[]; subsidiaries: Record<string, string[]> }
-> = {
+const EXACT_COUNTS: Record<SceneId, Record<string, Record<string, number>>> = {
+  shipbuilding: {
+    '招商局金陵船舶（江苏）有限公司': {
+      '总厂': 120
+    }
+  },
   metallurgy: {
-    groups: ['本溪钢铁', '江苏荣刚'],
-    subsidiaries: {
-      '本溪钢铁': ['炼钢一厂', '轧钢二厂', '高炉分厂'],
-      '江苏荣刚': ['特钢分公司', '棒线分厂']
+    '江苏永钢集团有限公司': {
+      '总厂': 350
+    },
+    '本钢集团': {
+      '各厂': 1600
     }
   },
   port: {
-    groups: ['青岛港集团', '宁波舟山港集团'],
-    subsidiaries: {
-      '青岛港集团': ['前湾港区', '董家口港区', '黄岛油港区'],
-      '宁波舟山港集团': ['北仑港区', '穿山港区', '梅山港区']
-    }
-  },
-  shipbuilding: {
-    groups: ['仪征造船厂', '外高桥造船'],
-    subsidiaries: {
-      '仪征造船厂': ['船体车间', '舾装分厂', '涂装车间'],
-      '外高桥造船': ['总装部', '搭载分部', '舾装码头']
+    '青岛港': {
+      '青岛前湾集装箱码头有限责任公司': 153,
+      '青岛前湾联合集装箱码头有限责任公司': 122,
+      '青岛新前湾集装箱码头有限责任公司': 117,
+      '青岛前湾新联合集装箱码头有限责任公司': 27,
+      '青岛前湾西港联合码头有限责任公司': 28,
+      '青岛港国际股份有限公司董家口分公司': 66,
+      '青岛港国际股份有限公司前港分公司': 27,
+      '青岛港国际股份有限公司大港分公司': 13,
+      '青岛港国际物流有限公司': 40,
+      '青岛港董家口矿石码头有限公司': 18,
+      '青岛港通用码头有限公司': 12
+    },
+    '连云港港口': {
+      '江苏连云港港口股份有限公司东方港务分公司': 135,
+      '连云港新东方国际货柜码头有限公司': 46,
+      '连云港新东方集装箱码头有限公司': 37,
+      '连云港新海湾码头有限公司': 28,
+      '连云港新圩港码头有限公司': 26,
+      '连云港新云台码头有限公司': 22,
+      '江苏连云港港口股份有限公司': 11,
+      '连云港东粮码头有限公司': 16,
+      '连云港新银湾码头有限公司': 15,
+      '新陆桥（连云港）码头有限公司': 14,
+      '江苏新龙港港口有限公司': 13,
+      '连云港鸿云实业有限公司': 8,
+      '连云港港口控股集团灌云有限公司': 7,
+      '连云港新苏港码头有限公司': 7
     }
   },
   construction: {
-    groups: ['中国建筑', '上海建工'],
-    subsidiaries: {
-      '中国建筑': ['一局华东公司', '三局总承包', '八局基础设施'],
-      '上海建工': ['一建集团', '机施集团', '基础集团']
+    '中国建筑': {
+      '一局华东公司': 167,
+      '三局总承包': 167,
+      '八局基础设施': 166
     }
   }
 }
+
+const SCENE_ENTERPRISE: Record<
+  SceneId,
+  { groups: string[]; subsidiaries: Record<string, string[]> }
+> = Object.keys(EXACT_COUNTS).reduce((acc, sceneId) => {
+  const groups = Object.keys(EXACT_COUNTS[sceneId as SceneId])
+  const subsidiaries: Record<string, string[]> = {}
+  groups.forEach(g => {
+    subsidiaries[g] = Object.keys(EXACT_COUNTS[sceneId as SceneId][g])
+  })
+  acc[sceneId as SceneId] = { groups, subsidiaries }
+  return acc
+}, {} as Record<SceneId, { groups: string[]; subsidiaries: Record<string, string[]> }>)
+
+// 预先打平所有设备的归属，以便生成设备时直接按顺序取
+const SCENE_ALLOCATION_LIST: Record<SceneId, { group: string, subsidiary: string }[]> = Object.keys(EXACT_COUNTS).reduce((acc, sceneId) => {
+  const list: { group: string, subsidiary: string }[] = []
+  const sceneData = EXACT_COUNTS[sceneId as SceneId]
+  for (const group in sceneData) {
+    for (const subsidiary in sceneData[group]) {
+      const count = sceneData[group][subsidiary]
+      for (let i = 0; i < count; i++) {
+        list.push({ group, subsidiary })
+      }
+    }
+  }
+  acc[sceneId as SceneId] = list
+  return acc
+}, {} as Record<SceneId, { group: string, subsidiary: string }[]>)
 
 /** 技术参数前6项名称（起重装备通用） */
 const TECH_PARAM_NAMES = ['额定起重量', '跨度', '起升高度', '工作级别', '起升速度', '运行速度'] as const
@@ -172,10 +214,16 @@ function generateDevice(sceneId: SceneId, index: number, rng: ReturnType<typeof 
   const installMonth = rng(1, 12)
 
   const ent = SCENE_ENTERPRISE[sceneId]
-  const g = ent.groups[rng(0, ent.groups.length - 1)]
-  const subs = ent.subsidiaries[g]
-  const group = g
-  const subsidiary = subs[rng(0, subs.length - 1)]
+  const allocationList = SCENE_ALLOCATION_LIST[sceneId]
+  const allocation = allocationList && index < allocationList.length 
+    ? allocationList[index]
+    : {
+        group: ent.groups[rng(0, ent.groups.length - 1)],
+        subsidiary: ent.subsidiaries[ent.groups[rng(0, ent.groups.length - 1)]][0]
+      }
+      
+  const group = allocation.group
+  const subsidiary = allocation.subsidiary
 
   const technicalParams: { name: string; value: string }[] = TECH_PARAM_NAMES.map((name, i) => {
     const u = TECH_PARAM_UNITS[name]
@@ -236,9 +284,9 @@ function ensureCache(sceneId: SceneId) {
   }
   const rng     = mkRng(seeds[sceneId])
   const scene   = SCENES.find(s => s.id === sceneId)!
-  const count   = Math.min(scene.totalDevices, 200) // generate up to 200 for demo
+  const count   = scene.totalDevices // generate all devices to ensure group count matches
   const devices: Device[] = []
-  for (let i = 1; i <= count; i++) {
+  for (let i = 0; i < count; i++) {
     devices.push(generateDevice(sceneId, i, rng))
   }
   cache.set(sceneId, devices)
