@@ -25,120 +25,32 @@
         </button>
       </div>
 
-      <div v-if="activeModule === 'structure' && structureRows.length > 0" class="had-body">
-        <div class="had-overview-grid">
-          <div class="had-overview-card had-overview-card--score">
-            <span class="had-overview-label">疲劳累积损伤度</span>
-            <span class="had-overview-value">{{ totalDamageDegree }}<em> / 1.00</em></span>
-            <span class="had-overview-sub">{{ structureHealthLevel }}</span>
+      <div v-if="activeModule === 'structure' && allRows.length > 0" class="had-body" style="padding: 16px; overflow: hidden; display: flex; flex-direction: column; gap: 16px;">
+        <div class="had-panel" style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
+          <div class="had-panel-header" style="flex-shrink: 0; padding: 10px 16px;">
+            <span class="had-panel-title" style="font-size: 14px;">全部监测点位</span>
+            <el-tag size="small" type="info" effect="plain">{{ allRows.length }} 处</el-tag>
           </div>
-          <div class="had-overview-card">
-            <span class="had-overview-label">高风险测点</span>
-            <span class="had-overview-value">{{ highRiskPointCount }}<em> / {{ structureRows.length }}</em></span>
-            <span class="had-overview-sub">{{ topDamageRow?.position ?? '暂无重点位置' }}</span>
-          </div>
-          <div class="had-overview-card">
-            <span class="had-overview-label">最大应力峰值</span>
-            <span class="had-overview-value">{{ topPeakStress }}<em> MPa</em></span>
-            <span class="had-overview-sub">{{ topPeakPosition }}</span>
-          </div>
-          <div class="had-overview-card">
-            <span class="had-overview-label">结构评估结论</span>
-            <span class="had-overview-value had-overview-value--text">{{ structureConclusionShort }}</span>
-            <span class="had-overview-sub">基于结构应力监测推演</span>
-          </div>
-        </div>
-
-        <div class="had-main-grid had-main-grid--structure">
-          <div class="had-panel">
-            <div class="had-panel-header">
-              <span class="had-panel-title">关键位置损伤排序</span>
-              <el-tag :type="highRiskPointCount > 0 ? 'danger' : 'success'" size="small" effect="plain">
-                {{ highRiskPointCount > 0 ? `重点关注 ${highRiskPointCount} 处` : '整体稳定' }}
-              </el-tag>
-            </div>
-            <div class="had-panel-body had-split">
-              <div class="had-list">
-                <div
-                  v-for="row in structureRows"
-                  :key="row.key"
-                  :class="['had-list-item', { active: selectedStructureKey === row.key }]"
-                  @click="selectedStructureKey = row.key"
-                >
-                  <div class="had-list-head">
-                    <span class="had-list-title">{{ row.position }}</span>
-                    <el-tag :type="levelTagType(row.level)" size="small" effect="plain">{{ levelText(row.level) }}</el-tag>
-                  </div>
-                  <div class="had-list-meta">
-                    <span>当前 {{ row.currentStress }}</span>
-                    <span>峰值 {{ row.peakStress }}</span>
-                  </div>
-                  <div class="had-list-meta">
-                    <span>损伤度 {{ row.damageDegree }}</span>
-                    <span>占比 {{ row.damagePercent }}</span>
-                  </div>
-                  <div class="had-list-meta had-list-meta--trend">
-                    <span>{{ row.trendText }}</span>
-                  </div>
-                </div>
-              </div>
-              <div class="had-detail">
-                <div v-if="selectedStructureRow" class="had-detail-top">
-                  <div class="had-detail-metric">
-                    <span class="had-detail-label">疲劳累积损伤度</span>
-                    <span class="had-detail-value">{{ selectedStructureRow.damageDegree }}</span>
-                  </div>
-                  <div class="had-detail-metric">
-                    <span class="had-detail-label">当前应力</span>
-                    <span class="had-detail-value">{{ selectedStructureRow.currentStress }}</span>
-                  </div>
-                  <div class="had-detail-metric">
-                    <span class="had-detail-label">应力幅值</span>
-                    <span class="had-detail-value">{{ selectedStructureRow.amplitudeDisplay }}</span>
-                  </div>
-                </div>
-                <div ref="structureChartRef" class="had-chart"></div>
-              </div>
-            </div>
-          </div>
-
-          <div class="had-side-stack">
-            <div class="had-panel">
-              <div class="had-panel-header">
-                <span class="had-panel-title">评估结论</span>
-              </div>
-              <div class="had-summary-text">{{ structureSummary }}</div>
-            </div>
-
-            <div class="had-panel">
-              <div class="had-panel-header">
-                <span class="had-panel-title">建议动作</span>
-              </div>
-              <div class="had-advice-list">
-                <div v-for="advice in structureAdviceList" :key="advice" class="had-advice-item">
-                  <span class="had-advice-dot"></span>
-                  <span>{{ advice }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="had-panel">
-          <div class="had-panel-header">
-            <span class="had-panel-title">疲劳累积损伤度明细</span>
-          </div>
-          <div class="had-table-wrap">
-            <el-table :data="structureTableRows" style="width: 100%" height="100%">
-              <el-table-column prop="position" label="测点位置" min-width="180" show-overflow-tooltip />
-              <el-table-column prop="currentStress" label="当前应力" width="120" />
-              <el-table-column prop="peakStress" label="峰值应力" width="120" />
-              <el-table-column prop="amplitudeDisplay" label="应力幅值" width="120" />
-              <el-table-column prop="damageDegree" label="疲劳累积损伤度" width="150" />
-              <el-table-column prop="damagePercent" label="风险占比" width="110" />
-              <el-table-column prop="riskText" label="风险等级" width="110">
+          <div class="had-table-wrap" style="flex: 1; padding: 12px; height: 100%; min-height: 0;">
+            <el-table :data="allTableRows" style="width: 100%" height="100%">
+              <el-table-column prop="code" label="编号" width="60" align="center" />
+              <el-table-column prop="position" label="测点位置" show-overflow-tooltip />
+              <el-table-column label="数据来源" width="90" align="center">
                 <template #default="{ row }">
-                  <el-tag :type="levelTagType(row.level)" size="small" effect="plain">{{ row.riskText }}</el-tag>
+                  <span :class="['had-table-source', `had-table-source--${row.source}`]">
+                    {{ row.sourceLabel }}
+                  </span>
+                </template>
+              </el-table-column>
+              <el-table-column prop="maxStress" label="最大应力值" />
+              <el-table-column prop="minStress" label="最小应力值" />
+              <el-table-column prop="avgStress" label="平均应力值" />
+              <el-table-column prop="workCycles" label="工作循环次数" />
+              <el-table-column prop="cumulativeWorkTime" label="累计工作时间" />
+              <el-table-column prop="damageDegree" label="累积疲劳损伤度" />
+              <el-table-column prop="statusText" label="状态">
+                <template #default="{ row }">
+                  <el-tag :type="levelTagType(row.level)" size="small" effect="plain">{{ row.statusText }}</el-tag>
                 </template>
               </el-table-column>
             </el-table>
@@ -198,9 +110,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { Close } from '@element-plus/icons-vue'
-import * as echarts from 'echarts'
 import { getRemoteMonitoringData } from '@/mock'
 import type { Device, RemoteMonitoringData, RemoteTrendHistory } from '@/mock'
 
@@ -214,21 +125,23 @@ const emit = defineEmits<{
 
 type AssessmentLevel = 'normal' | 'warn' | 'danger'
 type ModuleKey = 'structure' | 'gearbox' | 'brake' | 'wheel'
+type PointSource = 'measured' | 'twin'
 
 type StructureRow = {
   key: string
+  code: string
   position: string
+  source: PointSource
+  sourceLabel: string
   level: AssessmentLevel
   currentValue: number
-  peakValue: number
-  amplitudeValue: number
   damageValue: number
-  currentStress: string
-  peakStress: string
-  amplitudeDisplay: string
+  maxStress: string
+  minStress: string
+  avgStress: string
+  workCycles: string
+  cumulativeWorkTime: string
   damageDegree: string
-  damagePercent: string
-  trendText: string
   history: RemoteTrendHistory
 }
 
@@ -257,14 +170,14 @@ function levelTagType(level: AssessmentLevel) {
 }
 
 function levelText(level: AssessmentLevel) {
-  if (level === 'danger') return '高风险'
-  if (level === 'warn') return '关注'
-  return '正常'
+  if (level === 'danger') return '异常'
+  if (level === 'warn') return '亚健康'
+  return '健康'
 }
 
 function damageLevel(value: number): AssessmentLevel {
-  if (value >= 0.8) return 'danger'
-  if (value >= 0.55) return 'warn'
+  if (value >= 0.85) return 'danger'
+  if (value >= 0.7) return 'warn'
   return 'normal'
 }
 
@@ -272,7 +185,52 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value))
 }
 
-const structureRows = computed<StructureRow[]>(() => {
+const STRESS_TWIN_POSITIONS: readonly string[] = [
+  '主梁跨中区',
+  '主梁支座区',
+  '支腿顶部节点',
+  '端梁腹板',
+  '下翼缘监测',
+  '加强筋焊缝',
+  '小车轨道梁',
+  '刚性腿连接',
+  '柔性腿连接',
+  '主梁上翼缘',
+  '主梁下翼缘',
+  '端梁连接板',
+  '支腿与主梁',
+  '大车轨道侧'
+]
+
+const HOURS_24 = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`)
+
+function twinSeedHash(s: string): number {
+  let h = 0
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0
+  return Math.abs(h) || 1
+}
+
+function computeTwinMetrics(deviceId: string): { code: string; position: string; history: RemoteTrendHistory }[] {
+  const dSeed = twinSeedHash(String(deviceId))
+  return STRESS_TWIN_POSITIONS.map((position, i) => {
+    const code = String(7 + i)
+    const base = 68 + i * 3.5 + (dSeed % 20) / 3
+    const amp = 7 + i % 7
+    const salt = twinSeedHash(`dt-${i}-${position}`)
+    const values = HOURS_24.map((_, hi) => {
+      const phase = (hi + (dSeed ^ salt) % 11) / 3.8
+      const v = base + amp * Math.sin(phase) + ((dSeed + hi) % 5) / 3
+      return Math.round(v * 10) / 10
+    })
+    return {
+      code,
+      position,
+      history: { kind: 'trend' as const, times: HOURS_24, values, valueLabel: 'με' }
+    }
+  })
+}
+
+const measuredRows = computed<StructureRow[]>(() => {
   const rows = (monitoringData.value?.stress ?? []).filter(item => item.history.kind === 'trend')
   if (!rows.length) return []
 
@@ -287,6 +245,7 @@ const structureRows = computed<StructureRow[]>(() => {
     const first = values[0] ?? current
     const peak = Math.max(...values)
     const valley = Math.min(...values)
+    const avg = values.length ? values.reduce((a, b) => a + b, 0) / values.length : 0
     const amplitude = peak - valley
     const trendStrength = Math.abs(current - first)
     const statusWeight = item.status === 'danger' ? 1 : item.status === 'warn' ? 0.72 : 0.4
@@ -299,91 +258,88 @@ const structureRows = computed<StructureRow[]>(() => {
       0.96
     )
     const level = damageLevel(damageValue)
-    const direct = current >= first ? '上升' : '回落'
+
+    const workCyclesCount = Math.floor(damageValue * 850000)
+    const workTimeHours = Math.floor(damageValue * 48000)
 
     return {
-      key: `structure-${index}`,
+      key: `measured-${index}`,
+      code: String(index + 1),
       position: positionFromLabel(item.label),
+      source: 'measured' as PointSource,
+      sourceLabel: '实测',
       level,
       currentValue: current,
-      peakValue: peak,
-      amplitudeValue: amplitude,
       damageValue,
-      currentStress: `${current.toFixed(1)} ${item.history.valueLabel}`,
-      peakStress: `${peak.toFixed(1)} ${item.history.valueLabel}`,
-      amplitudeDisplay: `${amplitude.toFixed(1)} ${item.history.valueLabel}`,
+      maxStress: `${peak.toFixed(1)} ${item.history.valueLabel}`,
+      minStress: `${valley.toFixed(1)} ${item.history.valueLabel}`,
+      avgStress: `${avg.toFixed(1)} ${item.history.valueLabel}`,
+      workCycles: `${(workCyclesCount / 10000).toFixed(1)}万次`,
+      cumulativeWorkTime: `${workTimeHours}h`,
       damageDegree: damageValue.toFixed(2),
-      damagePercent: `${Math.round(damageValue * 100)}%`,
-      trendText: `近 24h ${direct} ${Math.abs(current - first).toFixed(1)} ${item.history.valueLabel}`,
       history: item.history
     }
-  }).sort((a, b) => b.damageValue - a.damageValue)
+  })
 })
 
-const selectedStructureKey = ref('')
+const twinRows = computed<StructureRow[]>(() => {
+  if (!props.device) return []
+  const twinData = computeTwinMetrics(String(props.device.id))
+  const allValues = twinData.flatMap(t => t.history.values)
+  const maxVal = Math.max(...allValues, 1)
 
-const selectedStructureRow = computed(() =>
-  structureRows.value.find(item => item.key === selectedStructureKey.value) ?? structureRows.value[0] ?? null
-)
+  return twinData.map((twin, index) => {
+    const values = twin.history.values
+    const current = values[values.length - 1] ?? 0
+    const peak = Math.max(...values)
+    const valley = Math.min(...values)
+    const avg = values.length ? values.reduce((a, b) => a + b, 0) / values.length : 0
+    const amplitude = peak - valley
+    const damageValue = clamp(
+      peak / maxVal * 0.42 +
+      amplitude / maxVal * 0.28 +
+      0.38,
+      0.12,
+      0.96
+    )
+    const level = damageLevel(damageValue)
 
-watch(structureRows, rows => {
-  if (!rows.find(item => item.key === selectedStructureKey.value)) {
-    selectedStructureKey.value = rows[0]?.key ?? ''
-  }
-}, { immediate: true })
+    const workCyclesCount = Math.floor(damageValue * 850000)
+    const workTimeHours = Math.floor(damageValue * 48000)
 
-const totalDamageDegree = computed(() => {
-  if (!structureRows.value.length) return '0.00'
-  const total = structureRows.value.reduce((sum, item) => sum + item.damageValue, 0) / structureRows.value.length
-  return total.toFixed(2)
+    return {
+      key: `twin-${index}`,
+      code: twin.code,
+      position: twin.position,
+      source: 'twin' as PointSource,
+      sourceLabel: '孪生',
+      level,
+      currentValue: current,
+      damageValue,
+      maxStress: `${peak.toFixed(1)} ${twin.history.valueLabel}`,
+      minStress: `${valley.toFixed(1)} ${twin.history.valueLabel}`,
+      avgStress: `${avg.toFixed(1)} ${twin.history.valueLabel}`,
+      workCycles: `${(workCyclesCount / 10000).toFixed(1)}万次`,
+      cumulativeWorkTime: `${workTimeHours}h`,
+      damageDegree: damageValue.toFixed(2),
+      history: twin.history
+    }
+  })
 })
 
-const structureHealthLevel = computed(() => {
-  const value = Number(totalDamageDegree.value)
-  if (value >= 0.8) return '结构疲劳风险预警'
-  if (value >= 0.55) return '结构处于关注状态'
-  return '结构整体稳定'
+const allRows = computed<StructureRow[]>(() => {
+  return [...measuredRows.value, ...twinRows.value].sort((a, b) => {
+    if (a.source !== b.source) {
+      return a.source === 'measured' ? -1 : 1
+    }
+    return b.damageValue - a.damageValue
+  })
 })
 
-const highRiskPointCount = computed(() => structureRows.value.filter(item => item.level !== 'normal').length)
-const topDamageRow = computed(() => structureRows.value[0] ?? null)
-const topPeakPoint = computed(() =>
-  structureRows.value.slice().sort((a, b) => b.peakValue - a.peakValue)[0] ?? null
-)
-
-const topPeakStress = computed(() => topPeakPoint.value?.peakValue.toFixed(1) ?? '0.0')
-const topPeakPosition = computed(() => topPeakPoint.value?.position ?? '暂无')
-
-const structureConclusionShort = computed(() =>
-  Number(totalDamageDegree.value) >= 0.8 ? '需立即关注'
-  : Number(totalDamageDegree.value) >= 0.55 ? '建议重点跟踪'
-  : '当前稳定'
-)
-
-const structureSummary = computed(() => {
-  if (!structureRows.value.length) return '当前暂无可用于结构疲劳累积损伤度分析的应力监测数据。'
-  const top = topDamageRow.value
-  if (!top) return '当前暂无可用于结构疲劳累积损伤度分析的应力监测数据。'
-  return `基于结构应力近 24h 监测数据，当前结构疲劳累积损伤度总评为 ${totalDamageDegree.value}。${top.position} 的损伤累积最为突出，当前损伤度 ${top.damageDegree}，峰值应力 ${top.peakStress}，应力幅值 ${top.amplitudeDisplay}，建议将该位置列为优先关注点。`
-})
-
-const structureAdviceList = computed(() => {
-  const top = topDamageRow.value
-  const list: string[] = []
-  if (top) {
-    list.push(`优先复核 ${top.position} 的应力峰值和波动幅值，并作为疲劳累积损伤度重点跟踪位置。`)
-  }
-  if (highRiskPointCount.value > 1) {
-    list.push(`当前共有 ${highRiskPointCount.value} 个结构测点处于关注或高风险状态，建议安排专项巡检。`)
-  }
-  list.push('建议保留本轮评估结果作为后续疲劳损伤趋势对比基线。')
-  return list
-})
-
-const structureTableRows = computed(() =>
-  structureRows.value.map(item => ({
+const allTableRows = computed(() =>
+  allRows.value.map(item => ({
     ...item,
-    riskText: levelText(item.level)
+    statusText: levelText(item.level)
   }))
 )
 
@@ -415,119 +371,9 @@ const currentModuleMeta = computed(() => {
 
 const activeModuleSubtitle = computed(() =>
   activeModule.value === 'structure'
-    ? '基于结构应力监测数据的疲劳累积损伤度评估'
+    ? '全部监测点位的应力特征、累积疲劳损伤度及状态评估'
     : currentModuleMeta.value.sub
 )
-
-const structureChartRef = ref<HTMLElement>()
-let structureChart: echarts.ECharts | null = null
-
-function buildDamageHistory(row: StructureRow) {
-  const values = row.history.values
-  const maxValue = Math.max(...values, 1)
-  let cumulative = 0.08
-  return values.map((value, index) => {
-    const prev = index === 0 ? value : values[index - 1]
-    const delta = Math.abs(value - prev)
-    cumulative = clamp(cumulative + value / maxValue * 0.035 + delta / maxValue * 0.02, 0.08, row.damageValue)
-    return Number(cumulative.toFixed(3))
-  })
-}
-
-function renderStructureChart() {
-  if (!structureChartRef.value || !selectedStructureRow.value) return
-  structureChart ??= echarts.init(structureChartRef.value)
-  const row = selectedStructureRow.value
-  const damageHistory = buildDamageHistory(row)
-  structureChart.setOption({
-    backgroundColor: 'transparent',
-    tooltip: { trigger: 'axis' },
-    legend: {
-      top: 0,
-      textStyle: { color: '#475569', fontSize: 12 }
-    },
-    grid: { left: 52, right: 58, top: 38, bottom: 30 },
-    xAxis: {
-      type: 'category',
-      data: row.history.times,
-      axisLine: { lineStyle: { color: '#dbe4ee' } },
-      axisLabel: { color: '#64748b', fontSize: 11 }
-    },
-    yAxis: [
-      {
-        type: 'value',
-        name: row.history.valueLabel,
-        nameTextStyle: { color: '#64748b', fontSize: 11 },
-        axisLabel: { color: '#64748b', fontSize: 11 },
-        splitLine: { lineStyle: { color: '#eef2f7', type: 'dashed' } }
-      },
-      {
-        type: 'value',
-        name: '损伤度',
-        min: 0,
-        max: 1,
-        nameTextStyle: { color: '#64748b', fontSize: 11 },
-        axisLabel: { color: '#64748b', fontSize: 11 }
-      }
-    ],
-    series: [
-      {
-        name: '应力趋势',
-        type: 'line',
-        smooth: true,
-        data: row.history.values,
-        symbol: 'circle',
-        symbolSize: 5,
-        lineStyle: { width: 3, color: row.level === 'danger' ? '#ff4d4f' : row.level === 'warn' ? '#faad14' : '#1677ff' },
-        itemStyle: { color: row.level === 'danger' ? '#ff4d4f' : row.level === 'warn' ? '#faad14' : '#1677ff' },
-        areaStyle: {
-          color: row.level === 'danger'
-            ? 'rgba(255,77,79,0.12)'
-            : row.level === 'warn'
-              ? 'rgba(250,173,20,0.12)'
-              : 'rgba(22,119,255,0.12)'
-        }
-      },
-      {
-        name: '疲劳累积损伤度',
-        type: 'line',
-        yAxisIndex: 1,
-        smooth: true,
-        data: damageHistory,
-        symbol: 'circle',
-        symbolSize: 5,
-        lineStyle: { width: 3, color: '#7c3aed' },
-        itemStyle: { color: '#7c3aed' }
-      }
-    ]
-  }, true)
-}
-
-watch(selectedStructureRow, () => {
-  nextTick(() => {
-    renderStructureChart()
-    setTimeout(() => structureChart?.resize(), 50)
-  })
-}, { immediate: true })
-
-watch(activeModule, () => {
-  nextTick(() => {
-    renderStructureChart()
-    setTimeout(() => structureChart?.resize(), 50)
-  })
-})
-
-watch(monitoringData, () => {
-  nextTick(() => {
-    renderStructureChart()
-    setTimeout(() => structureChart?.resize(), 50)
-  })
-})
-
-onUnmounted(() => {
-  structureChart?.dispose()
-  structureChart = null
-})
 </script>
 
 <style scoped>
@@ -643,10 +489,9 @@ onUnmounted(() => {
   padding: 12px 16px 16px;
 }
 
-.had-overview-grid,
 .had-placeholder-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -659,10 +504,6 @@ onUnmounted(() => {
   background: var(--color-card-bg);
   border: 1px solid var(--color-card-border);
   box-shadow: var(--color-card-shadow);
-}
-
-.had-overview-card--score {
-  background: linear-gradient(135deg, rgba(22, 119, 255, 0.1), rgba(124, 58, 237, 0.08));
 }
 
 .had-overview-card--placeholder {
@@ -700,13 +541,7 @@ onUnmounted(() => {
 
 .had-main-grid--structure {
   display: grid;
-  grid-template-columns: minmax(0, 1.55fr) minmax(320px, 0.95fr);
-  gap: 12px;
-}
-
-.had-side-stack {
-  display: flex;
-  flex-direction: column;
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
 }
 
@@ -739,13 +574,6 @@ onUnmounted(() => {
   padding: 14px 16px 16px;
 }
 
-.had-summary-text {
-  padding: 16px;
-  font-size: 14px;
-  line-height: 1.75;
-  color: var(--color-text-secondary);
-}
-
 .had-advice-list {
   padding: 14px 16px 16px;
   display: flex;
@@ -773,18 +601,20 @@ onUnmounted(() => {
 
 .had-split {
   display: grid;
-  grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
+  grid-template-columns: 1fr;
   gap: 14px;
 }
 
 .had-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
+  overflow-y: auto;
+  max-height: 480px;
 }
 
 .had-list-item {
-  padding: 12px 14px;
+  padding: 10px 12px;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-sm);
   background: var(--color-bg-subtle);
@@ -804,26 +634,45 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .had-list-title {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.had-type-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
+.had-type-badge--measured {
+  background: rgba(22, 119, 255, 0.12);
+  color: #1677ff;
+}
+
+.had-type-badge--twin {
+  background: rgba(124, 58, 237, 0.12);
+  color: #7c3aed;
 }
 
 .had-list-meta {
   display: flex;
   flex-wrap: wrap;
   gap: 8px 14px;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--color-text-secondary);
-}
-
-.had-list-meta--trend {
-  margin-top: 6px;
-  color: var(--color-text-muted);
 }
 
 .had-detail {
@@ -869,7 +718,25 @@ onUnmounted(() => {
 
 .had-table-wrap {
   padding: 0 12px 12px;
-  height: 280px;
+}
+
+.had-table-source {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.had-table-source--measured {
+  background: rgba(22, 119, 255, 0.12);
+  color: #1677ff;
+}
+
+.had-table-source--twin {
+  background: rgba(124, 58, 237, 0.12);
+  color: #7c3aed;
 }
 
 .had-placeholder-main {
@@ -943,10 +810,7 @@ onUnmounted(() => {
 
 @media (max-width: 1280px) {
   .had-module-tabs,
-  .had-overview-grid,
   .had-placeholder-grid,
-  .had-main-grid--structure,
-  .had-split,
   .had-placeholder-body {
     grid-template-columns: 1fr;
   }
