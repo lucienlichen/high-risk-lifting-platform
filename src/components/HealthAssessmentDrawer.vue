@@ -1,12 +1,23 @@
 <template>
   <div class="had-drawer">
     <div class="had-shell">
-      <div class="had-header">
-        <div class="had-header-main">
-          <span class="had-title">健康评估</span>
-          <span class="had-subtitle">{{ activeModuleSubtitle }}</span>
+      <div class="had-top-bar">
+        <div class="had-module-tabs">
+          <button
+            v-for="item in moduleTabs"
+            :key="item.key"
+            :class="['had-module-tab', { active: activeModule === item.key }]"
+            @click="activeModule = item.key"
+          >
+            <span class="had-module-tab-title">{{ item.label }}</span>
+          </button>
         </div>
-        <div class="had-header-actions">
+        <div class="had-actions">
+          <el-select v-if="activeModule === 'structure'" v-model="selectedAlgorithm" size="small" style="width: 180px;">
+            <el-option label="累积损伤算法模型01" value="miner01" />
+            <el-option label="累积损伤算法模型02" value="miner02" />
+            <el-option label="累积损伤算法模型03" value="miner03" />
+          </el-select>
           <el-tag type="primary" effect="plain" round>最近 24h</el-tag>
           <el-button size="small" circle @click="emit('close')">
             <el-icon><Close /></el-icon>
@@ -14,46 +25,40 @@
         </div>
       </div>
 
-      <div class="had-module-tabs">
-        <button
-          v-for="item in moduleTabs"
-          :key="item.key"
-          :class="['had-module-tab', { active: activeModule === item.key }]"
-          @click="activeModule = item.key"
-        >
-          <span class="had-module-tab-title">{{ item.label }}</span>
-        </button>
-      </div>
-
       <div v-if="activeModule === 'structure' && allRows.length > 0" class="had-body" style="padding: 16px; overflow: hidden; display: flex; flex-direction: column; gap: 16px;">
         <div class="had-panel" style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
-          <div class="had-panel-header" style="flex-shrink: 0; padding: 10px 16px;">
-            <span class="had-panel-title" style="font-size: 14px;">全部监测点位</span>
-            <el-tag size="small" type="info" effect="plain">{{ allRows.length }} 处</el-tag>
-          </div>
           <div class="had-table-wrap" style="flex: 1; padding: 12px; height: 100%; min-height: 0;">
-            <el-table :data="allTableRows" style="width: 100%" height="100%">
-              <el-table-column prop="code" label="编号" width="60" align="center" />
-              <el-table-column prop="position" label="测点位置" show-overflow-tooltip />
-              <el-table-column label="数据来源" width="90" align="center">
-                <template #default="{ row }">
-                  <span :class="['had-table-source', `had-table-source--${row.source}`]">
-                    {{ row.sourceLabel }}
-                  </span>
-                </template>
-              </el-table-column>
-              <el-table-column prop="maxStress" label="最大应力值" />
-              <el-table-column prop="minStress" label="最小应力值" />
-              <el-table-column prop="avgStress" label="平均应力值" />
-              <el-table-column prop="workCycles" label="工作循环次数" />
-              <el-table-column prop="cumulativeWorkTime" label="累计工作时间" />
-              <el-table-column prop="damageDegree" label="累积疲劳损伤度" />
-              <el-table-column prop="statusText" label="状态">
-                <template #default="{ row }">
-                  <el-tag :type="levelTagType(row.level)" size="small" effect="plain">{{ row.statusText }}</el-tag>
-                </template>
-              </el-table-column>
-            </el-table>
+            <el-table :data="allTableRows" style="width: 100%" height="100%" :span-method="spanMethod" :row-class-name="tableRowClassName">
+                <el-table-column prop="structureObject" label="结构对象" min-width="7%" align="center">
+                  <template #default="{ row }">
+                    <span style="font-weight: 700; color: var(--color-primary);">{{ row.structureObject }}</span>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="code" label="编号" min-width="4%" align="center" />
+                <el-table-column prop="position" label="测点位置" min-width="16%" show-overflow-tooltip>
+                  <template #default="{ row }">
+                    <span>{{ row.position }}</span>
+                    <el-tag v-if="row.source === 'twin'" size="small" type="info" effect="plain" style="margin-left: 6px; zoom: 0.85;">数字孪生</el-tag>
+                    <el-tag v-else size="small" type="primary" effect="plain" style="margin-left: 6px; zoom: 0.85;">实测点位</el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="maxStress" label="最大应力" min-width="7%" align="center" />
+                <el-table-column prop="minStress" label="最小应力" min-width="7%" align="center" />
+                <el-table-column prop="avgStress" label="平均应力" min-width="7%" align="center" />
+                <el-table-column prop="workCycles" label="循环次数" min-width="7%" align="center" />
+                <el-table-column prop="cumulativeWorkTime" label="累计工作时间" min-width="9%" align="center" />
+                <el-table-column prop="damageDegree" label="累积疲劳损伤度" min-width="10%" align="center" />
+                <el-table-column prop="statusText" label="点位状态" min-width="8%" align="center">
+                  <template #default="{ row }">
+                    <el-tag :type="levelTagType(row.level)" size="small" effect="plain">{{ row.statusText }}</el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="structureStatusText" label="结构健康状态" min-width="10%" align="center">
+                  <template #default="{ row }">
+                    <el-tag :type="levelTagType(row.structureLevel)" size="small" effect="plain">{{ row.structureStatusText }}</el-tag>
+                  </template>
+                </el-table-column>
+              </el-table>
           </div>
         </div>
       </div>
@@ -131,9 +136,11 @@ type StructureRow = {
   key: string
   code: string
   position: string
+  structureObject: string
   source: PointSource
   sourceLabel: string
   level: AssessmentLevel
+  structureLevel?: AssessmentLevel
   currentValue: number
   damageValue: number
   maxStress: string
@@ -143,6 +150,8 @@ type StructureRow = {
   cumulativeWorkTime: string
   damageDegree: string
   history: RemoteTrendHistory
+  rowspan?: number
+  colspan?: number
 }
 
 const moduleTabs = [
@@ -153,6 +162,7 @@ const moduleTabs = [
 ] as const
 
 const activeModule = ref<ModuleKey>('structure')
+const selectedAlgorithm = ref('miner01')
 
 const monitoringData = computed<RemoteMonitoringData | null>(() =>
   props.device ? getRemoteMonitoringData(props.device) : null
@@ -161,6 +171,15 @@ const monitoringData = computed<RemoteMonitoringData | null>(() =>
 function positionFromLabel(label: string) {
   const left = label.includes('·') ? label.split('·')[1] : label
   return left.replace(/（\d+#）/g, '').trim()
+}
+
+function getStructureObject(position: string) {
+  if (position.includes('主梁') || position.includes('翼缘')) return '主梁'
+  if (position.includes('端梁')) return '端梁'
+  if (position.includes('腿')) return '支腿'
+  if (position.includes('车')) return '运行机构'
+  if (position.includes('加强筋') || position.includes('连接板')) return '附属结构'
+  return '其他结构'
 }
 
 function levelTagType(level: AssessmentLevel) {
@@ -262,10 +281,12 @@ const measuredRows = computed<StructureRow[]>(() => {
     const workCyclesCount = Math.floor(damageValue * 850000)
     const workTimeHours = Math.floor(damageValue * 48000)
 
+    const pos = positionFromLabel(item.label)
     return {
       key: `measured-${index}`,
       code: String(index + 1),
-      position: positionFromLabel(item.label),
+      position: pos,
+      structureObject: getStructureObject(pos),
       source: 'measured' as PointSource,
       sourceLabel: '实测',
       level,
@@ -311,6 +332,7 @@ const twinRows = computed<StructureRow[]>(() => {
       key: `twin-${index}`,
       code: twin.code,
       position: twin.position,
+      structureObject: getStructureObject(twin.position),
       source: 'twin' as PointSource,
       sourceLabel: '孪生',
       level,
@@ -328,20 +350,89 @@ const twinRows = computed<StructureRow[]>(() => {
 })
 
 const allRows = computed<StructureRow[]>(() => {
-  return [...measuredRows.value, ...twinRows.value].sort((a, b) => {
+  const rows = [...measuredRows.value, ...twinRows.value].sort((a, b) => {
+    if (a.structureObject !== b.structureObject) {
+      return a.structureObject.localeCompare(b.structureObject)
+    }
     if (a.source !== b.source) {
       return a.source === 'measured' ? -1 : 1
     }
     return b.damageValue - a.damageValue
   })
+
+  // Assign grouping variables
+  let currentGroup = ''
+  let currentIdx = 1
+  let groupStartIndex = 0
+  
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i]
+    if (row.structureObject !== currentGroup) {
+      // Finalize previous group's rowspan and max level
+      if (i > 0) {
+        const groupLen = i - groupStartIndex
+        rows[groupStartIndex].rowspan = groupLen
+        
+        let worstLevel: AssessmentLevel = 'normal'
+        for (let j = groupStartIndex; j < i; j++) {
+          if (rows[j].level === 'danger') worstLevel = 'danger'
+          else if (rows[j].level === 'warn' && worstLevel !== 'danger') worstLevel = 'warn'
+        }
+        for (let j = groupStartIndex; j < i; j++) {
+          rows[j].structureLevel = worstLevel
+          if (j > groupStartIndex) rows[j].rowspan = 0
+        }
+      }
+      
+      currentGroup = row.structureObject
+      currentIdx = 1
+      groupStartIndex = i
+    }
+    row.code = String(currentIdx++)
+  }
+  
+  // Finalize last group
+  if (rows.length > 0) {
+    const groupLen = rows.length - groupStartIndex
+    rows[groupStartIndex].rowspan = groupLen
+    
+    let worstLevel: AssessmentLevel = 'normal'
+    for (let j = groupStartIndex; j < rows.length; j++) {
+      if (rows[j].level === 'danger') worstLevel = 'danger'
+      else if (rows[j].level === 'warn' && worstLevel !== 'danger') worstLevel = 'warn'
+    }
+    for (let j = groupStartIndex; j < rows.length; j++) {
+      rows[j].structureLevel = worstLevel
+      if (j > groupStartIndex) rows[j].rowspan = 0
+    }
+  }
+
+  return rows
 })
 
 const allTableRows = computed(() =>
   allRows.value.map(item => ({
     ...item,
-    statusText: levelText(item.level)
+    statusText: levelText(item.level),
+    structureStatusText: levelText(item.structureLevel || 'normal')
   }))
 )
+
+function spanMethod({ row, column, rowIndex, columnIndex }: any) {
+  if (column.property === 'structureObject' || column.property === 'structureStatusText') {
+    return {
+      rowspan: row.rowspan,
+      colspan: row.rowspan === 0 ? 0 : 1
+    }
+  }
+}
+
+function tableRowClassName({ row, rowIndex }: { row: StructureRow; rowIndex: number }) {
+  if (row.rowspan && row.rowspan > 0) {
+    return 'had-table-group-start'
+  }
+  return ''
+}
 
 const currentModuleMeta = computed(() => {
   const base: Record<Exclude<ModuleKey, 'structure'>, { label: string; sub: string; description: string; plans: string[] }> = {
@@ -405,49 +496,27 @@ const activeModuleSubtitle = computed(() =>
   gap: 0;
 }
 
-.had-header {
+.had-top-bar {
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 10px 16px;
-  background: rgba(255, 255, 255, 0.72);
-  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+  padding: 8px 12px;
+  background: rgba(248, 250, 252, 0.88);
+  border-bottom: 1px solid var(--color-border-light);
 }
 
-.had-header-main {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  min-width: 0;
-}
-
-.had-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--color-text-primary);
-}
-
-.had-subtitle {
-  font-size: 12px;
-  color: var(--color-text-secondary);
-}
-
-.had-header-actions {
+.had-actions {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
 .had-module-tabs {
-  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 8px 12px;
-  background: rgba(248, 250, 252, 0.88);
-  border-bottom: 1px solid var(--color-border-light);
   overflow-x: auto;
 }
 
@@ -806,6 +875,14 @@ const activeModuleSubtitle = computed(() =>
 :deep(.el-table th.el-table__cell .cell),
 :deep(.el-table .el-table__body .cell) {
   font-size: 13px;
+}
+
+:deep(.had-table-group-start > td) {
+  border-top: 2px solid rgba(22, 119, 255, 0.1) !important;
+}
+
+:deep(.el-table .el-table__row:first-child.had-table-group-start > td) {
+  border-top: none !important;
 }
 
 @media (max-width: 1280px) {

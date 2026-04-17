@@ -5,16 +5,19 @@
     <!-- ─── Layer 1: Device Info Header — above tabs ─── -->
     <div class="device-info-header device-info-header--compact" v-if="device">
       <div class="device-info-inline">
-        <span class="device-info-name-compact">{{ device.name }}</span>
+        <span class="device-info-name-compact">
+          <el-icon size="20" color="var(--color-primary)"><Platform /></el-icon>
+          {{ device.name }}
+        </span>
         <span :class="`badge badge-${device.status}`">
           <span class="badge-dot"></span>{{ statusLabels[device.status] }}
         </span>
         <span class="device-info-meta-sep">·</span>
-        <span class="device-info-meta-item">编号：{{ device.code }}</span>
-        <span class="device-info-meta-item">类型：{{ device.type }}</span>
-        <span class="device-info-meta-item">位置：{{ device.location }}</span>
-        <span class="device-info-meta-item">使用单位：{{ device.subsidiary || device.group || '—' }}</span>
-        <span class="device-info-meta-item">投用：{{ device.installDate }}</span>
+        <span class="device-info-meta-item">编号：<strong>{{ device.code }}</strong></span>
+        <span class="device-info-meta-item">类型：<strong>{{ device.type }}</strong></span>
+        <span class="device-info-meta-item">位置：<strong>{{ device.location }}</strong></span>
+        <span class="device-info-meta-item">使用单位：<strong>{{ device.subsidiary || device.group || '—' }}</strong></span>
+        <span class="device-info-meta-item">投用：<strong>{{ device.installDate }}</strong></span>
       </div>
       <div style="display:flex;gap:8px;flex-shrink:0">
         <el-button size="small" @click="router.back()">
@@ -422,7 +425,7 @@
 import { ref, computed, watch, onMounted, nextTick, defineComponent, h } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useSceneStore } from '@/stores/scene'
-import { Monitor, Warning, Select, Close, InfoFilled } from '@element-plus/icons-vue'
+import { Monitor, Warning, Select, Close, InfoFilled, ArrowLeft, Refresh, Platform } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import DeviceMonitoringWorkspace from '@/components/DeviceMonitoringWorkspace.vue'
 import HealthAssessmentDrawer from '@/components/HealthAssessmentDrawer.vue'
@@ -1046,21 +1049,30 @@ watch(
 }
 
 .device-info-name-compact {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--color-text-primary);
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--color-primary);
+  letter-spacing: 0.5px;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .device-info-meta-sep {
   color: var(--color-border);
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .device-info-meta-item {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-text-secondary);
   white-space: nowrap;
+}
+
+.device-info-meta-item strong {
+  color: var(--color-text-primary);
+  font-weight: 600;
 }
 
 /* ── 监测数据筛选栏 ── */
