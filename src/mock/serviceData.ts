@@ -212,3 +212,186 @@ export function getSpotCheckBoard(deviceId: string): SpotCheckBoard {
   const topPart = items[0]?.count > 0 ? items[0].name : '—'
   return { formCount, items, totalProblems, maxCount, involvedParts, topPart }
 }
+
+// ═════════════════════════ 维修智能服务 ═════════════════════════
+// 基于损伤/故障维修数据：按部件分组的历史维修记录 + AI 更换/维保建议
+
+interface FaultDef { damage: string; content: string }
+
+/** 维修分组（在部件基础上把「机构」拆出电机/减速机/制动器，共 9 组） */
+const REPAIR_GROUPS: { key: string; name: string; faults: FaultDef[] }[] = [
+  { key: 'structure', name: '金属结构', faults: [
+    { damage: '主梁下挠超标', content: '主梁起拱矫正并加固补强，复测下挠值合格' },
+    { damage: '主受力构件焊缝裂纹', content: '裂纹清根后补焊，焊后磁粉探伤合格' },
+    { damage: '结构腐蚀、局部穿孔', content: '除锈补板，重做防腐涂层' },
+    { damage: '连接螺栓、销轴松动脱落', content: '按规定扭矩重新紧固并更换缺失螺栓' },
+  ] },
+  { key: 'mechanism', name: '机构及零部件', faults: [
+    { damage: '钢丝绳断丝、断股超标', content: '更换同规格钢丝绳并按规范润滑' },
+    { damage: '吊钩磨损、开口度超标', content: '更换吊钩，复测危险断面与开口度合格' },
+    { damage: '大车车轮啃轨', content: '调整大车同步与车轮安装精度，整修轨道' },
+    { damage: '联轴器磨损、对中超差', content: '更换联轴器弹性件并重新对中' },
+    { damage: '卷筒磨损、绳槽损伤', content: '补焊车槽或更换卷筒，复测绳槽合格' },
+  ] },
+  { key: 'motor', name: '电机', faults: [
+    { damage: '电机绕组过热、绝缘下降', content: '清理通风、复测绝缘，必要时重绕或更换电机' },
+    { damage: '电机轴承磨损异响', content: '更换损坏轴承并补充润滑' },
+    { damage: '电机振动超标', content: '校正动平衡与对中，更换损坏部件' },
+    { damage: '电机过流、堵转', content: '排查机械卡阻与负载，更换故障元件' },
+  ] },
+  { key: 'reducer', name: '减速机', faults: [
+    { damage: '减速机渗油', content: '更换油封与密封垫，补充润滑油' },
+    { damage: '减速机运行异响', content: '检查更换损坏齿轮、轴承' },
+    { damage: '齿轮磨损、点蚀', content: '更换磨损齿轮副，保证润滑' },
+    { damage: '减速机轴承损坏', content: '更换损坏轴承并复测运行' },
+  ] },
+  { key: 'brake', name: '制动器', faults: [
+    { damage: '制动间隙超标、制动力不足', content: '调整制动间隙，更换磨损闸瓦' },
+    { damage: '闸瓦、制动盘磨损', content: '更换磨损闸瓦与制动盘' },
+    { damage: '制动弹簧疲劳失效', content: '更换疲劳失效的制动弹簧' },
+    { damage: '推动器、电磁铁动作不良', content: '检修或更换推动器、电磁铁' },
+  ] },
+  { key: 'electric', name: '电气及控制系统', faults: [
+    { damage: '接触器触点烧蚀', content: '更换接触器主触点（整体更换接触器）' },
+    { damage: '动力、控制线缆绝缘老化', content: '更换老化线缆，检测绝缘电阻合格' },
+    { damage: '控制操作失灵', content: '检修控制回路，更换故障元件' },
+    { damage: '变频器故障报警', content: '排查并更换故障模块，备份恢复参数' },
+  ] },
+  { key: 'safety', name: '安全保护装置', faults: [
+    { damage: '限位装置失灵', content: '更换限位开关，校验动作可靠' },
+    { damage: '缓冲止挡装置损坏', content: '更换缓冲器，修复限位挡块' },
+    { damage: '防超载装置示值漂移', content: '重新标定超载保护，更换载荷传感器' },
+    { damage: '抗风防滑装置失效', content: '检修或更换夹轨器、锚定装置' },
+  ] },
+  { key: 'rigging', name: '索具', faults: [
+    { damage: '钢丝绳索具磨损、断丝', content: '按报废标准报废并更换索具' },
+    { damage: '编织吊索破损', content: '更换编织吊索' },
+    { damage: '卸扣、吊环变形', content: '变形超标更换卸扣、吊环' },
+  ] },
+  { key: 'other', name: '其他', faults: [
+    { damage: '安全标识缺失、模糊', content: '补充、更换安全警示标识' },
+    { damage: '随机技术文件不全', content: '补全随机技术资料并归档' },
+    { damage: '走台、护栏损坏', content: '修复或更换损坏的走台、护栏' },
+  ] },
+]
+
+/** 各损伤/故障对应「更换 / 维保」建议知识库 */
+const REPAIR_ADVICE: Record<string, { replace: string; maintain: string }> = {
+  主梁下挠超标: { replace: '下挠超 GB/T 限值时起拱矫正或加固补强', maintain: '每季度复测下挠，避免长期满载作业' },
+  主受力构件焊缝裂纹: { replace: '裂纹清根补焊，必要时更换该节段', maintain: '主受力焊缝定期磁粉/超声探伤并建档' },
+  '结构腐蚀、局部穿孔': { replace: '穿孔部位补板加固，整体除锈重做防腐', maintain: '每年检查涂层并补涂，改善积水通风' },
+  '连接螺栓、销轴松动脱落': { replace: '更换失效的高强螺栓与销轴', maintain: '按扭矩定期复紧并做防松标记' },
+  '钢丝绳断丝、断股超标': { replace: '达到报废标准的钢丝绳立即整根更换', maintain: '每周检查断丝并按规范润滑' },
+  '吊钩磨损、开口度超标': { replace: '开口度或危险断面超标时更换吊钩', maintain: '每月测量开口度，检查防脱钩装置' },
+  大车车轮啃轨: { replace: '啃轨严重时更换车轮并整修轨道', maintain: '定期检测大车同步与跨度' },
+  '联轴器磨损、对中超差': { replace: '更换磨损的联轴器弹性件并重新对中', maintain: '定期检查对中精度与连接紧固' },
+  '卷筒磨损、绳槽损伤': { replace: '绳槽损伤超限时补焊车槽或更换卷筒', maintain: '定期检查绳槽与排绳情况' },
+  '电机绕组过热、绝缘下降': { replace: '绝缘不合格时重绕或更换电机', maintain: '定期测绝缘、清理通风并监测温升' },
+  电机轴承磨损异响: { replace: '更换损坏轴承', maintain: '定期润滑并监测振动、温度' },
+  电机振动超标: { replace: '校正动平衡或更换损坏部件', maintain: '定期做振动检测与对中校验' },
+  '电机过流、堵转': { replace: '排查机械卡阻与负载，更换故障元件', maintain: '核对负载，定期检查保护整定值' },
+  减速机渗油: { replace: '更换失效油封与密封垫', maintain: '定期检查油位、油质' },
+  减速机运行异响: { replace: '更换损坏齿轮、轴承', maintain: '按周期换油并监听运行声响' },
+  '齿轮磨损、点蚀': { replace: '磨损或点蚀超限时更换齿轮副', maintain: '保证润滑，定期检查齿面' },
+  减速机轴承损坏: { replace: '更换损坏轴承', maintain: '定期润滑与振动检测' },
+  '制动间隙超标、制动力不足': { replace: '更换磨损闸瓦、制动片', maintain: '每月调整制动间隙，检查弹簧与推动器' },
+  '闸瓦、制动盘磨损': { replace: '更换磨损的闸瓦与制动盘', maintain: '定期测厚，保持制动面清洁' },
+  制动弹簧疲劳失效: { replace: '更换疲劳失效的制动弹簧', maintain: '定期检查弹簧力与行程' },
+  '推动器、电磁铁动作不良': { replace: '检修或更换推动器、电磁铁', maintain: '定期试验动作灵活与可靠性' },
+  接触器触点烧蚀: { replace: '更换烧蚀触点或整体更换接触器', maintain: '定期检查触点与负载容量' },
+  '动力、控制线缆绝缘老化': { replace: '更换老化、破损线缆', maintain: '定期检测绝缘电阻，加固防护' },
+  控制操作失灵: { replace: '更换故障控制元件', maintain: '定期检修控制回路与操作机构' },
+  变频器故障报警: { replace: '排查并更换故障模块，必要时整机更换', maintain: '保持散热清洁，定期备份参数' },
+  限位装置失灵: { replace: '更换失灵限位开关', maintain: '每月校验各限位动作可靠性' },
+  缓冲止挡装置损坏: { replace: '更换破损缓冲器', maintain: '定期检查缓冲器与限位挡块' },
+  防超载装置示值漂移: { replace: '更换漂移的载荷传感器', maintain: '按周期重新标定超载保护' },
+  抗风防滑装置失效: { replace: '检修或更换夹轨器、锚定装置', maintain: '定期试验夹紧力，大风后检查' },
+  '钢丝绳索具磨损、断丝': { replace: '达到报废标准的索具立即更换', maintain: '每次使用前检查索具并建台账' },
+  编织吊索破损: { replace: '更换破损编织吊索', maintain: '使用前检查吊索，避免锐边割伤' },
+  '卸扣、吊环变形': { replace: '变形超标时更换卸扣、吊环', maintain: '定期检查并按额定载荷使用' },
+  '安全标识缺失、模糊': { replace: '补充、更换缺失或模糊的安全标识', maintain: '定期巡查标识完好性' },
+  随机技术文件不全: { replace: '补全缺失的随机技术资料', maintain: '建立设备档案并定期核查' },
+  '走台、护栏损坏': { replace: '修复或更换损坏的走台、护栏', maintain: '定期检查防护设施完好性' },
+}
+const repairAdviceOf = (damage: string) =>
+  REPAIR_ADVICE[damage] ?? { replace: '按检测结果更换达到报废标准的部件', maintain: '纳入定期维保计划并跟踪复查' }
+
+const REPAIR_HANDLERS = ['设备维修班', '专业维保单位', '厂内机电组']
+const REPAIR_URGENT_KW = ['裂纹', '断丝', '断股', '吊钩', '制动', '超载', '索具', '穿孔', '下挠', '过热', '堵转', '疲劳']
+const REPAIR_MID_KW = ['磨损', '啃轨', '渗', '漏', '老化', '松动', '异响', '变形', '漂移', '脱落', '振动', '点蚀', '烧蚀', '失效', '故障']
+const repairUrgencyOf = (damage: string): { base: number; level: '高' | '中' | '低' } => {
+  if (REPAIR_URGENT_KW.some((k) => damage.includes(k))) return { base: 60, level: '高' }
+  if (REPAIR_MID_KW.some((k) => damage.includes(k))) return { base: 150, level: '中' }
+  return { base: 300, level: '低' }
+}
+const REPAIR_LEVEL_RANK: Record<string, number> = { 高: 3, 中: 2, 低: 1 }
+
+export interface RepairRecord { id: string; date: string; damage: string; content: string; handler: string; downtime: number }
+export interface RepairGroupAdvice {
+  urgency: '高' | '中' | '低'
+  topDamage: string
+  kinds: number
+  summary: string
+  replace: string
+  suggestTime: string
+  overdue: boolean
+  maintain: string
+}
+export interface RepairGroup { key: string; name: string; records: RepairRecord[]; advice: RepairGroupAdvice }
+
+function buildRepairAdvice(records: RepairRecord[], todayStr: string): RepairGroupAdvice {
+  const byDamage: Record<string, { count: number; latest: string }> = {}
+  records.forEach((r) => {
+    const e = byDamage[r.damage] ?? { count: 0, latest: '0000-00-00' }
+    e.count += 1
+    if (r.date > e.latest) e.latest = r.date
+    byDamage[r.damage] = e
+  })
+  const rank = Object.entries(byDamage)
+    .map(([damage, info]) => ({ damage, count: info.count, latest: info.latest, u: repairUrgencyOf(damage) }))
+    .sort((a, b) => (REPAIR_LEVEL_RANK[b.u.level] - REPAIR_LEVEL_RANK[a.u.level]) || (b.count - a.count))
+  const primary = rank[0]
+  const kinds = rank.length
+  const cycle = Math.max(20, Math.round(primary.u.base / Math.min(primary.count, 4)))
+  const due = addDays(primary.latest, cycle)
+  const overdue = due <= todayStr
+  const suggestTime = overdue
+    ? `已达建议更换周期（参考 ${due}），建议尽快安排更换`
+    : `建议于 ${due} 前完成更换`
+  const pa = repairAdviceOf(primary.damage)
+  return {
+    urgency: primary.u.level,
+    topDamage: primary.damage,
+    kinds,
+    summary: `该分组共 ${records.length} 条历史维修记录，重点为「${primary.damage}」（出现 ${primary.count} 次）${kinds > 1 ? `，另涉及其余 ${kinds - 1} 类损伤 / 故障` : ''}。`,
+    replace: kinds > 1
+      ? `${pa.replace}；其余 ${kinds - 1} 类损伤 / 故障建议结合检测结果按报废标准一并处理。`
+      : pa.replace,
+    suggestTime,
+    overdue,
+    maintain: `${pa.maintain}；建立该分组维保台账，按周期巡检并记录。`,
+  }
+}
+
+/** 生成某设备按部件分组的历史维修记录 + 每组 AI 建议（确定性） */
+export function getRepairGroups(deviceId: string): RepairGroup[] {
+  const base = seedOf(deviceId, 4200)
+  const todayStr = fmtDate(new Date())
+  return REPAIR_GROUPS.map((g, gi) => {
+    const n = 12 + (hash(base + gi * 131 + 1) % 11) // 12~22 条
+    const records: RepairRecord[] = []
+    for (let i = 0; i < n; i++) {
+      const f = g.faults[hash(base + gi * 97 + i * 31 + 2) % g.faults.length]
+      records.push({
+        id: `${deviceId}-${g.key}-${i}`,
+        date: dateMinusDays(hash(base + gi * 17 + i * 13 + 5) % 540),
+        damage: f.damage,
+        content: f.content,
+        handler: REPAIR_HANDLERS[hash(base + gi * 7 + i * 97 + 11) % REPAIR_HANDLERS.length],
+        downtime: 2 + (hash(base + gi * 5 + i * 113 + 13) % 22),
+      })
+    }
+    records.sort((a, b) => (a.date < b.date ? 1 : -1))
+    return { key: g.key, name: g.name, records, advice: buildRepairAdvice(records, todayStr) }
+  })
+}

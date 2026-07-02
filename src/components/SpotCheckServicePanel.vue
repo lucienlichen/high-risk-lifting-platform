@@ -174,6 +174,7 @@ function openText(part: SpotPartStat) {
 
 /* 概览卡 */
 .spc-stat-grid {
+  flex-shrink: 0;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
@@ -206,6 +207,7 @@ function openText(part: SpotPartStat) {
 
 /* section */
 .spc-section {
+  flex-shrink: 0;
   background: var(--color-card-bg);
   border: 1px solid var(--color-card-border);
   border-radius: var(--radius-md);
