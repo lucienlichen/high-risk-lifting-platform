@@ -482,3 +482,77 @@ export function getInspectionRows(devices: { id: string; name: string }[], sub: 
   })
   return list.sort((a, b) => a.daysUntil - b.daysUntil).map((r, i) => ({ ...r, no: i + 1 }))
 }
+
+// ═════════════════════════ 基础数据服务 ═════════════════════════
+// 设备监管基础数据：在册设备宏观统计 + 维度图表 + 在册设备列表（合成机队）
+
+const FLEET_TYPES = ['桥式起重机', '门式起重机', '塔式起重机', '门座式起重机', '流动式起重机', '缆索起重机']
+const FLEET_LEVELS = ['A3', 'A4', 'A5', 'A6', 'A7', 'A8']
+const FLEET_MANUFACTURERS = ['大连重工', '太原重工', '卫华集团', '法兰泰克', '科尼起重', '徐工集团', '三一重工']
+const FLEET_STATUS_POOL = ['在用', '在用', '在用', '在用', '在用', '在用', '停用', '停用', '报废'] as const
+const FLEET_SIZE = 60
+
+export type FleetStatus = '在用' | '停用' | '报废'
+export interface FleetDev {
+  code: string
+  type: string
+  year: number
+  level: string
+  manufacturer: string
+  status: FleetStatus
+}
+export interface FleetSummary { total: number; inUse: number; paused: number; scrapped: number; avgAge: number }
+export interface SupervisionData {
+  fleet: FleetDev[]
+  list: FleetDev[]
+  summary: FleetSummary
+  byType: { name: string; value: number }[]
+  byLevel: { name: string; value: number }[]
+  byYear: { name: string; value: number }[]
+}
+
+const pickAt = <T>(arr: readonly T[], n: number): T => arr[n % arr.length]
+
+/** 生成监管在册设备机队及其聚合（确定性，与场景设备解耦） */
+export function getSupervisionFleet(): SupervisionData {
+  const currentYear = new Date().getFullYear()
+  const fleet: FleetDev[] = Array.from({ length: FLEET_SIZE }, (_, i) => {
+    const s = (i + 1) * 2654435761
+    const year = 2010 + (hash(s + 2) % (currentYear - 2010 + 1))
+    return {
+      code: `QZ-${year}-${pad(i + 1, 3)}`,
+      type: pickAt(FLEET_TYPES, hash(s + 1) % 100 < 46 ? 0 : hash(s + 1) % FLEET_TYPES.length),
+      year,
+      level: pickAt(FLEET_LEVELS, hash(s + 3) % FLEET_LEVELS.length),
+      manufacturer: pickAt(FLEET_MANUFACTURERS, hash(s + 4) % FLEET_MANUFACTURERS.length),
+      status: pickAt(FLEET_STATUS_POOL, hash(s + 5) % FLEET_STATUS_POOL.length),
+    }
+  })
+
+  const countBy = (key: keyof FleetDev) => {
+    const m = new Map<string, number>()
+    for (const d of fleet) m.set(String(d[key]), (m.get(String(d[key])) ?? 0) + 1)
+    return m
+  }
+  const orderedCount = (order: readonly string[], key: keyof FleetDev) => {
+    const m = countBy(key)
+    return order.map((name) => ({ name, value: m.get(name) ?? 0 }))
+  }
+
+  const inUse = fleet.filter((d) => d.status === '在用').length
+  const paused = fleet.filter((d) => d.status === '停用').length
+  const scrapped = fleet.filter((d) => d.status === '报废').length
+  const avgAge = Math.round((fleet.reduce((a, d) => a + (currentYear - d.year), 0) / fleet.length) * 10) / 10
+
+  const years = Array.from({ length: currentYear - 2010 + 1 }, (_, i) => String(2010 + i))
+  const yearMap = countBy('year')
+
+  return {
+    fleet,
+    list: [...fleet].sort((a, b) => b.year - a.year || (a.code < b.code ? -1 : 1)),
+    summary: { total: fleet.length, inUse, paused, scrapped, avgAge },
+    byType: orderedCount(FLEET_TYPES, 'type').filter((d) => d.value > 0),
+    byLevel: orderedCount(FLEET_LEVELS, 'level'),
+    byYear: years.map((y) => ({ name: y, value: yearMap.get(y) ?? 0 })),
+  }
+}
