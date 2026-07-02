@@ -473,3 +473,6 @@ export {
   type ElectricCurrentRow,
   type ElectricLimitItem
 } from './remoteMonitoring'
+
+// 数据智能服务共享 mock 层（点巡检 / 维修 / 检验 / 基础数据 / 供给）
+export * from './serviceData'
