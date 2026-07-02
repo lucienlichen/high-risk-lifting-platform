@@ -19,7 +19,7 @@
           <span class="insp-card-tag">共 {{ rows.length }} 台设备</span>
         </header>
 
-        <el-table :data="rows" size="small" style="width:100%" height="100%" class="insp-table">
+        <el-table :data="pageRows" size="small" style="width:100%" height="100%" class="insp-table">
           <el-table-column prop="no" label="序号" width="64" />
           <el-table-column label="设备名称" min-width="150">
             <template #default="{ row }">
@@ -54,6 +54,18 @@
             </template>
           </el-table-column>
         </el-table>
+
+        <div class="insp-pager">
+          <el-pagination
+            small
+            background
+            layout="total, prev, pager, next, jumper"
+            :total="rows.length"
+            :page-size="PAGE_SIZE"
+            :current-page="currentPage"
+            @current-change="(p:number) => currentPage = p"
+          />
+        </div>
       </div>
     </div>
 
@@ -85,7 +97,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { MagicStick, Search, Calendar, Document, CircleCheck, Download } from '@element-plus/icons-vue'
 import { useSceneStore } from '@/stores/scene'
 import { getDevices, getInspectionRows, type InspectSubType, type InspectStatus, type InspectRow, type SceneId } from '@/mock'
@@ -108,6 +120,12 @@ const subMeta = computed(() => subTabs.find((t) => t.id === subType.value)!)
 const cat = computed(() => (subType.value === 'inspection' ? '检验' : '检测'))
 
 const rows = computed<InspectRow[]>(() => getInspectionRows(devices.value, subType.value))
+
+// 分页渲染：设备可能上千台，el-table 无虚拟滚动，一次性渲染会卡顿
+const PAGE_SIZE = 20
+const currentPage = ref(1)
+const pageRows = computed(() => rows.value.slice((currentPage.value - 1) * PAGE_SIZE, currentPage.value * PAGE_SIZE))
+watch([subType, scene], () => { currentPage.value = 1 })
 
 const statusLabel: Record<InspectStatus, string> = { overdue: '已逾期', urgent: '即将到期', warning: '临近到期', ok: '正常' }
 const tagType = (s: InspectStatus) => (s === 'overdue' ? 'danger' : s === 'urgent' ? 'danger' : s === 'warning' ? 'warning' : 'success')
@@ -137,6 +155,7 @@ function openReports(row: InspectRow) {
 .insp-card-title { font-size: 15px; font-weight: 600; color: var(--color-text-primary); margin: 0; }
 .insp-card-tag { display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 4px; font-size: 11px; background: #eef2f7; color: var(--color-text-muted); }
 .insp-table { flex: 1; min-height: 0; }
+.insp-pager { flex-shrink: 0; display: flex; justify-content: flex-end; padding: 8px 16px; border-top: 1px solid var(--color-border-light); }
 
 .insp-dev { display: inline-flex; align-items: center; gap: 6px; font-weight: 500; color: var(--color-text-primary); }
 .insp-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
