@@ -556,3 +556,88 @@ export function getSupervisionFleet(): SupervisionData {
     byYear: years.map((y) => ({ name: y, value: yearMap.get(y) ?? 0 })),
   }
 }
+
+// ═════════════════════════ 供给智能服务 ═════════════════════════
+// 设备制造供给数据：制造台账检索 + 制造信息与随附技术资料详情（合成台账）
+
+const SUPPLY_TYPES = [
+  { name: '桥式起重机', code: 'QD' },
+  { name: '门式起重机', code: 'MD' },
+  { name: '塔式起重机', code: 'TC' },
+  { name: '门座式起重机', code: 'MZ' },
+  { name: '流动式起重机', code: 'QLD' },
+]
+const SUPPLY_MANUFACTURERS = ['大连重工起重集团', '太原重工股份', '河南卫华重型机械', '法兰泰克重工', '科尼起重设备', '徐工集团', '三一重工']
+const SUPPLY_TONNAGES = [5, 10, 16, 20, 32, 50, 80, 120]
+const SUPPLY_SPANS = [10.5, 16.5, 19.5, 22.5, 25.5, 28.5, 31.5]
+const SUPPLY_USERS = ['一号港机作业区', '二号装卸车间', '钢结构制造车间', '集装箱堆场', '重型装备总装厂']
+const SUPPLY_DOC_DEFS = [
+  { kind: '设计图纸（总装图）', format: 'DWG', mb: [1.8, 3.2] },
+  { kind: '电气原理图', format: 'PDF', mb: [0.8, 1.6] },
+  { kind: '产品质量合格证', format: 'PDF', mb: [0.2, 0.5] },
+  { kind: '使用维护说明书', format: 'PDF', mb: [2.0, 3.6] },
+  { kind: '型式试验报告', format: 'PDF', mb: [0.6, 1.2] },
+  { kind: '制造监督检验证书', format: 'PDF', mb: [0.4, 0.9] },
+]
+const SUPPLY_REG_SIZE = 24
+
+export interface SupplyDoc { id: string; name: string; kind: string; format: string; date: string; sizeMB: number }
+export interface SupplyReg {
+  id: string
+  code: string
+  name: string
+  type: string
+  manufacturer: string
+  model: string
+  factoryNo: string
+  madeDate: string
+  commissionDate: string
+  tonnage: number
+  span: number
+  user: string
+  docs: SupplyDoc[]
+}
+
+/** 生成设备制造供给登记台账（确定性） */
+export function getSupplyRegistry(): SupplyReg[] {
+  return Array.from({ length: SUPPLY_REG_SIZE }, (_, i) => {
+    const s = (i + 17) * 2654435761
+    const t = SUPPLY_TYPES[hash(s + 1) % SUPPLY_TYPES.length]
+    const madeYear = 2012 + (hash(s + 2) % 13)
+    const madeMonth = 1 + (hash(s + 3) % 12)
+    const tonnage = SUPPLY_TONNAGES[hash(s + 4) % SUPPLY_TONNAGES.length]
+    const span = SUPPLY_SPANS[hash(s + 5) % SUPPLY_SPANS.length]
+    const mfg = SUPPLY_MANUFACTURERS[hash(s + 6) % SUPPLY_MANUFACTURERS.length]
+    const seq = 1 + (hash(s + 7) % 900)
+    const code = `${t.code}-${madeYear}-${pad(seq, 4)}`
+    const factoryNo = `${t.code}${madeYear}${pad(hash(s + 8) % 10000, 4)}`
+    const commYear = madeYear + (hash(s + 9) % 2)
+    const docs: SupplyDoc[] = SUPPLY_DOC_DEFS.map((d, k) => {
+      const ds = hash(s + 100 + k)
+      const [lo, hi] = d.mb
+      return {
+        id: `${code}-doc${k}`,
+        name: `${code}_${d.kind}.${d.format.toLowerCase()}`,
+        kind: d.kind,
+        format: d.format,
+        date: `${madeYear}-${pad(1 + (ds % 12))}-${pad(1 + (ds % 27))}`,
+        sizeMB: Math.round((lo + (ds % 100) / 100 * (hi - lo)) * 10) / 10,
+      }
+    })
+    return {
+      id: code,
+      code,
+      name: `${t.name} ${tonnage}t·${span}m`,
+      type: t.name,
+      manufacturer: mfg,
+      model: `${t.code}${tonnage}-${span}`,
+      factoryNo,
+      madeDate: `${madeYear}-${pad(madeMonth)}-${pad(1 + (hash(s + 10) % 27))}`,
+      commissionDate: `${commYear}-${pad(1 + (hash(s + 11) % 12))}-${pad(1 + (hash(s + 12) % 27))}`,
+      tonnage,
+      span,
+      user: SUPPLY_USERS[hash(s + 13) % SUPPLY_USERS.length],
+      docs,
+    }
+  }).sort((a, b) => (a.code < b.code ? -1 : 1))
+}
