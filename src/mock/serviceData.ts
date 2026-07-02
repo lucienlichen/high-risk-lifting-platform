@@ -395,3 +395,90 @@ export function getRepairGroups(deviceId: string): RepairGroup[] {
     return { key: g.key, name: g.name, records, advice: buildRepairAdvice(records, todayStr) }
   })
 }
+
+// ═════════════════════════ 检验智能服务 ═════════════════════════
+// 基于检验检测数据：全设备定期检验/检测到期提醒 + 历史报告
+
+export type InspectSubType = 'inspection' | 'detection'
+export type InspectStatus = 'overdue' | 'urgent' | 'warning' | 'ok'
+
+const INSPECT_ORG: Record<InspectSubType, string> = {
+  inspection: '省特种设备检验研究院',
+  detection: '第三方检测机构',
+}
+const INSPECT_REPORT_LABEL: Record<InspectSubType, string> = { inspection: '定期检验', detection: '检测' }
+const INSPECT_CAT: Record<InspectSubType, string> = { inspection: '检验', detection: '检测' }
+const INSPECT_CONCLUSIONS = ['合格', '合格', '合格', '合格（含整改项）', '复检合格']
+
+export const inspectStatusOf = (days: number): InspectStatus =>
+  days < 0 ? 'overdue' : days <= 30 ? 'urgent' : days <= 90 ? 'warning' : 'ok'
+
+function inspectAdviceOf(status: InspectStatus, cat: string, days: number): string {
+  if (status === 'overdue') return `已超过${cat}周期 ${Math.abs(days)} 天，须立即停用并联系${cat}机构补检，取得合格结论前不得继续使用。`
+  if (status === 'urgent') return `距下次${cat}不足 30 天，请尽快预约${cat}机构、准备资料并安排停机窗口。`
+  if (status === 'warning') return `距下次${cat}约 ${days} 天，建议提前 1–2 个月预约，并完成隐患整改与资料归档。`
+  return `处于${cat}有效期内，按计划跟踪到期时间，保持${cat}台账更新即可。`
+}
+
+export interface InspectReport { id: string; name: string; date: string; conclusion: string; org: string; sizeMB: number }
+export interface InspectRow {
+  no: number
+  deviceId: string
+  deviceName: string
+  cycleY: number
+  lastDate: string
+  nextDate: string
+  daysUntil: number
+  status: InspectStatus
+  advice: string
+  reports: InspectReport[]
+}
+
+function buildInspectReports(devId: string, devName: string, type: InspectSubType, lastDate: Date, cycleY: number): InspectReport[] {
+  const seed = seedOf(devId, type === 'inspection' ? 5101 : 7202)
+  const count = 2 + (hash(seed + 3) % 3) // 2~4 份
+  const reports: InspectReport[] = []
+  for (let k = 0; k < count; k++) {
+    const d = new Date(lastDate)
+    d.setDate(d.getDate() - k * cycleY * 365)
+    reports.push({
+      id: `${type}-${devId}-${k}`,
+      name: `${devName}_${INSPECT_REPORT_LABEL[type]}报告_${d.getFullYear()}.pdf`,
+      date: fmtDate(d),
+      conclusion: INSPECT_CONCLUSIONS[hash(seed + k * 101) % INSPECT_CONCLUSIONS.length],
+      org: INSPECT_ORG[type],
+      sizeMB: Math.round((0.6 + (hash(seed + k * 57) % 18) / 10) * 10) / 10,
+    })
+  }
+  return reports // 新→旧
+}
+
+/** 生成全设备的检验/检测到期提醒行（确定性，按剩余天数升序） */
+export function getInspectionRows(devices: { id: string; name: string }[], sub: InspectSubType): InspectRow[] {
+  const t0 = new Date()
+  t0.setHours(0, 0, 0, 0)
+  const cat = INSPECT_CAT[sub]
+  const list = devices.map<InspectRow>((dev) => {
+    const seed = seedOf(dev.id, sub === 'inspection' ? 5101 : 7202)
+    const cycleY = 1 + (hash(seed) % 2) // 1 或 2 年
+    const daysUntil = (hash(seed + 7) % 460) - 70 // -70~389 天
+    const nextDateObj = new Date(t0)
+    nextDateObj.setDate(nextDateObj.getDate() + daysUntil)
+    const lastDateObj = new Date(nextDateObj)
+    lastDateObj.setDate(lastDateObj.getDate() - cycleY * 365)
+    const status = inspectStatusOf(daysUntil)
+    return {
+      no: 0,
+      deviceId: dev.id,
+      deviceName: dev.name,
+      cycleY,
+      lastDate: fmtDate(lastDateObj),
+      nextDate: fmtDate(nextDateObj),
+      daysUntil,
+      status,
+      advice: inspectAdviceOf(status, cat, daysUntil),
+      reports: buildInspectReports(dev.id, dev.name, sub, lastDateObj, cycleY),
+    }
+  })
+  return list.sort((a, b) => a.daysUntil - b.daysUntil).map((r, i) => ({ ...r, no: i + 1 }))
+}

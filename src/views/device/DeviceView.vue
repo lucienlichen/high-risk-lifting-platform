@@ -396,6 +396,11 @@
       :device="device"
       @close="store.setService(null)"
     />
+
+    <InspectionServicePanel
+      v-if="store.activeService === 'inspect'"
+      @close="store.setService(null)"
+    />
     </div>
   </div>
 </template>
@@ -414,6 +419,7 @@ import HazardInspectionDrawer from '@/components/HazardInspectionDrawer.vue'
 import IssueHandlingDrawer from '@/components/IssueHandlingDrawer.vue'
 import SpotCheckServicePanel from '@/components/SpotCheckServicePanel.vue'
 import RepairServicePanel from '@/components/RepairServicePanel.vue'
+import InspectionServicePanel from '@/components/InspectionServicePanel.vue'
 import WorkCyclePicker from '@/components/WorkCyclePicker.vue'
 import ServiceMenu from '@/components/ServiceMenu.vue'
 import { getDeviceById, getOperationList, getWorkCycles } from '@/mock'
@@ -484,7 +490,6 @@ const riskLabels:   Record<string,string> = { normal:'正常', low:'低风险', 
 
 // 12 项服务里需占位面板的「数据智能服务 / 知识库」
 const PLACEHOLDER_SERVICES: Record<string, { label: string; desc: string }> = {
-  inspect:   { label: '检验智能服务',   desc: '基于检验检测数据的 AI 智能服务，功能开发中，演示版暂不展示' },
   basicdata: { label: '基础数据服务',   desc: '设备监管基础数据查询与服务，功能开发中，演示版暂不展示' },
   supply:    { label: '供给智能服务',   desc: '设备制造供给数据的 AI 智能服务，功能开发中，演示版暂不展示' },
   kbDetect:  { label: '检测检验知识库', desc: '检测检验领域知识库检索服务，功能开发中，演示版暂不展示' },
@@ -495,7 +500,7 @@ const placeholderServiceMeta = computed(() =>
 )
 
 // 以独立面板铺满内容区展示的服务（原「抽屉」，现为内容区面板）
-const DRAWER_SERVICES = ['health', 'crack', 'risk', 'hazard', 'issue', 'point', 'maintain']
+const DRAWER_SERVICES = ['health', 'crack', 'risk', 'hazard', 'issue', 'point', 'maintain', 'inspect']
 const isDrawerService = computed(() =>
   store.activeService ? DRAWER_SERVICES.includes(store.activeService) : false
 )
