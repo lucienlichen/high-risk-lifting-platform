@@ -29,79 +29,16 @@
       </div>
     </div>
 
-    <!-- ─── Layer 2: Data Category Tabs ─── -->
-    <div class="data-tabs">
-      <div
-        v-for="tab in dataTabs"
-        :key="tab.key"
-        :class="['data-tab', { active: activeTab === tab.key }]"
-        @click="activeTab = tab.key"
-      >{{ tab.label }}</div>
-    </div>
+    <!-- ─── 智能服务菜单 ─── -->
+    <ServiceMenu />
 
-    <!-- ─── Layer 3: Scrollable Core Content ─── -->
-    <div :class="['content-scrollable', { 'monitor-tab-content': activeTab === 'monitor' }]" style="flex:1">
+    <!-- ─── 服务内容区（定位容器：抽屉铺满此区域，位于服务菜单下方，不遮挡菜单） ─── -->
+    <div class="device-content-region">
+    <div :class="['content-scrollable', { 'monitor-tab-content': store.activeService === 'remote' }]" style="flex:1">
 
-      <!-- ── 基础信息 ── -->
-      <template v-if="activeTab === 'basic'">
-        <div class="section-card" style="margin-bottom:14px">
-          <div class="section-card-header">
-            <span class="section-card-title">设备基本信息</span>
-          </div>
-          <div class="section-card-body">
-            <div class="info-grid">
-              <div class="info-item" v-for="f in basicFields" :key="f.label">
-                <span class="info-item-label">{{ f.label }}</span>
-                <span class="info-item-value">{{ f.value }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="section-card">
-          <div class="section-card-header">
-            <span class="section-card-title">技术参数</span>
-          </div>
-          <div class="section-card-body">
-            <div class="info-grid">
-              <div class="info-item" v-for="f in techFields" :key="f.label">
-                <span class="info-item-label">{{ f.label }}</span>
-                <span class="info-item-value">{{ f.value }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </template>
-
-      <!-- ── 故障数据 ── -->
-      <template v-else-if="activeTab === 'fault'">
-        <div class="section-card">
-          <div class="section-card-header">
-            <span class="section-card-title">故障记录</span>
-            <el-tag size="small" type="danger">{{ faultRecords.length }} 条</el-tag>
-          </div>
-          <el-table :data="faultRecords" style="width:100%">
-            <el-table-column prop="date"        label="发生时间"   width="170" />
-            <el-table-column prop="type"        label="故障类型"   width="130" />
-            <el-table-column prop="desc"        label="故障描述"   min-width="200" show-overflow-tooltip />
-            <el-table-column prop="duration"    label="停机时长"   width="100" />
-            <el-table-column prop="resolution"  label="处置措施"   min-width="160" show-overflow-tooltip />
-            <el-table-column label="状态"       width="80">
-              <template #default="{ row }">
-                <span :style="{ color: row.resolved ? 'var(--color-success)' : 'var(--color-danger)' }">
-                  {{ row.resolved ? '已修复' : '处理中' }}
-                </span>
-              </template>
-            </el-table-column>
-          </el-table>
-        </div>
-      </template>
-
-      <!-- ── 监测数据 ── -->
-      <template v-else-if="activeTab === 'monitor'">
-
-        <!-- 内容区（与其他标签内容区宽度对齐） -->
+      <!-- 远程监测：监测数据工作区（左数据 + 右数字孪生） -->
+      <template v-if="store.activeService === 'remote'">
         <div class="monitor-workspace-wrapper">
-          <!-- 工作循环面板 -->
           <div class="monitor-filter-bar">
             <WorkCyclePicker
               v-model="monitorCycleId"
@@ -110,8 +47,6 @@
               :device-id="device?.id ?? ''"
             />
           </div>
-
-          <!-- 内联监测工作区 -->
           <DeviceMonitoringWorkspace
             v-if="device"
             :device="device"
@@ -121,11 +56,22 @@
             class="monitor-workspace-inline"
           />
         </div>
-
       </template>
 
-      <!-- ── Other Tabs (Placeholder) ── -->
-      <template v-else>
+      <!-- 故障诊断：AI 智能分析 -->
+      <template v-else-if="store.activeService === 'fault'">
+        <div class="section-card">
+          <div class="section-card-header">
+            <span class="section-card-title">故障诊断 · 智能分析</span>
+          </div>
+          <div class="section-card-body">
+            <ServiceDetailContent service="fault" :device="device" />
+          </div>
+        </div>
+      </template>
+
+      <!-- 数据智能服务 / 知识库：功能预留占位 -->
+      <template v-else-if="placeholderServiceMeta">
         <div class="section-card">
           <div class="empty-placeholder">
             <svg class="empty-placeholder-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
@@ -137,33 +83,35 @@
             </svg>
             <div class="empty-placeholder-text">
               <div style="font-size:15px;font-weight:600;color:var(--color-text-secondary);margin-bottom:6px">
-                {{ currentTabLabel }} 数据
+                {{ placeholderServiceMeta.label }}
               </div>
-              <div>该分类数据将在正式版本中提供，演示版暂不展示</div>
+              <div>{{ placeholderServiceMeta.desc }}</div>
             </div>
           </div>
         </div>
       </template>
 
-      <!-- ── Service Content Panel ── -->
-      <div v-if="store.activeService && store.activeService !== 'remote' && store.activeService !== 'health' && store.activeService !== 'crack'" class="service-content-panel">
-        <div class="service-content-header">
-          <span class="section-card-title">{{ serviceLabels[store.activeService] }} · 智能分析</span>
-          <el-button size="small" text @click="store.setService(null)">
-            <el-icon><Close /></el-icon>关闭
-          </el-button>
+      <!-- 默认（健康评估 / 裂纹预测 / 风险监测 / 隐患排查 / 问题处理 由服务面板铺满展示） -->
+      <template v-else-if="!isDrawerService">
+        <div class="section-card">
+          <div class="empty-placeholder">
+            <svg class="empty-placeholder-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+              <circle cx="12" cy="12" r="9"/><path d="M12 8v4"/><path d="M12 16h.01"/>
+            </svg>
+            <div class="empty-placeholder-text">
+              <div style="font-size:15px;font-weight:600;color:var(--color-text-secondary);margin-bottom:6px">请选择上方智能服务</div>
+              <div>选择服务后在此查看对应的智能分析内容</div>
+            </div>
+          </div>
         </div>
-        <div class="service-content-body">
-          <ServiceDetailContent :service="store.activeService" :device="device" />
-        </div>
-      </div>
+      </template>
 
       <div style="height:16px"></div>
     </div>
 
-    <!-- ─── Layer 4: 远程监测弹出面板 (Bottom Drawer 风格) ─── -->
+    <!-- ─── (已停用) 旧版远程监测实时报警抽屉：远程监测现以监测工作区呈现 ─── -->
     <div
-      v-if="store.activeService === 'remote'"
+      v-if="false"
       class="remote-monitor-drawer"
     >
       <div class="rm-drawer-body">
@@ -418,6 +366,31 @@
       :device="device"
       @close="store.setService(null)"
     />
+
+    <RiskMonitoringDrawer
+      v-if="store.activeService === 'risk'"
+      :device="device"
+      @close="store.setService(null)"
+    />
+
+    <HazardInspectionDrawer
+      v-if="store.activeService === 'hazard'"
+      :device="device"
+      @close="store.setService(null)"
+    />
+
+    <IssueHandlingDrawer
+      v-if="store.activeService === 'issue'"
+      :device="device"
+      @close="store.setService(null)"
+    />
+
+    <SpotCheckServicePanel
+      v-if="store.activeService === 'point'"
+      :device="device"
+      @close="store.setService(null)"
+    />
+    </div>
   </div>
 </template>
 
@@ -430,7 +403,12 @@ import * as echarts from 'echarts'
 import DeviceMonitoringWorkspace from '@/components/DeviceMonitoringWorkspace.vue'
 import HealthAssessmentDrawer from '@/components/HealthAssessmentDrawer.vue'
 import CrackMonitoringDrawer from '@/components/CrackMonitoringDrawer.vue'
+import RiskMonitoringDrawer from '@/components/RiskMonitoringDrawer.vue'
+import HazardInspectionDrawer from '@/components/HazardInspectionDrawer.vue'
+import IssueHandlingDrawer from '@/components/IssueHandlingDrawer.vue'
+import SpotCheckServicePanel from '@/components/SpotCheckServicePanel.vue'
 import WorkCyclePicker from '@/components/WorkCyclePicker.vue'
+import ServiceMenu from '@/components/ServiceMenu.vue'
 import { getDeviceById, getOperationList, getWorkCycles } from '@/mock'
 import type { Device, WorkCycle } from '@/mock'
 
@@ -465,7 +443,6 @@ const route  = useRoute()
 const store  = useSceneStore()
 
 const device    = ref<Device | null>(null)
-const activeTab = ref('point')
 
 // ── 监测数据工作循环筛选 ──
 const monitorOpDate  = ref<Date>(new Date())
@@ -495,37 +472,27 @@ watch(monitorWorkCycles, (list) => {
   monitorCycleId.value = list.length > 0 ? list[0].id : 'all'
 })
 
-const dataTabs = [
-  { key: 'point',       label: '点巡检数据' },
-  { key: 'fault',       label: '故障数据' },
-  { key: 'maintenance', label: '检修数据' },
-  { key: 'inspect',     label: '检验数据' },
-  { key: 'detect',      label: '检测数据' },
-  { key: 'risk',        label: '风险数据' },
-  { key: 'monitor',     label: '监测数据' },
-  { key: 'basic',       label: '基础信息' },
-  { key: 'factory',     label: '出厂数据' },
-]
-
-const currentTabLabel = computed(() => dataTabs.find(t => t.key === activeTab.value)?.label ?? '')
-
 const statusLabels: Record<string,string> = { running:'运行中', standby:'待机', stopped:'停机', maintenance:'维修中' }
 const riskLabels:   Record<string,string> = { normal:'正常', low:'低风险', medium:'中风险', high:'高风险' }
-const serviceLabels: Record<string,string> = {
-  remote:'远程监测', health:'健康评估', crack:'裂纹预测', fault:'故障诊断',
-  risk:'风险监测', hazard:'隐患排查', issue:'问题处理'
-}
 
-const basicFields = computed(() => device.value ? [
-  { label: '设备名称',   value: device.value.name },
-  { label: '设备编号',   value: device.value.code },
-  { label: '设备类型',   value: device.value.type },
-  { label: '所属场景',   value: { metallurgy:'冶金起重装备', port:'港口起重装备', construction:'建筑起重装备', shipbuilding:'造船起重装备' }[device.value.scene] },
-  { label: '所在位置',   value: device.value.location },
-  { label: '使用单位',   value: device.value.subsidiary || device.value.group || '—' },
-  { label: '投用日期',   value: device.value.installDate },
-  { label: '累计运行时长', value: `${device.value.operatingHours.toLocaleString()} h` },
-] : [])
+// 12 项服务里需占位面板的「数据智能服务 / 知识库」
+const PLACEHOLDER_SERVICES: Record<string, { label: string; desc: string }> = {
+  maintain:  { label: '维修智能服务',   desc: '基于损伤/故障维修数据的 AI 智能服务，功能开发中，演示版暂不展示' },
+  inspect:   { label: '检验智能服务',   desc: '基于检验检测数据的 AI 智能服务，功能开发中，演示版暂不展示' },
+  basicdata: { label: '基础数据服务',   desc: '设备监管基础数据查询与服务，功能开发中，演示版暂不展示' },
+  supply:    { label: '供给智能服务',   desc: '设备制造供给数据的 AI 智能服务，功能开发中，演示版暂不展示' },
+  kbDetect:  { label: '检测检验知识库', desc: '检测检验领域知识库检索服务，功能开发中，演示版暂不展示' },
+  kbLaw:     { label: '法律法规知识库', desc: '法律法规标准知识库检索服务，功能开发中，演示版暂不展示' },
+}
+const placeholderServiceMeta = computed(() =>
+  store.activeService ? (PLACEHOLDER_SERVICES[store.activeService] ?? null) : null
+)
+
+// 以独立面板铺满内容区展示的服务（原「抽屉」，现为内容区面板）
+const DRAWER_SERVICES = ['health', 'crack', 'risk', 'hazard', 'issue', 'point']
+const isDrawerService = computed(() =>
+  store.activeService ? DRAWER_SERVICES.includes(store.activeService) : false
+)
 
 // ── 远程监测：告警数据模拟与曲线 ──
 const activeAlarmId = ref<string>('')
@@ -953,58 +920,17 @@ watch(() => store.activeService, (newVal) => {
   }
 })
 
-const techFields = [
-  { label: '额定起重量', value: '50 t' },
-  { label: '跨度',       value: '28.5 m' },
-  { label: '起升高度',   value: '12 m' },
-  { label: '起升速度',   value: '8 m/min' },
-  { label: '运行速度',   value: '40 m/min' },
-  { label: '工作级别',   value: 'M5' },
-  { label: '电动机功率', value: '55 kW' },
-  { label: '供电电压',   value: 'AC 380V / 50Hz' },
-]
-
-const faultRecords = computed(() => [
-  { date:'2026-01-15 14:30', type:'制动器故障', desc:'左侧制动器制动力矩不足', duration:'2.5h', resolution:'更换制动片', resolved:true },
-  { date:'2025-12-08 09:15', type:'电气故障',   desc:'变频器过温保护动作', duration:'1.0h', resolution:'清洁散热器，调整参数', resolved:true },
-  { date:'2025-11-22 16:45', type:'机械故障',   desc:'减速器异常振动', duration:'4.0h', resolution:'更换轴承', resolved:true },
-  { date:'2025-10-30 11:20', type:'传感器故障', desc:'编码器信号丢失', duration:'0.5h', resolution:'重新接线固定', resolved:true },
-  { date:'2026-03-10 08:30', type:'电气故障',   desc:'主接触器触点烧蚀', duration:'—', resolution:'等待备件', resolved:false },
-])
-
-function applyTabFromQuery() {
-  if (route.query.tab === 'monitor') {
-    activeTab.value = 'monitor'
-    nextTick(() => {
-      router.replace({ path: route.path })
-    })
-  } else {
-    activeTab.value = 'point'
-  }
-}
-
 function loadDevice() {
   const id = route.params.id as string
   device.value = getDeviceById(id)
   if (device.value) {
-    store.setDevice(id)
+    store.setDevice(id)          // setDevice 会清空 activeService
+    store.setService('remote')   // 进入设备详情默认选中「远程监测」并展示监测工作区
   }
-  applyTabFromQuery()
 }
 
 onMounted(loadDevice)
 watch(() => route.params.id, loadDevice)
-watch(
-  () => route.query.tab,
-  tab => {
-    if (tab === 'monitor' && device.value) {
-      activeTab.value = 'monitor'
-      nextTick(() => {
-        router.replace({ path: route.path })
-      })
-    }
-  }
-)
 </script>
 
 <style scoped>
@@ -1016,6 +942,16 @@ watch(
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+/* 内容区定位容器：服务面板（原抽屉）以 absolute inset:0 铺满此区域，
+   该区域位于服务菜单下方，故不会遮挡顶部服务菜单 */
+.device-content-region {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 /* monitor tab：去掉 padding，flex 纵向布局让工作区可撑满 */
@@ -1122,6 +1058,10 @@ watch(
   border-radius: var(--radius-sm);
 }
 
+.info-item--full {
+  grid-column: 1 / -1;
+}
+
 .info-item-label {
   font-size: 11px;
   color: var(--color-text-muted);
@@ -1164,7 +1104,7 @@ watch(
   bottom: 0;
   left: 0;
   right: 0;
-  height: calc(100% - 50px - 70px); /* 留出顶部信息栏和底部服务菜单的高度 */
+  height: calc(100% - 50px - 48px - 117px); /* 留出顶部信息栏、数据分类标签与服务菜单的高度 */
   background: rgba(248, 250, 252, 0.95);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -1174,7 +1114,6 @@ watch(
   flex-direction: column;
   z-index: 100;
   animation: slideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-  margin-bottom: 70px; /* 让出底部 ServiceMenu 的空间 */
 }
 
 @keyframes slideUp {
