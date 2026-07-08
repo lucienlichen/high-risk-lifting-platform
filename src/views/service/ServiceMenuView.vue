@@ -200,7 +200,7 @@ const DEVICE_PAGE_SIZE = 12
 const selectedScene = ref<SceneId>(store.currentScene)
 const selectedNode = ref<PermissionNode | null>(null)
 const expandedNodeIds = ref<Set<string>>(new Set())
-const collapsedBranchIds = ref<Set<string>>(new Set())
+const openedBranchIds = ref<Set<string>>(new Set())
 const devicePages = ref<Record<string, number>>({})
 const canSwitchScene = computed(() => auth.role === 'superAdmin')
 const selectedSceneInfo = computed(() => SCENES.find(scene => scene.id === selectedScene.value))
@@ -380,7 +380,7 @@ function handleSceneChange(scene: SceneId) {
   store.setScene(scene)
   selectedNode.value = null
   expandedNodeIds.value = new Set()
-  collapsedBranchIds.value = new Set()
+  openedBranchIds.value = new Set()
   devicePages.value = {}
 }
 
@@ -413,9 +413,7 @@ function expandDeviceParent(node: PermissionNode) {
   devicePages.value = { ...devicePages.value, [parentNode.id]: devicePages.value[parentNode.id] ?? 1 }
   if (parentNode.type === 'subsidiary' && parentNode.enterprise && parentNode.affiliatedUnit) {
     const branchId = `unit:${parentNode.enterprise}:${parentNode.affiliatedUnit}`
-    const next = new Set(collapsedBranchIds.value)
-    next.delete(branchId)
-    collapsedBranchIds.value = next
+    openedBranchIds.value = new Set([...openedBranchIds.value, branchId])
   }
 }
 
@@ -432,14 +430,14 @@ function isExpanded(nodeId: string) {
 }
 
 function isBranchOpen(nodeId: string) {
-  return !collapsedBranchIds.value.has(nodeId)
+  return openedBranchIds.value.has(nodeId)
 }
 
 function toggleBranch(nodeId: string) {
-  const next = new Set(collapsedBranchIds.value)
+  const next = new Set(openedBranchIds.value)
   if (next.has(nodeId)) next.delete(nodeId)
   else next.add(nodeId)
-  collapsedBranchIds.value = next
+  openedBranchIds.value = next
 }
 
 function toggleDevices(node: PermissionNode) {
@@ -497,7 +495,7 @@ function enterService(key: ServiceKey) {
 
 .service-page {
   display: grid;
-  grid-template-columns: 460px minmax(0, 1fr);
+  grid-template-columns: 420px minmax(0, 1fr);
   gap: 0;
   align-items: start;
   width: 100%;
@@ -508,8 +506,8 @@ function enterService(key: ServiceKey) {
   position: sticky;
   top: 0;
   align-self: start;
-  width: 460px;
-  max-width: 460px;
+  width: 420px;
+  max-width: 420px;
   height: calc(100vh - var(--header-height));
   background: #ffffff;
   border-right: 1px solid var(--color-nav-border);
