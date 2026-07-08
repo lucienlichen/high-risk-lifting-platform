@@ -5,13 +5,8 @@
     <header class="top-bar">
       <div class="top-bar-left">
         <!-- Platform logo mark -->
-        <div class="platform-logo" title="冶金起重装备场景" @click="router.push('/scene/metallurgy')">
-          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-            <rect x="1" y="8" width="5" height="13" rx="1" fill="rgba(255,255,255,0.9)"/>
-            <rect x="8" y="4" width="5" height="17" rx="1" fill="rgba(255,255,255,0.9)"/>
-            <rect x="15" y="1" width="5" height="20" rx="1" fill="rgba(22,119,255,0.9)"/>
-            <line x1="1" y1="21" x2="21" y2="21" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
-          </svg>
+        <div class="platform-logo" title="服务菜单" @click="router.push('/services')">
+          <img src="/logo.png" alt="平台 Logo" />
         </div>
         <div class="platform-title">
           <h1>高风险起重装备智能运维与事故防控云服务平台</h1>
@@ -43,38 +38,45 @@
           <span class="notif-dot"></span>
         </div>
 
-        <div class="user-info">
-          <div class="user-avatar">管</div>
-          <span class="user-name">管理员</span>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2">
-            <polyline points="6 9 12 15 18 9"/>
-          </svg>
-        </div>
+        <el-dropdown trigger="click" @command="handleUserCommand">
+          <div class="user-info">
+            <div class="user-avatar">{{ avatarText }}</div>
+            <span class="user-name">{{ displayName }}</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </div>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="logout">
+                <el-icon><SwitchButton /></el-icon>退出登录
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
       </div>
     </header>
 
     <!-- ─── Main Body ─── -->
     <div class="main-body">
 
-      <!-- Left Scene Navigation -->
-      <aside class="scene-nav">
-        <div
-          v-for="scene in SCENES"
-          :key="scene.id"
-          :class="['scene-nav-item', { active: currentScene === scene.id }]"
-          @click="handleSceneClick(scene.id)"
-        >
-          <div class="scene-nav-icon">
-            <component :is="sceneIcons[scene.id]" />
-          </div>
-          <span class="scene-nav-label">{{ scene.name }}</span>
-        </div>
-      </aside>
-
-      <!-- Right Content Area: router-view + service menu -->
+      <!-- Right Content Area -->
       <main class="content-area">
-        <router-view />
-        <ServiceMenu />
+        <div v-if="showTopHierarchy" class="top-hierarchy-nav">
+          <div class="hierarchy-crumbs">
+            <span class="hierarchy-crumb strong">{{ currentGroup || currentSceneInfo?.name || '设备范围' }}</span>
+            <span v-if="currentAffiliatedUnit" class="hierarchy-sep">/</span>
+            <span v-if="currentAffiliatedUnit" class="hierarchy-crumb">{{ currentAffiliatedUnit }}</span>
+            <span v-if="currentSubsidiary" class="hierarchy-sep">/</span>
+            <span v-if="currentSubsidiary" class="hierarchy-crumb">{{ currentSubsidiary }}</span>
+            <span v-if="currentDevice" class="hierarchy-sep">/</span>
+            <span v-if="currentDevice" class="hierarchy-crumb strong">{{ currentDevice.name }}</span>
+            <span v-if="route.name === 'scene'" class="hierarchy-count">{{ hierarchyDeviceCount }} 台设备</span>
+          </div>
+        </div>
+        <router-view v-slot="{ Component }">
+          <component :is="Component" class="route-content" />
+        </router-view>
       </main>
 
     </div>
@@ -85,17 +87,57 @@
 import { ref, computed, onMounted, onUnmounted, defineComponent, h } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useSceneStore } from '@/stores/scene'
-import { SCENES }        from '@/mock'
+import { useAuthStore }  from '@/stores/auth'
+import { getDeviceById, getDevices, SCENES } from '@/mock'
 import type { SceneId }  from '@/mock'
-import ServiceMenu       from '@/components/ServiceMenu.vue'
 
 const router = useRouter()
 const route  = useRoute()
 const store  = useSceneStore()
+const auth   = useAuthStore()
 
 const searchVal    = ref('')
 const currentTime  = ref('')
 const currentScene = computed(() => store.currentScene)
+const showTopHierarchy = computed(() => route.name === 'scene' || route.name === 'device')
+const currentSceneInfo = computed(() => SCENES.find(scene => scene.id === currentScene.value))
+const currentDevice = computed(() => {
+  const id = route.name === 'device'
+    ? (route.params.id as string | undefined)
+    : store.currentDeviceId ?? undefined
+  return id ? getDeviceById(id) : null
+})
+const currentGroup = computed(() => {
+  if (currentDevice.value?.group) return currentDevice.value.group
+  return typeof route.query.group === 'string' ? route.query.group : ''
+})
+const currentSubsidiary = computed(() => {
+  if (currentDevice.value?.subsidiary) return currentDevice.value.subsidiary
+  return typeof route.query.subsidiary === 'string' ? route.query.subsidiary : ''
+})
+const currentAffiliatedUnit = computed(() => {
+  if (currentDevice.value?.affiliatedUnit) return currentDevice.value.affiliatedUnit
+  return typeof route.query.affiliatedUnit === 'string' ? route.query.affiliatedUnit : ''
+})
+const hierarchyDeviceCount = computed(() => {
+  const devices = getDevices(currentScene.value, 1, 9999).list
+  return devices.filter(device => {
+    if (currentGroup.value && device.group !== currentGroup.value) return false
+    if (currentAffiliatedUnit.value && device.affiliatedUnit !== currentAffiliatedUnit.value) return false
+    if (currentSubsidiary.value && device.subsidiary !== currentSubsidiary.value) return false
+    return true
+  }).length
+})
+
+const displayName = computed(() => auth.username || '管理员')
+const avatarText  = computed(() => displayName.value.charAt(0).toUpperCase())
+
+function handleUserCommand(command: string) {
+  if (command === 'logout') {
+    auth.logout()
+    router.push('/login')
+  }
+}
 
 let timer: number
 
@@ -115,6 +157,10 @@ function updateTime() {
 
 function handleSceneClick(id: SceneId) {
   store.setScene(id)
+  store.setDevice(null, !!store.activeService)
+  if (route.name !== 'scene' || !store.activeService) {
+    store.setService(null)
+  }
   router.push(`/scene/${id}`)
 }
 

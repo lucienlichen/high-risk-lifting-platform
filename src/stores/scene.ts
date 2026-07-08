@@ -8,7 +8,10 @@ export const useSceneStore = defineStore('scene', () => {
   const activeService   = ref<string | null>(null)
 
   function setScene(id: SceneId)           { currentScene.value = id }
-  function setDevice(id: string | null)    { currentDeviceId.value = id; activeService.value = null }
+  function setDevice(id: string | null, keepService = false) {
+    currentDeviceId.value = id
+    if (!keepService) activeService.value = null
+  }
   function setService(name: string | null) { activeService.value = name }
 
   return { currentScene, currentDeviceId, activeService, setScene, setDevice, setService }

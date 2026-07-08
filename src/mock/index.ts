@@ -1,3 +1,5 @@
+import { demoDeviceRecords, type DemoDeviceRecord } from './demoDeviceRecords'
+
 export type SceneId = 'metallurgy' | 'port' | 'construction' | 'shipbuilding'
 export type DeviceStatus = 'running' | 'stopped' | 'maintenance' | 'standby'
 export type RiskLevel = 'normal' | 'low' | 'medium' | 'high'
@@ -22,6 +24,12 @@ export interface Device {
   group?: string
   /** 子公司或下属作业单元（港区、车间、分公司等） */
   subsidiary?: string
+  /** 平台统一口径：企业名称 */
+  enterprise?: string
+  /** 平台统一口径：分公司、事业部、基地等所属单位 */
+  affiliatedUnit?: string
+  /** 平台统一口径：分厂、车间、码头等作业区域 */
+  workArea?: string
   /** 技术参数前6项 */
   technicalParams?: { name: string; value: string }[]
 }
@@ -38,7 +46,7 @@ export const SCENES: SceneInfo[] = [
     id: 'metallurgy',
     name: '冶金起重装备',
     description: '面向钢铁、有色金属等冶金行业起重装备的智能运维与风险防控服务',
-    totalDevices: 1950
+    totalDevices: 1964
   },
   {
     id: 'port',
@@ -50,7 +58,7 @@ export const SCENES: SceneInfo[] = [
     id: 'shipbuilding',
     name: '造船起重装备',
     description: '面向船舶建造行业大型起重装备的智能运维与健康评估服务',
-    totalDevices: 120
+    totalDevices: 125
   },
   {
     id: 'construction',
@@ -64,7 +72,7 @@ const DEVICE_TYPES: Record<SceneId, string[]> = {
   metallurgy: ['桥式起重机', '门式起重机', '冶金专用起重机', '电磁起重机', '铸造起重机'],
   port:        ['门座起重机', '岸桥', '轮胎式集装箱门式起重机', '轨道式集装箱门式起重机', '浮式起重机'],
   construction:['塔式起重机', '施工升降机', '履带起重机', '汽车起重机', '动臂式塔吊'],
-  shipbuilding: ['造船门式起重机', '龙门起重机', '浮式起重机', '壁行起重机', '悬臂起重机']
+  shipbuilding: ['通用桥式起重机', '电动单梁起重机', '电动葫芦门式起重机', '门座起重机', '造船门式起重机', '通用门式起重机']
 }
 
 const NAME_PREFIXES: Record<SceneId, string[]> = {
@@ -79,88 +87,160 @@ const SCENE_CODES: Record<SceneId, string> = {
   metallurgy: 'YJ', port: 'GK', construction: 'JZ', shipbuilding: 'ZC'
 }
 
-const EXACT_COUNTS: Record<SceneId, Record<string, Record<string, number>>> = {
-  shipbuilding: {
-    '招商局金陵船舶（江苏）有限公司': {
-      '总厂': 120
-    }
-  },
-  metallurgy: {
-    '江苏永钢集团有限公司': {
-      '总厂': 350
-    },
-    '本钢集团': {
-      '各厂': 1600
-    }
-  },
-  port: {
-    '青岛港': {
-      '青岛前湾集装箱码头有限责任公司': 153,
-      '青岛前湾联合集装箱码头有限责任公司': 122,
-      '青岛新前湾集装箱码头有限责任公司': 117,
-      '青岛前湾新联合集装箱码头有限责任公司': 27,
-      '青岛前湾西港联合码头有限责任公司': 28,
-      '青岛港国际股份有限公司董家口分公司': 66,
-      '青岛港国际股份有限公司前港分公司': 27,
-      '青岛港国际股份有限公司大港分公司': 13,
-      '青岛港国际物流有限公司': 40,
-      '青岛港董家口矿石码头有限公司': 18,
-      '青岛港通用码头有限公司': 12
-    },
-    '连云港港口': {
-      '江苏连云港港口股份有限公司东方港务分公司': 135,
-      '连云港新东方国际货柜码头有限公司': 46,
-      '连云港新东方集装箱码头有限公司': 37,
-      '连云港新海湾码头有限公司': 28,
-      '连云港新圩港码头有限公司': 26,
-      '连云港新云台码头有限公司': 22,
-      '江苏连云港港口股份有限公司': 11,
-      '连云港东粮码头有限公司': 16,
-      '连云港新银湾码头有限公司': 15,
-      '新陆桥（连云港）码头有限公司': 14,
-      '江苏新龙港港口有限公司': 13,
-      '连云港鸿云实业有限公司': 8,
-      '连云港港口控股集团灌云有限公司': 7,
-      '连云港新苏港码头有限公司': 7
-    }
-  },
-  construction: {
-    '中国建筑': {
-      '一局华东公司': 167,
-      '三局总承包': 167,
-      '八局基础设施': 166
-    }
-  }
+const SHIPBUILDING_TYPE_COUNTS = [
+  { type: '通用桥式起重机', count: 75 },
+  { type: '电动单梁起重机', count: 25 },
+  { type: '电动葫芦门式起重机', count: 10 },
+  { type: '门座起重机', count: 8 },
+  { type: '造船门式起重机', count: 6 },
+  { type: '通用门式起重机', count: 1 }
+]
+
+interface AllocationRecord {
+  enterprise: string
+  affiliatedUnit: string
+  workArea: string
+  count: number
+  deviceType?: string
+}
+
+const BENXI_STEEL_ALLOCATIONS: AllocationRecord[] = [
+  { enterprise: '本钢集团', affiliatedUnit: '板材板块', workArea: '冷轧厂', count: 187 },
+  { enterprise: '本钢集团', affiliatedUnit: '板材板块', workArea: '原料厂', count: 125 },
+  { enterprise: '本钢集团', affiliatedUnit: '板材板块', workArea: '热连轧厂', count: 116 },
+  { enterprise: '本钢集团', affiliatedUnit: '板材板块', workArea: '炼铁厂', count: 101 },
+  { enterprise: '本钢集团', affiliatedUnit: '板材板块', workArea: '特钢厂', count: 89 },
+  { enterprise: '本钢集团', affiliatedUnit: '板材板块', workArea: '炼钢厂', count: 79 },
+  { enterprise: '本钢集团', affiliatedUnit: '板材板块', workArea: '能源总厂（供水系统）', count: 43 },
+  { enterprise: '本钢集团', affiliatedUnit: '板材板块', workArea: '储运（板材区域）', count: 27 },
+  { enterprise: '本钢集团', affiliatedUnit: '板材板块', workArea: '焦化厂', count: 25 },
+  { enterprise: '本钢集团', affiliatedUnit: '板材板块', workArea: '储运（北营区域）', count: 23 },
+  { enterprise: '本钢集团', affiliatedUnit: '板材板块', workArea: '冶金渣公司', count: 21 },
+  { enterprise: '本钢集团', affiliatedUnit: '板材板块', workArea: '发电', count: 20 },
+  { enterprise: '本钢集团', affiliatedUnit: '板材板块', workArea: '废钢厂', count: 20 },
+  { enterprise: '本钢集团', affiliatedUnit: '板材板块', workArea: '能源总厂（燃气系统）', count: 18 },
+  { enterprise: '本钢集团', affiliatedUnit: '板材板块', workArea: '储运（矿业区域）', count: 17 },
+  { enterprise: '本钢集团', affiliatedUnit: '板材板块', workArea: '铁运公司', count: 12 },
+  { enterprise: '本钢集团', affiliatedUnit: '北营板块', workArea: '炼钢厂', count: 130 },
+  { enterprise: '本钢集团', affiliatedUnit: '北营板块', workArea: '轧钢厂', count: 116 },
+  { enterprise: '本钢集团', affiliatedUnit: '北营板块', workArea: '炼铁厂', count: 102 },
+  { enterprise: '本钢集团', affiliatedUnit: '北营板块', workArea: '铸管厂', count: 41 },
+  { enterprise: '本钢集团', affiliatedUnit: '北营板块', workArea: '焦化厂', count: 28 },
+  { enterprise: '本钢集团', affiliatedUnit: '北营板块', workArea: '能源总厂', count: 26 },
+  { enterprise: '本钢集团', affiliatedUnit: '北营板块', workArea: '冶金渣公司', count: 13 },
+  { enterprise: '本钢集团', affiliatedUnit: '北营板块', workArea: '铁运公司', count: 8 },
+  { enterprise: '本钢集团', affiliatedUnit: '北营板块', workArea: '原料厂', count: 6 },
+  { enterprise: '本钢集团', affiliatedUnit: '矿业板块', workArea: '选矿厂', count: 64 },
+  { enterprise: '本钢集团', affiliatedUnit: '矿业板块', workArea: '歪头山铁矿', count: 56 },
+  { enterprise: '本钢集团', affiliatedUnit: '矿业板块', workArea: '南芬露天铁矿', count: 40 },
+  { enterprise: '本钢集团', affiliatedUnit: '矿业板块', workArea: '设备修造厂', count: 38 },
+  { enterprise: '本钢集团', affiliatedUnit: '矿业板块', workArea: '矿业汽运', count: 23 }
+]
+
+const LIANYUNGANG_ALLOCATIONS: AllocationRecord[] = [
+  { enterprise: '连云港港口', affiliatedUnit: '江苏连云港港口股份有限公司东方港务分公司', workArea: '东方港务分公司', count: 135 },
+  { enterprise: '连云港港口', affiliatedUnit: '连云港新东方国际货柜码头有限公司', workArea: '新东方国际货柜码头', count: 46 },
+  { enterprise: '连云港港口', affiliatedUnit: '连云港新东方集装箱码头有限公司', workArea: '新东方集装箱码头', count: 37 },
+  { enterprise: '连云港港口', affiliatedUnit: '连云港新海湾码头有限公司', workArea: '新海湾码头', count: 28 },
+  { enterprise: '连云港港口', affiliatedUnit: '连云港新圩港码头有限公司', workArea: '新圩港码头', count: 26 },
+  { enterprise: '连云港港口', affiliatedUnit: '连云港新云台码头有限公司', workArea: '新云台码头', count: 22 },
+  { enterprise: '连云港港口', affiliatedUnit: '江苏连云港港口股份有限公司', workArea: '港口股份本部', count: 11 },
+  { enterprise: '连云港港口', affiliatedUnit: '连云港东粮码头有限公司', workArea: '东粮码头', count: 16 },
+  { enterprise: '连云港港口', affiliatedUnit: '连云港新银湾码头有限公司', workArea: '新银湾码头', count: 15 },
+  { enterprise: '连云港港口', affiliatedUnit: '新陆桥（连云港）码头有限公司', workArea: '新陆桥码头', count: 14 },
+  { enterprise: '连云港港口', affiliatedUnit: '江苏新龙港港口有限公司', workArea: '新龙港港口', count: 13 },
+  { enterprise: '连云港港口', affiliatedUnit: '连云港鸿云实业有限公司', workArea: '鸿云实业', count: 8 },
+  { enterprise: '连云港港口', affiliatedUnit: '连云港港口控股集团灌云有限公司', workArea: '灌云港区', count: 7 },
+  { enterprise: '连云港港口', affiliatedUnit: '连云港新苏港码头有限公司', workArea: '新苏港码头', count: 7 }
+]
+
+const SHIPBUILDING_ALLOCATIONS: AllocationRecord[] = [
+  { enterprise: '招商局金陵船舶（江苏）有限公司', affiliatedUnit: '本部', workArea: '安保处', count: 49 },
+  { enterprise: '招商局金陵船舶（江苏）有限公司', affiliatedUnit: '本部', workArea: '船修车间', count: 20 },
+  { enterprise: '招商局金陵船舶（江苏）有限公司', affiliatedUnit: '本部', workArea: '设备', count: 20 },
+  { enterprise: '招商局金陵船舶（江苏）有限公司', affiliatedUnit: '本部', workArea: '设备科', count: 17 },
+  { enterprise: '招商局金陵船舶（江苏）有限公司', affiliatedUnit: '本部', workArea: '未分组', count: 14 },
+  { enterprise: '招商局金陵船舶（江苏）有限公司', affiliatedUnit: '本部', workArea: '办公室', count: 3 },
+  { enterprise: '招商局金陵船舶（江苏）有限公司', affiliatedUnit: '本部', workArea: '设备部', count: 1 },
+  { enterprise: '招商局金陵船舶（江苏）有限公司', affiliatedUnit: '本部', workArea: '安全处', count: 1 }
+]
+
+const QINGDAO_PORT_ALLOCATIONS: AllocationRecord[] = [
+  { enterprise: '青岛港', affiliatedUnit: '青岛前湾集装箱码头有限责任公司', workArea: '前湾集装箱码头', count: 153 },
+  { enterprise: '青岛港', affiliatedUnit: '青岛前湾联合集装箱码头有限责任公司', workArea: '前湾联合集装箱码头', count: 122 },
+  { enterprise: '青岛港', affiliatedUnit: '青岛新前湾集装箱码头有限责任公司', workArea: '新前湾集装箱码头', count: 117 },
+  { enterprise: '青岛港', affiliatedUnit: '青岛前湾新联合集装箱码头有限责任公司', workArea: '前湾新联合集装箱码头', count: 27 },
+  { enterprise: '青岛港', affiliatedUnit: '青岛前湾西港联合码头有限责任公司', workArea: '前湾西港联合码头', count: 28 },
+  { enterprise: '青岛港', affiliatedUnit: '青岛港国际股份有限公司董家口分公司', workArea: '董家口分公司', count: 66 },
+  { enterprise: '青岛港', affiliatedUnit: '青岛港国际股份有限公司前港分公司', workArea: '前港分公司', count: 27 },
+  { enterprise: '青岛港', affiliatedUnit: '青岛港国际股份有限公司大港分公司', workArea: '大港分公司', count: 13 },
+  { enterprise: '青岛港', affiliatedUnit: '青岛港国际物流有限公司', workArea: '国际物流公司', count: 40 },
+  { enterprise: '青岛港', affiliatedUnit: '青岛港董家口矿石码头有限公司', workArea: '董家口矿石码头', count: 18 },
+  { enterprise: '青岛港', affiliatedUnit: '青岛港通用码头有限公司', workArea: '通用码头', count: 12 }
+]
+
+const SCENE_ALLOCATIONS: Record<SceneId, AllocationRecord[]> = {
+  shipbuilding: SHIPBUILDING_ALLOCATIONS,
+  metallurgy: [
+    ...BENXI_STEEL_ALLOCATIONS,
+    { enterprise: '江苏永钢集团有限公司', affiliatedUnit: '本部', workArea: '总厂', count: 350 }
+  ],
+  port: [
+    ...QINGDAO_PORT_ALLOCATIONS,
+    ...LIANYUNGANG_ALLOCATIONS
+  ],
+  construction: [
+    { enterprise: '中国建筑', affiliatedUnit: '一局华东公司', workArea: '一局华东公司', count: 167 },
+    { enterprise: '中国建筑', affiliatedUnit: '三局总承包', workArea: '三局总承包', count: 167 },
+    { enterprise: '中国建筑', affiliatedUnit: '八局基础设施', workArea: '八局基础设施', count: 166 }
+  ]
 }
 
 const SCENE_ENTERPRISE: Record<
   SceneId,
-  { groups: string[]; subsidiaries: Record<string, string[]> }
-> = Object.keys(EXACT_COUNTS).reduce((acc, sceneId) => {
-  const groups = Object.keys(EXACT_COUNTS[sceneId as SceneId])
-  const subsidiaries: Record<string, string[]> = {}
-  groups.forEach(g => {
-    subsidiaries[g] = Object.keys(EXACT_COUNTS[sceneId as SceneId][g])
-  })
-  acc[sceneId as SceneId] = { groups, subsidiaries }
-  return acc
-}, {} as Record<SceneId, { groups: string[]; subsidiaries: Record<string, string[]> }>)
-
-// 预先打平所有设备的归属，以便生成设备时直接按顺序取
-const SCENE_ALLOCATION_LIST: Record<SceneId, { group: string, subsidiary: string }[]> = Object.keys(EXACT_COUNTS).reduce((acc, sceneId) => {
-  const list: { group: string, subsidiary: string }[] = []
-  const sceneData = EXACT_COUNTS[sceneId as SceneId]
-  for (const group in sceneData) {
-    for (const subsidiary in sceneData[group]) {
-      const count = sceneData[group][subsidiary]
-      for (let i = 0; i < count; i++) {
-        list.push({ group, subsidiary })
-      }
-    }
+  {
+    groups: string[]
+    subsidiaries: Record<string, string[]>
+    affiliatedUnits: Record<string, string[]>
+    workAreas: Record<string, Record<string, string[]>>
   }
+> = Object.keys(SCENE_ALLOCATIONS).reduce((acc, sceneId) => {
+  const allocations = SCENE_ALLOCATIONS[sceneId as SceneId]
+  const groups = Array.from(new Set(allocations.map(item => item.enterprise)))
+  const subsidiaries: Record<string, string[]> = {}
+  const affiliatedUnits: Record<string, string[]> = {}
+  const workAreas: Record<string, Record<string, string[]>> = {}
+  groups.forEach(group => {
+    const groupRows = allocations.filter(item => item.enterprise === group)
+    affiliatedUnits[group] = Array.from(new Set(groupRows.map(item => item.affiliatedUnit)))
+    subsidiaries[group] = Array.from(new Set(groupRows.map(item => item.workArea)))
+    workAreas[group] = {}
+    affiliatedUnits[group].forEach(unit => {
+      workAreas[group][unit] = Array.from(new Set(
+        groupRows.filter(item => item.affiliatedUnit === unit).map(item => item.workArea)
+      ))
+    })
+  })
+  acc[sceneId as SceneId] = { groups, subsidiaries, affiliatedUnits, workAreas }
+  return acc
+}, {} as Record<SceneId, {
+  groups: string[]
+  subsidiaries: Record<string, string[]>
+  affiliatedUnits: Record<string, string[]>
+  workAreas: Record<string, Record<string, string[]>>
+}>)
+
+// 预先打平所有设备的归属，以便生成设备时直接按顺序取。
+const SCENE_ALLOCATION_LIST: Record<SceneId, AllocationRecord[]> = Object.keys(SCENE_ALLOCATIONS).reduce((acc, sceneId) => {
+  const list: AllocationRecord[] = []
+  SCENE_ALLOCATIONS[sceneId as SceneId].forEach(record => {
+    for (let i = 0; i < record.count; i++) {
+      list.push(record)
+    }
+  })
   acc[sceneId as SceneId] = list
   return acc
-}, {} as Record<SceneId, { group: string, subsidiary: string }[]>)
+}, {} as Record<SceneId, AllocationRecord[]>)
 
 /** 技术参数前6项名称（起重装备通用） */
 const TECH_PARAM_NAMES = ['额定起重量', '跨度', '起升高度', '工作级别', '起升速度', '运行速度'] as const
@@ -182,10 +262,89 @@ function mkRng(baseSeed: number) {
   }
 }
 
-function generateDevice(sceneId: SceneId, index: number, rng: ReturnType<typeof mkRng>): Device {
-  const types    = DEVICE_TYPES[sceneId]
+function getDeviceType(sceneId: SceneId, index: number, rng: ReturnType<typeof mkRng>) {
+  const types = DEVICE_TYPES[sceneId]
+  if (sceneId !== 'shipbuilding') return types[rng(0, types.length - 1)]
+  let cursor = 0
+  for (const item of SHIPBUILDING_TYPE_COUNTS) {
+    cursor += item.count
+    if (index < cursor) return item.type
+  }
+  return types[rng(0, types.length - 1)]
+}
+
+function statusFromSource(statusText: string, fallback: DeviceStatus): DeviceStatus {
+  if (statusText.includes('封存') || statusText.includes('停用')) return 'stopped'
+  if (statusText.includes('检修') || statusText.includes('维修')) return 'maintenance'
+  if (statusText.includes('在用')) return 'running'
+  return fallback
+}
+
+function riskFromId(id: string): RiskLevel {
+  const n = id.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) % 100
+  return n < 58 ? 'normal' : n < 79 ? 'low' : n < 92 ? 'medium' : 'high'
+}
+
+function deviceFromRecord(record: DemoDeviceRecord, index: number, rng: ReturnType<typeof mkRng>): Device {
+  const fallbackStatus: DeviceStatus = rng(0, 99) < 85 ? 'running' : 'standby'
+  const status = statusFromSource(record.statusText, fallbackStatus)
+  const riskLevel = riskFromId(record.id)
+  const hasAlarm = riskLevel !== 'normal' || rng(0, 9) > 7
+  const alarmDate = new Date()
+  alarmDate.setDate(alarmDate.getDate() - rng(0, 29))
+  alarmDate.setHours(rng(0, 23), rng(0, 59), 0, 0)
+  return {
+    id: record.id,
+    name: record.name,
+    code: record.code,
+    type: record.type,
+    scene: record.scene as SceneId,
+    status,
+    riskLevel,
+    latestAlarmTime: hasAlarm ? alarmDate.toLocaleString('zh-CN') : null,
+    online: status === 'running' || status === 'standby',
+    healthScore:
+      riskLevel === 'high'   ? rng(30, 60) :
+      riskLevel === 'medium' ? rng(60, 78) :
+      riskLevel === 'low'    ? rng(78, 90) : rng(88, 100),
+    load: status === 'running' ? rng(20, 95) : 0,
+    operatingHours: rng(200, 32000),
+    manufacturer: record.manufacturer || '未登记',
+    installDate: record.installDate || `${2010 + rng(0, 12)}-${String(rng(1, 12)).padStart(2, '0')}-01`,
+    location: record.location || record.workArea,
+    group: record.enterprise,
+    subsidiary: record.workArea,
+    enterprise: record.enterprise,
+    affiliatedUnit: record.affiliatedUnit,
+    workArea: record.workArea,
+    technicalParams: record.technicalParams.length ? record.technicalParams : TECH_PARAM_NAMES.map((name) => {
+      const u = TECH_PARAM_UNITS[name]
+      const val =
+        name === '额定起重量' ? String(rng(5, 200)) :
+        name === '跨度' ? String(rng(10, 50)) :
+        name === '起升高度' ? String(rng(6, 50)) :
+        name === '工作级别' ? `A${rng(3, 8)}` :
+        name === '起升速度' ? String(rng(1, 20)) :
+        String(rng(10, 80))
+      return { name, value: u ? `${val}${u}` : val }
+    })
+  }
+}
+
+function isCoveredByExactRecord(sceneId: SceneId, allocation: AllocationRecord) {
+  if (sceneId === 'metallurgy') return allocation.enterprise === '本钢集团'
+  if (sceneId === 'port') return allocation.enterprise === '连云港港口'
+  if (sceneId === 'shipbuilding') return allocation.enterprise === '招商局金陵船舶（江苏）有限公司'
+  return false
+}
+
+function generateDevice(
+  sceneId: SceneId,
+  index: number,
+  rng: ReturnType<typeof mkRng>,
+  allocationOverride?: AllocationRecord
+): Device {
   const prefixes = NAME_PREFIXES[sceneId]
-  const type     = types[rng(0, types.length - 1)]
   const prefix   = prefixes[rng(0, prefixes.length - 1)]
   const mfg      = MANUFACTURERS[rng(0, MANUFACTURERS.length - 1)]
 
@@ -215,15 +374,21 @@ function generateDevice(sceneId: SceneId, index: number, rng: ReturnType<typeof 
 
   const ent = SCENE_ENTERPRISE[sceneId]
   const allocationList = SCENE_ALLOCATION_LIST[sceneId]
-  const allocation = allocationList && index < allocationList.length 
+  const allocation = allocationOverride ?? (allocationList && index < allocationList.length
     ? allocationList[index]
     : {
-        group: ent.groups[rng(0, ent.groups.length - 1)],
-        subsidiary: ent.subsidiaries[ent.groups[rng(0, ent.groups.length - 1)]][0]
-      }
+        enterprise: ent.groups[rng(0, ent.groups.length - 1)],
+        affiliatedUnit: '本部',
+        workArea: ent.subsidiaries[ent.groups[rng(0, ent.groups.length - 1)]][0],
+        count: 1
+      })
       
-  const group = allocation.group
-  const subsidiary = allocation.subsidiary
+  const enterprise = allocation.enterprise
+  const affiliatedUnit = allocation.affiliatedUnit
+  const workArea = allocation.workArea
+  const group = enterprise
+  const subsidiary = workArea
+  const type = allocation.deviceType ?? getDeviceType(sceneId, index, rng)
 
   const technicalParams: { name: string; value: string }[] = TECH_PARAM_NAMES.map((name, i) => {
     const u = TECH_PARAM_UNITS[name]
@@ -255,9 +420,12 @@ function generateDevice(sceneId: SceneId, index: number, rng: ReturnType<typeof 
     operatingHours:   rng(200, 32000),
     manufacturer:     mfg,
     installDate:      `${installYear}-${String(installMonth).padStart(2, '0')}-01`,
-    location:         `${prefix}厂区`,
+    location:         sceneId === 'port' ? workArea : `${workArea || prefix}厂区`,
     group,
     subsidiary,
+    enterprise,
+    affiliatedUnit,
+    workArea,
     technicalParams
   }
 }
@@ -274,6 +442,21 @@ export function getSceneSubsidiaries(sceneId: SceneId, group?: string): string[]
   return Object.values(subsidiaries).flat()
 }
 
+/** 获取企业下的所属单位（分公司、基地、板块等平台统一层级） */
+export function getSceneAffiliatedUnits(sceneId: SceneId, enterprise?: string): string[] {
+  const { affiliatedUnits } = SCENE_ENTERPRISE[sceneId]
+  if (enterprise) return affiliatedUnits[enterprise] ?? []
+  return Object.values(affiliatedUnits).flat()
+}
+
+/** 获取所属单位下的作业区域（分厂、车间、码头等设备上一级） */
+export function getSceneWorkAreas(sceneId: SceneId, enterprise?: string, affiliatedUnit?: string): string[] {
+  const { workAreas } = SCENE_ENTERPRISE[sceneId]
+  if (enterprise && affiliatedUnit) return workAreas[enterprise]?.[affiliatedUnit] ?? []
+  if (enterprise) return Object.values(workAreas[enterprise] ?? {}).flat()
+  return Object.values(workAreas).flatMap(unitMap => Object.values(unitMap).flat())
+}
+
 // Cache generated devices
 const cache = new Map<SceneId, Device[]>()
 
@@ -283,11 +466,17 @@ function ensureCache(sceneId: SceneId) {
     metallurgy: 101, port: 203, construction: 307, shipbuilding: 409
   }
   const rng     = mkRng(seeds[sceneId])
-  const scene   = SCENES.find(s => s.id === sceneId)!
-  const count   = scene.totalDevices // generate all devices to ensure group count matches
+  const exactRecords = demoDeviceRecords
+    .filter(record => record.scene === sceneId)
+    .map((record, index) => deviceFromRecord(record, index, rng))
+  const syntheticAllocations = SCENE_ALLOCATION_LIST[sceneId]
+    .filter(allocation => !isCoveredByExactRecord(sceneId, allocation))
   const devices: Device[] = []
-  for (let i = 0; i < count; i++) {
-    devices.push(generateDevice(sceneId, i, rng))
+  syntheticAllocations.forEach((allocation, index) => {
+    devices.push(generateDevice(sceneId, index, rng, allocation))
+  })
+  for (let i = 0; i < exactRecords.length; i++) {
+    devices.push(exactRecords[i])
   }
   cache.set(sceneId, devices)
 }

@@ -122,21 +122,23 @@ body {
 }
 
 .platform-logo {
-  width: 36px;
-  height: 36px;
-  background: rgba(22, 119, 255, 0.2);
-  border: 1px solid rgba(22, 119, 255, 0.4);
-  border-radius: var(--radius-sm);
+  height: 50px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: opacity 0.2s;
   flex-shrink: 0;
 }
 
+.platform-logo img {
+  height: 100%;
+  width: auto;
+  object-fit: contain;
+}
+
 .platform-logo:hover {
-  background: rgba(22, 119, 255, 0.3);
+  opacity: 0.85;
 }
 
 .platform-title {
@@ -357,8 +359,55 @@ body {
   min-width: 0;
 }
 
-/* 仅路由出口占满主内容区，避免底部 ServiceMenu 被 flex 拉伸 */
-.content-area > :first-child {
+.top-hierarchy-nav {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 12px 18px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.05);
+}
+
+.hierarchy-crumbs {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 9px;
+  min-width: 0;
+  color: var(--color-text-secondary);
+  font-size: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.hierarchy-crumb {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hierarchy-crumb.strong {
+  color: var(--color-text-primary);
+  font-weight: 800;
+}
+
+.hierarchy-sep {
+  color: var(--color-text-muted);
+}
+
+.hierarchy-count {
+  margin-left: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(22, 119, 255, 0.10);
+  color: var(--color-primary);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+/* 路由出口占满主内容区 */
+.content-area > .route-content {
   flex: 1;
   min-height: 0;
   min-width: 0;

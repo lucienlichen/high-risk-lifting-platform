@@ -63,46 +63,39 @@
         </div>
       </div>
 
-      <div v-else-if="activeModule !== 'structure'" class="had-body">
-        <div class="had-placeholder-grid">
-          <div class="had-overview-card had-overview-card--placeholder">
-            <span class="had-overview-label">{{ currentModuleMeta.label }}</span>
-            <span class="had-overview-value had-overview-value--text">功能预留</span>
-            <span class="had-overview-sub">{{ currentModuleMeta.sub }}</span>
-          </div>
-          <div class="had-overview-card">
-            <span class="had-overview-label">当前状态</span>
-            <span class="had-overview-value">待接入</span>
-            <span class="had-overview-sub">后续按真实监测数据补齐</span>
-          </div>
-          <div class="had-overview-card">
-            <span class="had-overview-label">页面能力</span>
-            <span class="had-overview-value">已规划</span>
-            <span class="had-overview-sub">评估卡、趋势图、建议动作</span>
-          </div>
-        </div>
-
-        <div class="had-placeholder-main">
-          <div class="had-panel">
-            <div class="had-panel-header">
-              <span class="had-panel-title">{{ currentModuleMeta.label }}</span>
-            </div>
-            <div class="had-placeholder-body">
-              <div class="had-placeholder-box">
-                <span class="had-placeholder-title">模块说明</span>
-                <p>{{ currentModuleMeta.description }}</p>
-              </div>
-              <div class="had-placeholder-box">
-                <span class="had-placeholder-title">预留能力</span>
-                <div class="had-advice-list">
-                  <div v-for="item in currentModuleMeta.plans" :key="item" class="had-advice-item">
-                    <span class="had-advice-dot"></span>
-                    <span>{{ item }}</span>
-                  </div>
-                </div>
-              </div>
-              <div class="had-placeholder-chart">后续接入后在此展示趋势图与评估指标</div>
-            </div>
+      <!-- ── 结构损伤评估 ── -->
+      <div v-else-if="activeModule === 'damage'" class="had-body had-assess-body">
+        <div class="had-panel had-assess-panel">
+          <div class="had-table-wrap had-assess-table-wrap">
+            <el-table :data="damageRows" style="width:100%" height="100%">
+              <el-table-column prop="no" label="编号" min-width="5%" align="center" />
+              <el-table-column prop="site" label="测点位置" min-width="9%" align="center" />
+              <el-table-column prop="desc" label="具体位置" min-width="14%" show-overflow-tooltip />
+              <el-table-column label="历史数据" min-width="9%" align="center">
+                <template #default="{ row }">
+                  <button class="had-hist-link" @click="openHistory('damage', row.idx, row.title, row.loc, row.level)">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    查看数据
+                  </button>
+                </template>
+              </el-table-column>
+              <el-table-column prop="strainMax" label="应变最大(με)" min-width="8%" align="center" />
+              <el-table-column prop="strainAvg" label="应变平均(με)" min-width="8%" align="center" />
+              <el-table-column prop="aeMax" label="声发射最大(dB)" min-width="8%" align="center" />
+              <el-table-column prop="aeAvg" label="声发射平均(dB)" min-width="8%" align="center" />
+              <el-table-column label="位置损伤状态" min-width="9%" align="center">
+                <template #default="{ row }">
+                  <el-tag :type="levelTagType(row.level)" size="small" effect="plain">{{ row.statusLabel }}</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="损伤程度" min-width="9%" align="center">
+                <template #default="{ row }">
+                  <el-tag :type="levelTagType(row.level)" size="small" effect="dark">{{ row.degree }}</el-tag>
+                  <span class="had-degree-pct">{{ row.pct }}%</span>
+                </template>
+              </el-table-column>
+              <el-table-column prop="maintain" label="维修建议" min-width="21%" show-overflow-tooltip />
+            </el-table>
           </div>
         </div>
       </div>
@@ -110,6 +103,45 @@
       <div v-else class="had-empty">
         <el-empty description="当前设备暂无可评估的结构监测数据" />
       </div>
+
+      <!-- ═══ 历史数据文件弹窗（结构损伤） ═══ -->
+      <div v-if="historyModal" class="had-modal-mask" @click.self="closeHistory">
+        <div class="had-modal-card had-hist-card">
+          <header class="had-modal-head">
+            <div class="had-modal-title">
+              <span class="had-modal-name">{{ historyModal.title }} · 历史数据文件</span>
+              <span class="had-modal-loc">{{ historyModal.location }}</span>
+            </div>
+            <button class="had-modal-close" @click="closeHistory"><el-icon><Close /></el-icon></button>
+          </header>
+          <div class="had-modal-sub">
+            <span>{{ FILE_META[historyModal.mode].desc }}</span>
+            <span>每日 1 个数据文件 · 共 {{ historyModal.days.length }} 个</span>
+          </div>
+          <div class="had-hist-head">
+            <span>日期</span><span>数据文件</span><span class="ta-r">下载</span>
+          </div>
+          <div class="had-hist-list">
+            <div v-for="day in historyModal.days" :key="day.date" class="had-hist-row">
+              <span class="had-hist-date">{{ day.date }}</span>
+              <span class="had-hist-file">
+                <svg class="had-hist-file-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <span class="had-hist-file-main">
+                  <span class="had-hist-fname">{{ day.file.name }}</span>
+                  <span class="had-hist-fmeta">上传 {{ day.file.time }} · {{ day.file.sizeMB }} MB · {{ day.file.records.toLocaleString() }} 点</span>
+                </span>
+                <el-tag v-if="day.file.level !== 'normal'" :type="levelTagType(day.file.level)" size="small" effect="plain">{{ day.file.level === 'danger' ? '异常段' : '波动段' }}</el-tag>
+              </span>
+              <span class="ta-r">
+                <button class="had-hist-dl" title="下载数据文件（演示占位）">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                </button>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </template>
@@ -129,7 +161,7 @@ const emit = defineEmits<{
 }>()
 
 type AssessmentLevel = 'normal' | 'warn' | 'danger'
-type ModuleKey = 'structure' | 'gearbox' | 'brake' | 'wheel'
+type ModuleKey = 'structure' | 'damage'
 type PointSource = 'measured' | 'twin'
 
 type StructureRow = {
@@ -156,9 +188,7 @@ type StructureRow = {
 
 const moduleTabs = [
   { key: 'structure', label: '结构健康评估', sub: '疲劳累积损伤度' },
-  { key: 'gearbox', label: '减速机健康评估', sub: '模块占位' },
-  { key: 'brake', label: '制动器健康评估', sub: '模块占位' },
-  { key: 'wheel', label: '行走车轮健康评估', sub: '模块占位' }
+  { key: 'damage', label: '结构损伤评估', sub: '声发射 / 应变损伤识别' }
 ] as const
 
 const activeModule = ref<ModuleKey>('structure')
@@ -434,57 +464,158 @@ function tableRowClassName({ row, rowIndex }: { row: StructureRow; rowIndex: num
   return ''
 }
 
-const currentModuleMeta = computed(() => {
-  const base: Record<Exclude<ModuleKey, 'structure'>, { label: string; sub: string; description: string; plans: string[] }> = {
-    gearbox: {
-      label: '减速机健康评估',
-      sub: '预留减速机温升、振动、润滑等评估能力',
-      description: '当前页面已预留减速机健康评估框架，后续可基于温度、振动、油液状态和故障征兆实现综合健康评估。',
-      plans: ['预留总览评分卡', '预留趋势图区域', '预留建议动作与结论区']
-    },
-    brake: {
-      label: '制动器健康评估',
-      sub: '预留制动力、响应、磨损等评估能力',
-      description: '当前页面已预留制动器健康评估框架，后续可基于开闭反馈、响应时间、异常频次和磨损状态进行评估。',
-      plans: ['预留总览评分卡', '预留趋势图区域', '预留建议动作与结论区']
-    },
-    wheel: {
-      label: '行走车轮健康评估',
-      sub: '预留轮压、磨损、偏斜等评估能力',
-      description: '当前页面已预留行走车轮健康评估框架，后续可基于轮压均衡、偏斜趋势、磨损程度和冲击异常进行评估。',
-      plans: ['预留总览评分卡', '预留趋势图区域', '预留建议动作与结论区']
-    }
+/* ════════════════════════════════════════════════════════════════
+   结构损伤 / 减速机 / 行走车轮 / 制动器 状态评估
+   - 数据沿用 getRemoteMonitoringData（与「健康监测数据」Tab 口径一致）
+   - 每行复刻参考的评估文本列：健康评估 / 故障诊断 / 故障预测 / 维修建议
+   - 历史数据列用最大/最小/平均统计值（不做迷你图）
+   ════════════════════════════════════════════════════════════════ */
+
+interface TrendStat { max: number; min: number; avg: number; unit: string }
+
+function statOf(h: RemoteTrendHistory, digits = 0): TrendStat {
+  const f = Math.pow(10, digits)
+  const round = (n: number) => Math.round(n * f) / f
+  const v = h.values
+  return {
+    max: round(Math.max(...v)),
+    min: round(Math.min(...v)),
+    avg: round(v.reduce((a, b) => a + b, 0) / v.length),
+    unit: h.valueLabel ?? ''
   }
-  return activeModule.value === 'structure'
-    ? { label: '结构健康评估', sub: '基于结构应力的疲劳累积损伤度', description: '', plans: [] }
-    : base[activeModule.value]
+}
+
+function siteOfLabel(label: string): string {
+  const seg = label.includes('·') ? label.split('·')[1] : label
+  return seg.replace(/（.*?）/g, '').trim()
+}
+
+function seedHash(s: string): number {
+  let h = 0
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0
+  return Math.abs(h) || 1
+}
+
+const devId = computed(() => props.device?.id ?? '')
+
+// ── 结构损伤评估 ──────────────────────────────────────────────
+const DAMAGE_DESC: Record<string, string> = {
+  焊缝热点A: '主梁腹板与上翼缘纵向角焊缝热点（A 区）',
+  焊缝热点B: '主梁腹板与下翼缘纵向角焊缝热点（B 区）',
+  主梁下翼缘: '主梁跨中下翼缘母材应力集中区',
+  端梁连接板: '端梁与主梁连接节点板及螺栓群',
+  支腿过渡区: '支腿与下横梁变截面过渡圆弧区',
+  小车架铰点: '小车架与车轮组连接铰点销轴部位'
+}
+const DAMAGE_MAINTAIN: Record<AssessmentLevel, string> = {
+  normal: '该部位应变与声发射信号均在正常范围、未见损伤特征，维持周期性监测与数据归档即可。',
+  warn: '声发射活动增强、应变出现异常波动，疑似早期损伤；建议提高监测频次并安排无损检测（磁粉/超声）复核焊缝与应力集中区。',
+  danger: '应变与声发射信号显著超限、存在明显损伤/裂纹，立即限载停机，开展无损检测与剩余强度评估，必要时修复或更换构件。'
+}
+
+interface DamageRow {
+  no: string; idx: number; site: string; desc: string; title: string; loc: string
+  strainMax: number; strainAvg: number; aeMax: number; aeAvg: number
+  level: AssessmentLevel; statusLabel: string
+  degree: string; pct: number; maintain: string
+}
+
+const damageRows = computed<DamageRow[]>(() => {
+  const data = monitoringData.value
+  if (!data) return []
+  return data.damage.flatMap((p, i) => {
+    const h = p.history
+    if (h.kind !== 'dualTrend') return []
+    const strain = statOf(h.strain, 1)
+    const ae = statOf(h.acoustic, 0)
+    const site = siteOfLabel(p.label)
+    const level = p.status as AssessmentLevel
+    const r = seedHash(`${devId.value}-dmg-${site}`)
+    let pct: number, degree: string
+    if (level === 'normal') { pct = 4 + (r % 6); degree = '无' }
+    else if (level === 'warn') { pct = 28 + (r % 18); degree = '轻度' }
+    else { pct = 58 + (r % 30); degree = pct >= 78 ? '重度' : '中度' }
+    return [{
+      no: `${i + 1}#`,
+      idx: i,
+      site,
+      desc: DAMAGE_DESC[site] ?? site,
+      title: `结构损伤监测·${site}`,
+      loc: DAMAGE_DESC[site] ?? site,
+      strainMax: strain.max, strainAvg: strain.avg,
+      aeMax: ae.max, aeAvg: ae.avg,
+      level,
+      statusLabel: level === 'normal' ? '无损伤' : '有损伤',
+      degree,
+      pct,
+      maintain: DAMAGE_MAINTAIN[level]
+    }]
+  })
 })
 
-const activeModuleSubtitle = computed(() =>
-  activeModule.value === 'structure'
-    ? '全部监测点位的应力特征、累积疲劳损伤度及状态评估'
-    : currentModuleMeta.value.sub
-)
+const pad2 = (n: number) => String(n).padStart(2, '0')
+function dateMinusDays(days: number): string {
+  const dt = new Date()
+  dt.setDate(dt.getDate() - days)
+  return `${dt.getFullYear()}-${pad2(dt.getMonth() + 1)}-${pad2(dt.getDate())}`
+}
+
+/* ── 历史数据文件弹窗（结构损伤：每日 1 个数据文件）──
+   对齐参考页面：测点 → 历史数据 → 每日数据文件清单（日期 / 文件名 / 下载） */
+type HistMode = 'damage'
+interface HistFile { name: string; time: string; sizeMB: number; records: number; level: AssessmentLevel }
+interface HistDay { date: string; file: HistFile }
+
+const FILE_META: Record<HistMode, { prefix: string; ext: string; desc: string }> = {
+  damage: { prefix: 'DMG', ext: 'dat', desc: '应变与声发射原始波形 · DAT · 采样率 1 MHz' }
+}
+const MODE_SALT: Record<HistMode, number> = { damage: 5300 }
+
+function buildHistoryDays(mode: HistMode, idx: number, level: AssessmentLevel): HistDay[] {
+  const baseSeed = seedHash(`${devId.value}-${mode}-${idx}`) + MODE_SALT[mode]
+  const rnd = (n: number) => {
+    let x = (baseSeed + n * 2654435761) >>> 0
+    x ^= x >>> 15; x = Math.imul(x, 2246822519) >>> 0; x ^= x >>> 13
+    return (x >>> 0) % 1000 / 1000
+  }
+  const dayCount = 14 + Math.floor(rnd(1) * 8) // 14~21 天
+  const meta = FILE_META[mode]
+  const days: HistDay[] = []
+  for (let d = 0; d < dayCount; d++) {
+    const date = dateMinusDays(d)
+    const ymd = date.replace(/-/g, '')
+    const hour = 6 + Math.floor(rnd(d * 7 + 2) * 4)
+    const min = Math.floor(rnd(d * 7 + 3) * 12) * 5
+    const time = `${pad2(hour)}:${pad2(min)}`
+    const records = 1800 + Math.floor(rnd(d * 7 + 4) * 4600)
+    const sizeMB = Math.round(((records / 1000) * (4 + rnd(d * 7 + 5) * 6) / 10) * 10) / 10 + 0.1
+    const elevated = rnd(d * 7 + 6) < (level === 'danger' ? 0.34 : level === 'warn' ? 0.2 : 0.06)
+    const fLevel: AssessmentLevel = elevated
+      ? (level === 'danger' && rnd(d * 7 + 7) < 0.55 ? 'danger' : 'warn')
+      : 'normal'
+    days.push({
+      date,
+      file: { name: `${meta.prefix}_P${idx + 1}_${ymd}.${meta.ext}`, time, sizeMB: Math.round(sizeMB * 10) / 10, records, level: fLevel }
+    })
+  }
+  return days
+}
+
+const historyModal = ref<{ title: string; location: string; mode: HistMode; days: HistDay[] } | null>(null)
+function openHistory(mode: HistMode, idx: number, title: string, location: string, level: AssessmentLevel) {
+  historyModal.value = { title, location, mode, days: buildHistoryDays(mode, idx, level) }
+}
+function closeHistory() { historyModal.value = null }
 </script>
 
 <style scoped>
 .had-drawer {
   position: absolute;
-  inset: 50px 0 0;
-  z-index: 100;
+  inset: 0;
+  z-index: 5;
   display: flex;
   flex-direction: column;
-  background: rgba(248, 250, 252, 0.96);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-top: 1px solid rgba(22, 119, 255, 0.18);
-  box-shadow: 0 -10px 30px rgba(15, 23, 42, 0.12);
-  animation: had-slide-up 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-@keyframes had-slide-up {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+  background: #f8fafc;
 }
 
 .had-shell {
@@ -863,6 +994,500 @@ const activeModuleSubtitle = computed(() =>
   background: rgba(255, 255, 255, 0.7);
   border: 1px solid rgba(226, 232, 240, 0.9);
   border-radius: var(--radius-md);
+}
+
+/* ── 状态评估通用表格容器 ── */
+.had-assess-body {
+  padding: 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.had-assess-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.had-assess-table-wrap {
+  flex: 1;
+  padding: 12px;
+  height: 100%;
+  min-height: 0;
+}
+
+.had-stat {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.had-stat em {
+  font-style: normal;
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+
+.had-degree-pct {
+  margin-left: 6px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 制动器：闸瓦图像识别 ── */
+.had-brake-body {
+  padding: 14px 16px 16px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.had-brake-day {
+  flex-shrink: 0;
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-card-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--color-card-shadow);
+  overflow: hidden;
+}
+
+.had-brake-day-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--color-border-light);
+  background: rgba(248, 250, 252, 0.7);
+}
+
+.had-brake-day-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.had-brake-date {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.had-brake-day-metrics {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.had-brake-day-metrics strong {
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.had-brake-day-hint {
+  color: var(--color-text-muted);
+}
+
+.had-brake-day-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) 1fr;
+  gap: 14px;
+  padding: 14px;
+}
+
+.had-brake-shots {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  align-content: start;
+}
+
+.had-brake-shot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 6px 6px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-subtle);
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+}
+
+.had-brake-shot:hover {
+  border-color: rgba(22, 119, 255, 0.4);
+  box-shadow: 0 2px 10px rgba(22, 119, 255, 0.12);
+  transform: translateY(-1px);
+}
+
+.had-brake-shot-img {
+  position: relative;
+  width: 100%;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: linear-gradient(135deg, rgba(148, 163, 184, 0.18), rgba(148, 163, 184, 0.06));
+  color: #94a3b8;
+}
+
+.had-brake-shot.is-warn .had-brake-shot-img {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(245, 158, 11, 0.06));
+  color: #b45309;
+}
+
+.had-brake-shot.is-danger .had-brake-shot-img {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.24), rgba(239, 68, 68, 0.07));
+  color: #b91c1c;
+}
+
+.had-brake-shot-badge {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  padding: 0 5px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 16px;
+  color: #fff;
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.had-brake-shot.is-warn .had-brake-shot-badge { background: rgba(180, 83, 9, 0.9); }
+.had-brake-shot.is-danger .had-brake-shot-badge { background: rgba(185, 28, 28, 0.92); }
+
+.had-brake-shot-time {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.had-brake-assess {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 16px;
+  align-content: start;
+}
+
+.had-brake-assess-item {
+  display: flex;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.had-brake-assess-item .k {
+  flex-shrink: 0;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.had-brake-assess-item .v {
+  color: var(--color-text-secondary);
+}
+
+.had-brake-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(3px);
+}
+
+.had-brake-lightbox-card {
+  display: flex;
+  gap: 16px;
+  width: min(640px, 92vw);
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background: #fff;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.3);
+}
+
+.had-brake-lightbox-img {
+  position: relative;
+  flex-shrink: 0;
+  width: 260px;
+  height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, rgba(148, 163, 184, 0.2), rgba(148, 163, 184, 0.06));
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.had-brake-lightbox-img.is-warn { background: linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(245, 158, 11, 0.06)); color: #b45309; }
+.had-brake-lightbox-img.is-danger { background: linear-gradient(135deg, rgba(239, 68, 68, 0.24), rgba(239, 68, 68, 0.07)); color: #b91c1c; }
+
+.had-brake-lightbox-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.had-brake-lightbox-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.had-brake-lightbox-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.had-brake-lightbox-rows > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-subtle);
+  font-size: 13px;
+}
+
+.had-brake-lightbox-rows span { color: var(--color-text-muted); }
+.had-brake-lightbox-rows strong { color: var(--color-text-primary); }
+
+/* ── 历史数据查看入口按钮 ── */
+.had-hist-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--color-primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.had-hist-link:hover {
+  text-decoration: underline;
+}
+
+/* ── 通用弹窗外壳 ── */
+.had-modal-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 2900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(3px);
+}
+
+.had-modal-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-height: 82vh;
+  background: #fff;
+  border-radius: var(--radius-md);
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.3);
+  overflow: hidden;
+}
+
+.had-hist-card { max-width: 640px; }
+.had-brakeday-card { max-width: 760px; }
+
+.had-modal-head {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: 48px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.had-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.had-modal-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.had-modal-loc {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.had-modal-close {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.had-modal-close:hover {
+  background: var(--color-bg-subtle);
+  color: var(--color-text-primary);
+}
+
+.had-modal-sub {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 14px;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  background: rgba(248, 250, 252, 0.7);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+/* ── 历史数据文件清单 ── */
+.had-hist-head,
+.had-hist-row {
+  display: grid;
+  grid-template-columns: 120px 1fr 48px;
+  gap: 12px;
+  align-items: center;
+  padding: 0 14px;
+}
+
+.had-hist-head {
+  flex-shrink: 0;
+  height: 34px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-subtle);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.had-hist-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.had-hist-row {
+  min-height: 52px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--color-border-light);
+  transition: background 0.15s;
+}
+
+.had-hist-row:hover { background: rgba(22, 119, 255, 0.03); }
+
+.had-hist-date {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.had-hist-file {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.had-hist-file-icon { color: var(--color-primary); flex-shrink: 0; }
+
+.had-hist-file-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.had-hist-fname {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.had-hist-fmeta {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.ta-r { text-align: right; justify-self: end; }
+
+.had-hist-dl {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.had-hist-dl:hover { background: var(--color-bg-subtle); color: var(--color-primary); }
+
+/* ── 制动器当日抓拍弹窗网格 ── */
+.had-brakeday-grid {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+  padding: 14px;
 }
 
 :deep(.el-table) {

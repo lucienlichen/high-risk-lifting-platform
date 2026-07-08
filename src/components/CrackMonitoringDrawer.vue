@@ -379,21 +379,11 @@ function tableRowClassName({ row, rowIndex }: { row: StructureRow; rowIndex: num
 <style scoped>
 .cpd-drawer {
   position: absolute;
-  inset: 50px 0 0;
-  z-index: 100;
+  inset: 0;
+  z-index: 5;
   display: flex;
   flex-direction: column;
-  background: rgba(248, 250, 252, 0.96);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-top: 1px solid rgba(22, 119, 255, 0.18);
-  box-shadow: 0 -10px 30px rgba(15, 23, 42, 0.12);
-  animation: cpd-slide-up 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-@keyframes cpd-slide-up {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+  background: #f8fafc;
 }
 
 .cpd-shell {

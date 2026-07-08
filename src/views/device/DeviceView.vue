@@ -29,9 +29,6 @@
       </div>
     </div>
 
-    <!-- ─── 智能服务菜单 ─── -->
-    <ServiceMenu />
-
     <!-- ─── 服务内容区（定位容器：抽屉铺满此区域，位于服务菜单下方，不遮挡菜单） ─── -->
     <div class="device-content-region">
     <div :class="['content-scrollable', { 'monitor-tab-content': store.activeService === 'remote' }]" style="flex:1">
@@ -55,18 +52,6 @@
             :model-op-date="monitorOpDate"
             class="monitor-workspace-inline"
           />
-        </div>
-      </template>
-
-      <!-- 故障诊断：AI 智能分析 -->
-      <template v-else-if="store.activeService === 'fault'">
-        <div class="section-card">
-          <div class="section-card-header">
-            <span class="section-card-title">故障诊断 · 智能分析</span>
-          </div>
-          <div class="section-card-body">
-            <ServiceDetailContent service="fault" :device="device" />
-          </div>
         </div>
       </template>
 
@@ -361,6 +346,12 @@
       @close="store.setService(null)"
     />
 
+    <FaultDiagnosisDrawer
+      v-if="store.activeService === 'fault'"
+      :device="device"
+      @close="store.setService(null)"
+    />
+
     <CrackMonitoringDrawer
       v-if="store.activeService === 'crack'"
       :device="device"
@@ -416,13 +407,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, nextTick, defineComponent, h } from 'vue'
+import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useSceneStore } from '@/stores/scene'
 import { Monitor, Warning, Select, Close, InfoFilled, ArrowLeft, Refresh, Platform } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import DeviceMonitoringWorkspace from '@/components/DeviceMonitoringWorkspace.vue'
 import HealthAssessmentDrawer from '@/components/HealthAssessmentDrawer.vue'
+import FaultDiagnosisDrawer from '@/components/FaultDiagnosisDrawer.vue'
 import CrackMonitoringDrawer from '@/components/CrackMonitoringDrawer.vue'
 import RiskMonitoringDrawer from '@/components/RiskMonitoringDrawer.vue'
 import HazardInspectionDrawer from '@/components/HazardInspectionDrawer.vue'
@@ -433,35 +425,8 @@ import InspectionServicePanel from '@/components/InspectionServicePanel.vue'
 import SupervisionServicePanel from '@/components/SupervisionServicePanel.vue'
 import SupplyServicePanel from '@/components/SupplyServicePanel.vue'
 import WorkCyclePicker from '@/components/WorkCyclePicker.vue'
-import ServiceMenu from '@/components/ServiceMenu.vue'
 import { getDeviceById, getOperationList, getWorkCycles } from '@/mock'
 import type { Device, WorkCycle } from '@/mock'
-
-// ─── Sub-component for service panel content ─────────────────────────
-const ServiceDetailContent = defineComponent({
-  props: {
-    service: { type: String, required: true },
-    device:  { type: Object as () => Device | null }
-  },
-  setup(props) {
-    const contents: Record<string, string[]> = {
-      health:  [`综合健康评分：${props.device?.healthScore ?? 0} 分`, '关键部件老化程度：轻微', '润滑状态：良好', '结构应力评估：正常', '建议下次保养：30天后'],
-      crack:   ['钢结构裂纹风险：低', '主梁应力分布：正常', '焊缝监测：未发现异常', '疲劳寿命预测：剩余 78%', '建议检测周期：6个月'],
-      fault:   ['当前运行状态：正常', '减速器温度：偏高（72°C）', '主电机电流：稳定', '传感器状态：全部在线', '近期故障概率：8%'],
-      risk:    [`综合风险等级：${props.device?.riskLevel ?? '—'}`, '安全监测指标：全部正常', '超载记录：近30天 0次', '违规操作：近30天 0次', '风险趋势：稳定'],
-      hazard:  ['未处理隐患：2 项', '隐患类型：制动系统磨损、钢丝绳锈蚀', '排查日期：2026-03-15', '整改期限：2026-04-01', '整改责任人：李工'],
-      issue:   ['当前问题数：3 项', '紧急问题：1 项（减速器温度超限）', '一般问题：2 项', '本月处理完结率：86%', '待派工单：1 张']
-    }
-    return () => h('div', { style: 'display:flex;flex-direction:column;gap:6px' },
-      (contents[props.service] ?? []).map(text =>
-        h('div', { style: 'display:flex;align-items:center;gap:8px;font-size:13px;color:#475569' }, [
-          h('span', { style: 'width:6px;height:6px;border-radius:50%;background:#1677ff;flex-shrink:0' }),
-          text
-        ])
-      )
-    )
-  }
-})
 
 const router = useRouter()
 const route  = useRoute()
@@ -510,7 +475,7 @@ const placeholderServiceMeta = computed(() =>
 )
 
 // 以独立面板铺满内容区展示的服务（原「抽屉」，现为内容区面板）
-const DRAWER_SERVICES = ['health', 'crack', 'risk', 'hazard', 'issue', 'point', 'maintain', 'inspect', 'basicdata', 'supply']
+const DRAWER_SERVICES = ['health', 'fault', 'crack', 'risk', 'hazard', 'issue', 'point', 'maintain', 'inspect', 'basicdata', 'supply']
 const isDrawerService = computed(() =>
   store.activeService ? DRAWER_SERVICES.includes(store.activeService) : false
 )
