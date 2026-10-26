@@ -90,6 +90,9 @@ const ITEMS: HazardItem[] = [
   { id: 5, categoryId: 111, itemNo: 5, description: '主体结构失稳', causeCodes: ['8.1.2a', '8.1.2b', '8.1.3a', '8.1.3b', '8.1.3c', '8.1.3g', '8.1.4a', '8.1.4b', '8.1.4d', '8.1.4f'], eventCodes: ['6a', '6c'] },
   { id: 7, categoryId: 111, itemNo: 7, description: '焊缝存在裂纹、气孔、固体夹杂、未融合、未焊透等缺陷', causeCodes: ['8.1.2a', '8.1.2b', '8.1.3d', '8.1.3h', '8.1.4a', '8.1.4d'], eventCodes: ['6a', '6c'] },
   { id: 8, categoryId: 111, itemNo: 8, description: '金属结构连接螺栓、销轴等小部件断裂或脱落', causeCodes: ['8.1.2d', '8.1.3a', '8.1.4b', '8.1.4c', '8.1.4d'], eventCodes: ['6a', '6b', '6c'] },
+  // 非主要受力结构 (112)
+  { id: 21, categoryId: 112, itemNo: 1, description: '司机室、平台、走台、栏杆等变形、开裂或锈蚀', causeCodes: ['8.1.2h', '8.1.3f', '8.1.4b', '8.1.4c'], eventCodes: ['6b', '6p'] },
+  { id: 22, categoryId: 112, itemNo: 2, description: '梯子、扶手等连接松动或缺失', causeCodes: ['8.1.2h', '8.1.4b', '8.1.4c'], eventCodes: ['6p'] },
   // 钢丝绳 (126)
   { id: 35, categoryId: 126, itemNo: 1, description: '钢丝绳断丝、断股和断绳等', causeCodes: ['8.1.2d', '8.1.3a', '8.1.4b', '8.1.4c', '8.1.4d'], eventCodes: ['6j'] },
   { id: 36, categoryId: 126, itemNo: 2, description: '钢丝绳直径减小（包括外部磨损、内部磨损和绳芯劣化）', causeCodes: ['8.1.2d', '8.1.3a', '8.1.4b', '8.1.4c', '8.1.4d'], eventCodes: ['6j'] },
@@ -97,6 +100,12 @@ const ITEMS: HazardItem[] = [
   { id: 38, categoryId: 126, itemNo: 4, description: '变形', causeCodes: ['8.1.2d', '8.1.3a', '8.1.4b', '8.1.4c', '8.1.4d'], eventCodes: ['6j'] },
   { id: 39, categoryId: 126, itemNo: 5, description: '机械损伤、热损伤（包括电弧）等', causeCodes: ['8.1.2d', '8.1.3a', '8.1.4b', '8.1.4c', '8.1.4d'], eventCodes: ['6j'] },
   { id: 40, categoryId: 126, itemNo: 6, description: '钢丝绳的连接、固定不可靠', causeCodes: ['8.1.2d', '8.1.3a', '8.1.4c', '8.1.4d'], eventCodes: ['6j'] },
+  // 吊钩 (127)
+  { id: 45, categoryId: 127, itemNo: 1, description: '吊钩出现裂纹、危险断面磨损或塑性变形', causeCodes: ['8.1.2d', '8.1.4b', '8.1.4c', '8.1.4d'], eventCodes: ['6j'] },
+  { id: 46, categoryId: 127, itemNo: 2, description: '吊钩开口度增大、防脱钩装置失效', causeCodes: ['8.1.2d', '8.1.4b', '8.1.4c'], eventCodes: ['6j'] },
+  // 制动器 (135)
+  { id: 55, categoryId: 135, itemNo: 1, description: '制动器制动力矩不足、制动间隙超标', causeCodes: ['8.1.2c', '8.1.4b', '8.1.4c'], eventCodes: ['6j', '6f'] },
+  { id: 56, categoryId: 135, itemNo: 2, description: '制动衬垫磨损超限、制动轮表面缺陷', causeCodes: ['8.1.4b', '8.1.4c'], eventCodes: ['6j'] },
   // 起重机司机 (21)
   { id: 133, categoryId: 21, itemNo: 1, description: '操作起重机时未得到指挥指令或指挥信号不明', causeCodes: ['8.2a', '8.2b', '8.2c'], eventCodes: ['6a', '6c', '6e', '6f', '6p'] },
   { id: 134, categoryId: 21, itemNo: 2, description: '启动起重机前未进行安全确认、示警', causeCodes: ['8.2a', '8.2b', '8.2c'], eventCodes: ['6a', '6c', '6e', '6f', '6p'] },

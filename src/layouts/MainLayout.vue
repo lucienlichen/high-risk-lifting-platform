@@ -62,8 +62,14 @@
 
       <!-- Right Content Area -->
       <main class="content-area">
-        <div v-if="showTopHierarchy" class="top-hierarchy-nav">
-          <div class="hierarchy-crumbs">
+        <div v-if="showTopHierarchy" :class="['top-hierarchy-nav', { 'top-hierarchy-nav--service': showSceneServiceTitle }]">
+          <div v-if="showSceneServiceTitle" class="hierarchy-crumbs hierarchy-crumbs--service">
+            <span class="hierarchy-service-scope">{{ hierarchyScopeLabel }}</span>
+            <span class="hierarchy-count">{{ hierarchyDeviceCount }} 台设备</span>
+            <span class="hierarchy-service-divider"></span>
+            <SceneServiceSwitcher class="top-service-switcher" />
+          </div>
+          <div v-else class="hierarchy-crumbs">
             <span class="hierarchy-crumb strong">{{ currentGroup || currentSceneInfo?.name || '设备范围' }}</span>
             <span v-if="currentAffiliatedUnit" class="hierarchy-sep">/</span>
             <span v-if="currentAffiliatedUnit" class="hierarchy-crumb">{{ currentAffiliatedUnit }}</span>
@@ -88,6 +94,8 @@ import { ref, computed, onMounted, onUnmounted, defineComponent, h } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useSceneStore } from '@/stores/scene'
 import { useAuthStore }  from '@/stores/auth'
+import SceneServiceSwitcher from '@/components/SceneServiceSwitcher.vue'
+import { flatServices, type ServiceKey } from '@/components/serviceCatalog'
 import { getDeviceById, getDevices, SCENES } from '@/mock'
 import type { SceneId }  from '@/mock'
 
@@ -100,6 +108,11 @@ const searchVal    = ref('')
 const currentTime  = ref('')
 const currentScene = computed(() => store.currentScene)
 const showTopHierarchy = computed(() => route.name === 'scene' || route.name === 'device')
+const activeServiceKey = computed(() => store.activeService as ServiceKey | null)
+const activeServiceMeta = computed(() =>
+  activeServiceKey.value ? flatServices.find(service => service.key === activeServiceKey.value) : null
+)
+const showSceneServiceTitle = computed(() => route.name === 'scene' && !!activeServiceMeta.value)
 const currentSceneInfo = computed(() => SCENES.find(scene => scene.id === currentScene.value))
 const currentDevice = computed(() => {
   const id = route.name === 'device'
@@ -118,6 +131,14 @@ const currentSubsidiary = computed(() => {
 const currentAffiliatedUnit = computed(() => {
   if (currentDevice.value?.affiliatedUnit) return currentDevice.value.affiliatedUnit
   return typeof route.query.affiliatedUnit === 'string' ? route.query.affiliatedUnit : ''
+})
+const hierarchyScopeLabel = computed(() => {
+  const parts = [
+    currentGroup.value || currentSceneInfo.value?.name || '设备范围',
+    currentAffiliatedUnit.value,
+    currentSubsidiary.value
+  ].filter(Boolean)
+  return parts.join(' / ')
 })
 const hierarchyDeviceCount = computed(() => {
   const devices = getDevices(currentScene.value, 1, 9999).list
