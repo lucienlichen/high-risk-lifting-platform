@@ -110,7 +110,11 @@ function deviceFromShagang(record: DemoDeviceRecord): Device {
 
 function yonggangUnit(device: Device) {
   const map = yonggangUnitMap as Record<string, string>
-  return map[device.location] || map[device.workArea || ''] || '未标明厂区'
+  const byLocation = device.location ? map[device.location] : undefined
+  const byWork = device.workArea ? map[device.workArea] : undefined
+  if (byLocation && byLocation !== '未标明厂区') return byLocation
+  if (byWork && byWork !== '未标明厂区') return byWork
+  return byLocation || byWork || '未标明厂区'
 }
 
 export function getOverviewCards(): OverviewCard[] {

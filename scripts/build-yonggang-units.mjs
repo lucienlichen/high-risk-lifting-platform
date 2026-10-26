@@ -2,7 +2,9 @@
  * 把永钢使用地点收成二级单位，写出 src/mock/yonggangUnitMap.json。
  *
  * 用法：node scripts/build-yonggang-units.mjs
- * 输入：src/mock/demoDeviceRecords.ts 里江苏永钢集团有限公司的 location。
+ * 输入：src/mock/demoDeviceRecords.ts 里江苏永钢集团有限公司的记录。
+ * 线上台账把厂名放在 workArea，跨名放在 location。location 能对上厂名时用 location，
+ * 否则用 workArea。同一字符串对应多个厂时不写入，避免「成品跨」这类重名串厂。
  * 不改设备条数。规则按顺序匹配，先命中的为准。
  * 全角转半角，PC构建视为 PC构件，去掉吨位后缀。
  * 对不上厂名的碎片归入「未标明厂区」。
@@ -81,15 +83,33 @@ function loadYonggang() {
   return records.filter(record => record.enterprise === '江苏永钢集团有限公司' && record.scene === 'metallurgy')
 }
 
+function resolveUnit(record) {
+  const location = String(record.location || '').trim()
+  const workArea = String(record.workArea || '').trim()
+  const fromLocation = location ? normalizeYonggangLocation(location) : '未标明厂区'
+  if (location && fromLocation !== '未标明厂区') return fromLocation
+  const fromWork = workArea ? normalizeYonggangLocation(workArea) : '未标明厂区'
+  if (workArea && fromWork !== '未标明厂区') return fromWork
+  return '未标明厂区'
+}
+
 function main() {
   const devices = loadYonggang()
-  const map = {}
+  const byKey = new Map()
   const counts = new Map()
   for (const device of devices) {
-    const source = device.location || device.workArea || ''
-    const unit = normalizeYonggangLocation(source)
-    map[source] = unit
+    const unit = resolveUnit(device)
     counts.set(unit, (counts.get(unit) || 0) + 1)
+    for (const key of [device.location, device.workArea]) {
+      const text = String(key || '').trim()
+      if (!text) continue
+      if (!byKey.has(text)) byKey.set(text, new Set())
+      byKey.get(text).add(unit)
+    }
+  }
+  const map = {}
+  for (const [key, units] of byKey) {
+    if (units.size === 1) map[key] = [...units][0]
   }
   const sortedMap = Object.fromEntries(Object.entries(map).sort((a, b) => a[0].localeCompare(b[0], 'zh-CN')))
   fs.writeFileSync(outPath, `${JSON.stringify(sortedMap, null, 2)}\n`)
