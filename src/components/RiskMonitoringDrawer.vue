@@ -24,7 +24,7 @@
             </div>
             <div class="rmd-status-text">
               <span class="rmd-status-label">所在位置</span>
-              <span class="rmd-status-value">{{ device.location }}</span>
+              <span class="rmd-status-value">{{ displayLocationName(device.location) }}</span>
             </div>
           </div>
           <div class="rmd-status-divider"></div>
@@ -132,6 +132,7 @@ import { computed } from 'vue'
 import { Close, Aim, Location, SwitchButton, Odometer, Refresh, DataAnalysis } from '@element-plus/icons-vue'
 import { getDeviceRiskAssessment, getDeviceVibration } from '@/mock/riskAssessment'
 import type { Device } from '@/mock'
+import { displayLocationName } from '@/utils/displayNames'
 
 const props = defineProps<{
   device: Device | null

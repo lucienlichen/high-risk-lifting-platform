@@ -15,8 +15,8 @@
         <span class="device-info-meta-sep">·</span>
         <span class="device-info-meta-item">编号：<strong>{{ device.code }}</strong></span>
         <span class="device-info-meta-item">类型：<strong>{{ device.type }}</strong></span>
-        <span class="device-info-meta-item">位置：<strong>{{ device.location }}</strong></span>
-        <span class="device-info-meta-item">使用单位：<strong>{{ device.subsidiary || device.group || '—' }}</strong></span>
+        <span class="device-info-meta-item">位置：<strong>{{ displayLocationName(device.location) }}</strong></span>
+        <span class="device-info-meta-item">使用单位：<strong>{{ device.subsidiary ? displayWorkAreaName(device.subsidiary) : displayEnterpriseName(device.group) || '—' }}</strong></span>
         <span class="device-info-meta-item">投用：<strong>{{ device.installDate }}</strong></span>
       </div>
       <div style="display:flex;gap:8px;flex-shrink:0">
@@ -31,10 +31,10 @@
 
     <!-- ─── 服务内容区（定位容器：抽屉铺满此区域，位于服务菜单下方，不遮挡菜单） ─── -->
     <div class="device-content-region">
-    <div :class="['content-scrollable', { 'monitor-tab-content': store.activeService === 'remote' }]" style="flex:1">
+    <div :class="['content-scrollable', { 'monitor-tab-content': isMonitoringWorkspaceService }]" style="flex:1">
 
-      <!-- 远程监测：监测数据工作区（左数据 + 右数字孪生） -->
-      <template v-if="store.activeService === 'remote'">
+      <!-- 安全监控 / 健康监测：按服务边界拆分监测工作区 -->
+      <template v-if="isMonitoringWorkspaceService">
         <div class="monitor-workspace-wrapper">
           <div class="monitor-filter-bar">
             <WorkCyclePicker
@@ -47,6 +47,7 @@
           <DeviceMonitoringWorkspace
             v-if="device"
             :device="device"
+            :service-mode="store.activeService === 'healthMonitor' ? 'health' : 'safety'"
             :hide-op-list="true"
             :model-op-id="monitorOpId"
             :model-op-date="monitorOpDate"
@@ -55,25 +56,9 @@
         </div>
       </template>
 
-      <!-- 数据智能服务 / 知识库：功能预留占位 -->
-      <template v-else-if="placeholderServiceMeta">
-        <div class="section-card">
-          <div class="empty-placeholder">
-            <svg class="empty-placeholder-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-              <polyline points="14 2 14 8 20 8"/>
-              <line x1="16" y1="13" x2="8" y2="13"/>
-              <line x1="16" y1="17" x2="8" y2="17"/>
-              <polyline points="10 9 9 9 8 9"/>
-            </svg>
-            <div class="empty-placeholder-text">
-              <div style="font-size:15px;font-weight:600;color:var(--color-text-secondary);margin-bottom:6px">
-                {{ placeholderServiceMeta.label }}
-              </div>
-              <div>{{ placeholderServiceMeta.desc }}</div>
-            </div>
-          </div>
-        </div>
+      <!-- 知识、分析、报表、实训与系统支撑服务 -->
+      <template v-else-if="extendedServiceKey">
+        <ExtendedServiceOverview :service-key="extendedServiceKey" />
       </template>
 
       <!-- 默认（健康评估 / 裂纹预测 / 风险监测 / 隐患排查 / 问题处理 由服务面板铺满展示） -->
@@ -413,6 +398,7 @@ import { useSceneStore } from '@/stores/scene'
 import { Monitor, Warning, Select, Close, InfoFilled, ArrowLeft, Refresh, Platform } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import DeviceMonitoringWorkspace from '@/components/DeviceMonitoringWorkspace.vue'
+import ExtendedServiceOverview from '@/components/ExtendedServiceOverview.vue'
 import HealthAssessmentDrawer from '@/components/HealthAssessmentDrawer.vue'
 import FaultDiagnosisDrawer from '@/components/FaultDiagnosisDrawer.vue'
 import CrackMonitoringDrawer from '@/components/CrackMonitoringDrawer.vue'
@@ -427,6 +413,7 @@ import SupplyServicePanel from '@/components/SupplyServicePanel.vue'
 import WorkCyclePicker from '@/components/WorkCyclePicker.vue'
 import { getDeviceById, getOperationList, getWorkCycles } from '@/mock'
 import type { Device, WorkCycle } from '@/mock'
+import { displayEnterpriseName, displayLocationName, displayWorkAreaName } from '@/utils/displayNames'
 
 const router = useRouter()
 const route  = useRoute()
@@ -465,19 +452,18 @@ watch(monitorWorkCycles, (list) => {
 const statusLabels: Record<string,string> = { running:'运行中', standby:'待机', stopped:'停机', maintenance:'维修中' }
 const riskLabels:   Record<string,string> = { normal:'正常', low:'低风险', medium:'中风险', high:'高风险' }
 
-// 12 项服务里需占位面板的「数据智能服务 / 知识库」
-const PLACEHOLDER_SERVICES: Record<string, { label: string; desc: string }> = {
-  kbDetect:  { label: '检测检验知识库', desc: '检测检验领域知识库检索服务，功能开发中，演示版暂不展示' },
-  kbLaw:     { label: '法律法规知识库', desc: '法律法规标准知识库检索服务，功能开发中，演示版暂不展示' },
-}
-const placeholderServiceMeta = computed(() =>
-  store.activeService ? (PLACEHOLDER_SERVICES[store.activeService] ?? null) : null
+const EXTENDED_SERVICES = ['analysis', 'reports', 'training', 'system', 'kbDetect', 'kbLaw', 'kbStandard']
+const extendedServiceKey = computed(() =>
+  store.activeService && EXTENDED_SERVICES.includes(store.activeService) ? store.activeService : ''
 )
 
 // 以独立面板铺满内容区展示的服务（原「抽屉」，现为内容区面板）
 const DRAWER_SERVICES = ['health', 'fault', 'crack', 'risk', 'hazard', 'issue', 'point', 'maintain', 'inspect', 'basicdata', 'supply']
 const isDrawerService = computed(() =>
   store.activeService ? DRAWER_SERVICES.includes(store.activeService) : false
+)
+const isMonitoringWorkspaceService = computed(() =>
+  store.activeService === 'remote' || store.activeService === 'healthMonitor'
 )
 
 // ── 远程监测：告警数据模拟与曲线 ──
@@ -908,10 +894,13 @@ watch(() => store.activeService, (newVal) => {
 
 function loadDevice() {
   const id = route.params.id as string
+  const activeService = store.activeService
   device.value = getDeviceById(id)
   if (device.value) {
-    store.setDevice(id)          // setDevice 会清空 activeService
-    store.setService('remote')   // 进入设备详情默认选中「远程监测」并展示监测工作区
+    store.setDevice(id, !!activeService)
+    if (!activeService) {
+      store.setService('remote')   // 直接进入设备详情时默认展示监测工作区
+    }
   }
 }
 

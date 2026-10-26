@@ -641,3 +641,47 @@ export function getSupplyRegistry(): SupplyReg[] {
     }
   }).sort((a, b) => (a.code < b.code ? -1 : 1))
 }
+
+/** 将制造台账稳定投影到平台当前设备，避免区域列表与设备范围脱节。 */
+export function getSupplyForDevice(device: {
+  id: string
+  code: string
+  name: string
+  type: string
+  location: string
+  installDate?: string
+  manufacturer?: string
+  technicalParams?: { name: string; value: string }[]
+}): SupplyReg {
+  const s = seedOf(device.id, 8800)
+  const type = SUPPLY_TYPES.find(t => device.type.includes(t.name)) ?? SUPPLY_TYPES[hash(s + 1) % SUPPLY_TYPES.length]
+  const madeYear = 2012 + hash(s + 2) % 13
+  const technicalNumber = (name: string) => {
+    const raw = device.technicalParams?.find(item => item.name === name)?.value
+    const value = raw ? Number.parseFloat(raw) : Number.NaN
+    return Number.isFinite(value) ? value : null
+  }
+  const tonnage = technicalNumber('额定起重量') ?? SUPPLY_TONNAGES[hash(s + 3) % SUPPLY_TONNAGES.length]
+  const span = technicalNumber('跨度') ?? SUPPLY_SPANS[hash(s + 4) % SUPPLY_SPANS.length]
+  const madeDate = `${madeYear}-${pad(1 + hash(s + 5) % 12)}-${pad(1 + hash(s + 6) % 27)}`
+  const docs = SUPPLY_DOC_DEFS.map((d, k) => {
+    const ds = hash(s + 100 + k)
+    const [lo, hi] = d.mb
+    return { id: `${device.id}-supply-doc-${k}`, name: `${device.code}_${d.kind}.${d.format.toLowerCase()}`, kind: d.kind, format: d.format, date: madeDate, sizeMB: Math.round((lo + (ds % 100) / 100 * (hi - lo)) * 10) / 10 }
+  })
+  return {
+    id: device.id,
+    code: device.code,
+    name: device.name,
+    type: device.type,
+    manufacturer: device.manufacturer || SUPPLY_MANUFACTURERS[hash(s + 7) % SUPPLY_MANUFACTURERS.length],
+    model: `${type.code}${tonnage}-${span}`,
+    factoryNo: `${type.code}${madeYear}${pad(hash(s + 8) % 10000, 4)}`,
+    madeDate,
+    commissionDate: device.installDate || addDays(madeDate, 180),
+    tonnage,
+    span,
+    user: device.location,
+    docs
+  }
+}
