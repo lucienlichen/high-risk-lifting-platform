@@ -1,4 +1,5 @@
 import { demoDeviceRecords, type DemoDeviceRecord } from './demoDeviceRecords'
+import { shagangDeviceRecords } from './shagangDevices'
 
 export type SceneId = 'metallurgy' | 'port' | 'construction' | 'shipbuilding'
 export type DeviceStatus = 'running' | 'stopped' | 'maintenance' | 'standby'
@@ -46,7 +47,7 @@ export const SCENES: SceneInfo[] = [
     id: 'metallurgy',
     name: '冶金起重装备',
     description: '面向钢铁、有色金属等冶金行业起重装备的智能运维与风险防控服务',
-    totalDevices: 1979
+    totalDevices: 2031
   },
   {
     id: 'port',
@@ -243,7 +244,7 @@ function allocationsFromDemoRecords(scene: SceneId, enterprise: string): Allocat
   return Array.from(counts.values())
 }
 
-const BENXI_STEEL_ALLOCATIONS: AllocationRecord[] = [
+const BENXI_STEEL_ALLOCATION_SOURCE: AllocationRecord[] = [
   { enterprise: '本钢集团', affiliatedUnit: '板材板块', workArea: '冷轧厂', count: 187 },
   { enterprise: '本钢集团', affiliatedUnit: '板材板块', workArea: '原料厂', count: 125 },
   { enterprise: '本钢集团', affiliatedUnit: '板材板块', workArea: '热连轧厂', count: 116 },
@@ -275,6 +276,26 @@ const BENXI_STEEL_ALLOCATIONS: AllocationRecord[] = [
   { enterprise: '本钢集团', affiliatedUnit: '矿业板块', workArea: '设备修造厂', count: 38 },
   { enterprise: '本钢集团', affiliatedUnit: '矿业板块', workArea: '矿业汽运', count: 23 }
 ]
+
+/** 冶金演示只保留板材板块。北营、矿业不进入场景树，也不再生成设备。 */
+const BENXI_STEEL_ALLOCATIONS: AllocationRecord[] = BENXI_STEEL_ALLOCATION_SOURCE.filter(
+  item => item.affiliatedUnit === '板材板块'
+)
+
+function allocationsFromRecords(records: DemoDeviceRecord[]): AllocationRecord[] {
+  const counts = new Map<string, AllocationRecord>()
+  records.forEach(record => {
+    const affiliatedUnit = record.affiliatedUnit || '未分组'
+    const workArea = record.workArea || affiliatedUnit
+    const key = `${record.enterprise}::${affiliatedUnit}::${workArea}`
+    const existing = counts.get(key)
+    if (existing) existing.count += 1
+    else counts.set(key, { enterprise: record.enterprise, affiliatedUnit, workArea, count: 1 })
+  })
+  return Array.from(counts.values())
+}
+
+const SHAGANG_ALLOCATIONS: AllocationRecord[] = allocationsFromRecords(shagangDeviceRecords)
 
 const LIANYUNGANG_ALLOCATIONS: AllocationRecord[] = [
   { enterprise: '连云港港口', affiliatedUnit: '江苏连云港港口股份有限公司东方港务分公司', workArea: '东方港务分公司', count: 135 },
@@ -314,7 +335,8 @@ const SCENE_ALLOCATIONS: Record<SceneId, AllocationRecord[]> = {
   shipbuilding: SHIPBUILDING_ALLOCATIONS,
   metallurgy: [
     ...BENXI_STEEL_ALLOCATIONS,
-    ...YONGGANG_ALLOCATIONS
+    ...YONGGANG_ALLOCATIONS,
+    ...SHAGANG_ALLOCATIONS
   ],
   port: [
     ...QINGDAO_PORT_ALLOCATIONS,
@@ -464,7 +486,11 @@ function deviceFromRecord(record: DemoDeviceRecord, index: number, rng: ReturnTy
 }
 
 function isCoveredByExactRecord(sceneId: SceneId, allocation: AllocationRecord) {
-  if (sceneId === 'metallurgy') return allocation.enterprise === '本钢集团' || allocation.enterprise === '江苏永钢集团有限公司'
+  if (sceneId === 'metallurgy') {
+    return allocation.enterprise === '本钢集团'
+      || allocation.enterprise === '江苏永钢集团有限公司'
+      || allocation.enterprise === '沙钢'
+  }
   if (sceneId === 'port') return allocation.enterprise === '连云港港口' || allocation.enterprise === '青岛港'
   if (sceneId === 'shipbuilding') return allocation.enterprise === '招商局金陵船舶（江苏）有限公司'
   return false
@@ -598,9 +624,13 @@ function ensureCache(sceneId: SceneId) {
     metallurgy: 101, port: 203, construction: 307, shipbuilding: 409
   }
   const rng     = mkRng(seeds[sceneId])
-  const exactRecords = demoDeviceRecords
-    .filter(record => record.scene === sceneId)
-    .map((record, index) => deviceFromRecord(record, index, rng))
+  const scopedRecords = demoDeviceRecords.filter(record => {
+    if (record.scene !== sceneId) return false
+    if (record.enterprise === '本钢集团' && record.affiliatedUnit !== '板材板块') return false
+    return true
+  })
+  const records = sceneId === 'metallurgy' ? scopedRecords.concat(shagangDeviceRecords) : scopedRecords
+  const exactRecords = records.map((record, index) => deviceFromRecord(record, index, rng))
   const syntheticAllocations = SCENE_ALLOCATION_LIST[sceneId]
     .filter(allocation => !isCoveredByExactRecord(sceneId, allocation))
   const devices: Device[] = []

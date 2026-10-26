@@ -11,6 +11,12 @@
         <div class="platform-title">
           <h1>设备智能检测监测云服务系统</h1>
         </div>
+        <button
+          type="button"
+          class="top-nav-entry"
+          :class="{ 'is-active': route.name === 'overview' }"
+          @click="router.push('/overview')"
+        >设备概览</button>
       </div>
 
       <div class="top-bar-right">

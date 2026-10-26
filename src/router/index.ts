@@ -4,6 +4,7 @@ import ServiceMenuView from '@/views/service/ServiceMenuView.vue'
 import SceneView   from '@/views/scene/SceneView.vue'
 import DeviceView  from '@/views/device/DeviceView.vue'
 import LoginView   from '@/views/login/LoginView.vue'
+import OverviewView from '@/views/overview/OverviewView.vue'
 import { useAuthStore } from '@/stores/auth'
 
 const router = createRouter({
@@ -15,6 +16,7 @@ const router = createRouter({
       component: MainLayout,
       children: [
         { path: '',              redirect: '/services' },
+        { path: '/overview',     name: 'overview', component: OverviewView },
         { path: '/services',     name: 'serviceMenu', component: ServiceMenuView },
         { path: '/scene/:id',    name: 'scene',  component: SceneView  },
         { path: '/device/:id',   name: 'device', component: DeviceView }
