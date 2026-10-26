@@ -14,7 +14,7 @@
         <button
           type="button"
           class="top-nav-entry"
-          :class="{ 'is-active': route.name === 'overview' }"
+          :class="{ 'is-active': route.path.startsWith('/overview') }"
           @click="router.push('/overview')"
         >设备概览</button>
       </div>

@@ -5,6 +5,9 @@ import SceneView   from '@/views/scene/SceneView.vue'
 import DeviceView  from '@/views/device/DeviceView.vue'
 import LoginView   from '@/views/login/LoginView.vue'
 import OverviewView from '@/views/overview/OverviewView.vue'
+import OverviewHome from '@/views/overview/OverviewHome.vue'
+import OverviewPlantView from '@/views/overview/OverviewPlantView.vue'
+import OverviewDeviceView from '@/views/overview/OverviewDeviceView.vue'
 import { useAuthStore } from '@/stores/auth'
 
 const router = createRouter({
@@ -16,7 +19,15 @@ const router = createRouter({
       component: MainLayout,
       children: [
         { path: '',              redirect: '/services' },
-        { path: '/overview',     name: 'overview', component: OverviewView },
+        {
+          path: '/overview',
+          component: OverviewView,
+          children: [
+            { path: '', name: 'overviewHome', component: OverviewHome },
+            { path: 'plant', name: 'overviewPlant', component: OverviewPlantView },
+            { path: 'device/:id', name: 'overviewDevice', component: OverviewDeviceView }
+          ]
+        },
         { path: '/services',     name: 'serviceMenu', component: ServiceMenuView },
         { path: '/scene/:id',    name: 'scene',  component: SceneView  },
         { path: '/device/:id',   name: 'device', component: DeviceView }
