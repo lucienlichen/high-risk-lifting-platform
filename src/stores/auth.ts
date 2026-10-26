@@ -55,7 +55,19 @@ function readPersisted(): PersistedAuth | null {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return null
     const parsed = JSON.parse(raw) as Partial<PersistedAuth>
-    if (!parsed.username) return null
+    if (!parsed.username || typeof parsed.username !== 'string') return null
+    const known = DEMO_ACCOUNTS.find(item => item.username === parsed.username)
+    if (known) {
+      const next: PersistedAuth = {
+        username: known.username,
+        role: known.role,
+        enterprise: known.enterprise,
+        unit: known.unit
+      }
+      const stale = parsed.role !== next.role || parsed.enterprise !== next.enterprise || parsed.unit !== next.unit
+      if (stale) localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+      return next
+    }
     if (!parsed.role || !('enterprise' in parsed)) {
       const account = accountForUsername(parsed.username)
       return { username: parsed.username, role: account.role, enterprise: account.enterprise, unit: account.unit }

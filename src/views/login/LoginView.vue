@@ -13,17 +13,6 @@
       </div>
 
       <div class="login-card">
-      <div class="demo-accounts">
-        <button
-          v-for="account in loginShortcuts"
-          :key="account.username"
-          type="button"
-          class="demo-account-btn"
-          @click="fillDemo(account.username)"
-        >
-          {{ account.label }} <span>{{ account.username }} · {{ account.scopeLabel }}</span>
-        </button>
-      </div>
       <!-- Form -->
       <el-form
         ref="formRef"
@@ -78,6 +67,15 @@
       <p class="login-footer">© 2026 高风险起重装备智能运维与事故防控云服务平台</p>
       </div>
     </div>
+    <nav class="demo-accounts" aria-label="演示账号">
+      <button
+        v-for="account in loginShortcuts"
+        :key="account.username"
+        type="button"
+        class="demo-account-link"
+        @click="fillDemo(account.username)"
+      >{{ account.label }} · {{ account.username }}</button>
+    </nav>
   </div>
 </template>
 
@@ -140,6 +138,8 @@ function handleLogin() {
   min-height: 100vh;
   width: 100vw;
   display: flex;
+  flex-direction: column;
+  align-items: center;
   overflow: auto;
   background: linear-gradient(135deg, var(--color-header-bg) 0%, var(--color-header-bg2) 100%);
 }
@@ -171,16 +171,18 @@ function handleLogin() {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 20px;
+  flex: 1;
   width: min(760px, calc(100vw - 32px));
-  margin: auto;
-  padding: 28px 0;
+  margin: 0 auto;
+  padding: 28px 0 12px;
 }
 
 .login-card {
-  width: 100%;
+  width: min(440px, 100%);
   max-width: 100%;
-  padding: 28px 36px 24px;
+  padding: 36px 36px 28px;
   background: rgba(13, 33, 64, 0.42);
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: var(--radius-lg);
@@ -224,29 +226,32 @@ function handleLogin() {
 }
 
 .demo-accounts {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  margin-bottom: 16px;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 6px 18px;
+  width: min(1360px, calc(100vw - 32px));
+  margin: 0 auto 28px;
 }
 
-.demo-account-btn {
-  padding: 10px 12px;
-  border: 1px solid rgba(255,255,255,0.18);
-  border-radius: var(--radius-sm);
-  background: rgba(255,255,255,0.08);
-  color: rgba(255,255,255,0.9);
-  cursor: pointer;
-  text-align: left;
-  font-weight: 700;
-}
-
-.demo-account-btn span {
-  display: block;
-  margin-top: 4px;
-  font-size: 12px;
+.demo-account-link {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 13px;
   font-weight: 500;
-  color: rgba(255,255,255,0.58);
+  line-height: 1.6;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.demo-account-link:hover {
+  color: #ffffff;
 }
 
 .login-scene-select {

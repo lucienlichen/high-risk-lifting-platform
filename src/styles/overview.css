@@ -228,12 +228,13 @@
 
 .ov-split { flex: 1; min-height: 0; display: flex; flex-direction: row; align-items: stretch; }
 .ov-tree {
-  width: 300px;
+  width: 320px;
   flex-shrink: 0;
   background: #fff;
   border-right: 1px solid #e4e9f0;
   padding: 16px;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -249,6 +250,8 @@
 }
 .ov-tree-btn {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   min-height: 36px;
   display: flex;
   justify-content: space-between;
@@ -261,6 +264,7 @@
   color: #334155;
   text-align: left;
   font-size: 13px;
+  overflow: hidden;
 }
 .ov-tree-btn.depth-group {
   min-height: 44px;
@@ -271,15 +275,16 @@
   border-left: 4px solid #1677ff;
   background: #eef4fb;
 }
-.ov-tree-btn.depth-sector { min-height: 38px; margin-left: 10px; font-weight: 600; background: #f8fafc; }
-.ov-tree-btn.depth-unit { margin-left: 28px; }
+.ov-tree-btn.depth-sector { min-height: 38px; padding-left: 20px; font-weight: 600; background: #f8fafc; }
+.ov-tree-btn.depth-unit { padding-left: 32px; }
 .ov-tree-btn.active {
   background: rgba(22, 119, 255, 0.08);
   border-color: rgba(22, 119, 255, 0.35);
   color: #1677ff;
 }
-.ov-tree-btn .name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ov-badges { display: flex; align-items: center; gap: 5px; flex-shrink: 0; font-size: 12px; color: #64748b; }
+.ov-tree-btn .name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ov-badges { display: flex; align-items: center; gap: 5px; flex: 0 0 auto; white-space: nowrap; font-size: 12px; color: #64748b; font-variant-numeric: tabular-nums; }
+.ov-badges > span { flex: 0 0 auto; }
 .ov-badge {
   min-width: 18px;
   height: 18px;

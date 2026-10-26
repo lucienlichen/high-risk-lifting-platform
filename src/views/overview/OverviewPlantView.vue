@@ -5,14 +5,14 @@
       <div class="ov-scene-chip">{{ sceneChip }}</div>
       <template v-for="group in tree" :key="group.id">
         <button type="button" class="ov-tree-btn depth-group" :class="{ active: isGroupActive(group) }" @click="select(group.enterprise, '')">
-          <span class="name">{{ group.label }}</span>
+          <span class="name" :title="group.label">{{ group.label }}</span>
           <span class="ov-badges"><span>{{ group.total }}</span></span>
         </button>
         <template v-if="openGroups.has(group.enterprise)">
           <p v-if="group.hint" class="ov-hint">{{ group.hint }}</p>
           <template v-if="group.sector">
             <button type="button" class="ov-tree-btn depth-sector" :class="{ active: !unit && enterprise === group.enterprise }" @click="select(group.enterprise, '')">
-              <span class="name">{{ group.sector }}</span>
+              <span class="name" :title="group.sector">{{ group.sector }}</span>
               <span class="ov-badges">
                 <span v-if="group.red" class="ov-badge red">{{ group.red }}</span>
                 <span v-if="group.yellow" class="ov-badge yellow">{{ group.yellow }}</span>
@@ -28,7 +28,7 @@
             :class="{ active: unit === item.unit && enterprise === group.enterprise }"
             @click="select(group.enterprise, item.unit)"
           >
-            <span class="name">{{ item.unit }}</span>
+            <span class="name" :title="item.unit">{{ item.unit }}</span>
             <span class="ov-badges">
               <span v-if="item.red" class="ov-badge red">{{ item.red }}</span>
               <span v-if="item.yellow" class="ov-badge yellow">{{ item.yellow }}</span>
