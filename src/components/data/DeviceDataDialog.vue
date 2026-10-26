@@ -69,6 +69,36 @@
         </div>
       </template>
 
+      <template v-else-if="category === 'supply' && supply">
+        <div class="section-card">
+          <div class="section-card-header">
+            <span class="section-card-title">设备制造信息</span>
+          </div>
+          <div class="section-card-body">
+            <div class="ddd-grid">
+              <div v-for="item in supplyFields" :key="item.label" class="ddd-item">
+                <span class="ddd-item-label">{{ item.label }}</span>
+                <span class="ddd-item-value">{{ item.value }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="section-card" style="margin-top:14px">
+          <div class="section-card-header">
+            <span class="section-card-title">技术资料</span>
+            <el-tag size="small" type="info">{{ supply.docs.length }} 份</el-tag>
+          </div>
+          <el-table :data="supply.docs" style="width:100%">
+            <el-table-column prop="name" label="资料名称" min-width="280" show-overflow-tooltip />
+            <el-table-column prop="kind" label="资料类型" min-width="150" />
+            <el-table-column prop="format" label="格式" width="80" align="center" />
+            <el-table-column prop="date" label="归档日期" width="120" />
+            <el-table-column label="文件大小" width="100" align="right">
+              <template #default="{ row }">{{ row.sizeMB.toFixed(1) }} MB</template>
+            </el-table-column>
+          </el-table>
+        </div>
+      </template>
       <!-- ── 其余分类：演示占位 ── -->
       <template v-else>
         <div class="section-card">
@@ -90,7 +120,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { getRemoteMonitoringData } from '@/mock'
+import { getRemoteMonitoringData, getSupplyForDevice } from '@/mock'
 import type { Device } from '@/mock'
 
 const props = defineProps<{
@@ -118,6 +148,18 @@ const CATEGORY_LABELS: Record<string, string> = {
   supply: '设备制造供给数据'
 }
 const categoryLabel = computed(() => CATEGORY_LABELS[props.category] ?? '数据')
+const supply = computed(() => props.device ? getSupplyForDevice(props.device) : null)
+const supplyFields = computed(() => supply.value ? [
+  { label: '设备类型', value: supply.value.type },
+  { label: '制造商', value: supply.value.manufacturer },
+  { label: '规格型号', value: supply.value.model },
+  { label: '额定起重量', value: `${supply.value.tonnage} t` },
+  { label: '跨度 / 幅度', value: `${supply.value.span} m` },
+  { label: '出厂编号', value: supply.value.factoryNo },
+  { label: '出厂日期', value: supply.value.madeDate },
+  { label: '投入时间', value: supply.value.commissionDate },
+  { label: '使用地点', value: supply.value.user }
+] : [])
 
 function levelTagType(level: Level) {
   return level === 'danger' ? 'danger' : level === 'warn' ? 'warning' : 'success'

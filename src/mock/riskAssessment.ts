@@ -52,10 +52,10 @@ export const indicatorsSchema: RiskIndicatorSchema[] = [
     id: 3,
     name: '使用场所',
     options: [
-      { grade: 1, description: '其它' },
-      { grade: 2, description: '建筑工地' },
-      { grade: 3, description: '公共场所' },
-      { grade: 4, description: '学校、医院、文物保护区' }
+      { grade: 1, description: '普通生产区域' },
+      { grade: 2, description: '重点生产区域' },
+      { grade: 3, description: '人员密集作业区域' },
+      { grade: 4, description: '重大危险作业区域' }
     ]
   },
   {

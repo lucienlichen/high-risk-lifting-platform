@@ -8,7 +8,7 @@
       <!-- Brand above the panel -->
       <div class="login-brand">
         <img src="/logo.png" alt="平台 Logo" class="login-logo" />
-        <h1 class="login-title">高风险起重装备智能运维与事故防控云服务平台</h1>
+        <h1 class="login-title">设备智能检测监测云服务系统</h1>
         <p class="login-subtitle">智能运维 · 事故防控 · 全域感知</p>
       </div>
 
@@ -18,10 +18,10 @@
           超级管理员 <span>group_admin</span>
         </button>
         <button type="button" class="demo-account-btn" @click="fillDemo('company_admin')">
-          集团管理员 <span>company_admin</span>
+          公司管理员 <span>company_admin</span>
         </button>
         <button type="button" class="demo-account-btn" @click="fillDemo('factory_admin')">
-          分厂管理员 <span>factory_admin</span>
+          厂区管理员 <span>factory_admin</span>
         </button>
       </div>
       <!-- Form -->
@@ -32,20 +32,6 @@
         class="login-form"
         @keyup.enter="handleLogin"
       >
-        <el-form-item prop="scene">
-          <div class="login-scene-select">
-            <span class="login-scene-label">所属场景</span>
-            <el-select v-if="canSwitchScene" v-model="form.scene" size="large" style="width: 100%">
-              <el-option
-                v-for="scene in SCENES"
-                :key="scene.id"
-                :label="scene.name"
-                :value="scene.id"
-              />
-            </el-select>
-            <div v-else class="login-scene-static">{{ fixedSceneName }}</div>
-          </div>
-        </el-form-item>
         <el-form-item prop="username">
           <el-input
             v-model="form.username"
@@ -75,21 +61,19 @@
         </el-form-item>
       </el-form>
 
-      <p class="login-footer">© 2026 高风险起重装备智能运维与事故防控云服务平台</p>
+      <p class="login-footer">© 2026 设备智能检测监测云服务系统</p>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, reactive } from 'vue'
+import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { User, Lock } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
 import { useSceneStore } from '@/stores/scene'
-import { SCENES } from '@/mock'
-import type { SceneId } from '@/mock'
 
 const router = useRouter()
 const auth   = useAuthStore()
@@ -100,17 +84,12 @@ const loading = ref(false)
 
 const form = reactive({
   username: '',
-  password: '',
-  scene: 'metallurgy' as SceneId
+  password: ''
 })
-const loginRole = computed(() => auth.resolveRole(form.username))
-const canSwitchScene = computed(() => loginRole.value === 'superAdmin')
-const fixedSceneName = computed(() => SCENES.find(scene => scene.id === 'metallurgy')?.name ?? '冶金起重装备')
 
 const rules: FormRules = {
   username: [{ required: true, message: '请输入账号', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
-  scene: [{ required: true, message: '请选择应用场景', trigger: 'change' }]
+  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
 }
 
 function fillDemo(username: string) {
@@ -125,7 +104,7 @@ function handleLogin() {
     // 纯前端原型：任意非空账号即可登录
     window.setTimeout(() => {
       auth.login(form.username)
-      sceneStore.setScene(canSwitchScene.value ? form.scene : 'metallurgy')
+      sceneStore.setScene('metallurgy')
       router.push('/services')
     }, 500)
   })
@@ -245,30 +224,6 @@ function handleLogin() {
   font-size: 12px;
   font-weight: 500;
   color: rgba(255,255,255,0.58);
-}
-
-.login-scene-select {
-  width: 100%;
-}
-
-.login-scene-label {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.72);
-}
-
-.login-scene-static {
-  min-height: 40px;
-  display: flex;
-  align-items: center;
-  padding: 0 14px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.92);
-  font-size: 15px;
-  font-weight: 700;
 }
 
 .login-submit {

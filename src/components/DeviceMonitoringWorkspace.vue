@@ -583,6 +583,7 @@ import type {
 
 const props = defineProps<{
   device: Device | null
+  serviceMode?: 'all' | 'safety' | 'health'
   /** 嵌入抽屉时使用：仅显示右侧监测内容，隐藏左侧作业列表和 section tabs */
   sectionOnly?: boolean
   /** sectionOnly 模式下由父组件受控的当前分类 */
@@ -600,7 +601,7 @@ const emit = defineEmits<{
   (e: 'update:modelOpId', val: string): void
 }>()
 
-const _activeSection = ref<RemoteSectionId>('electric')
+const _activeSection = ref<RemoteSectionId>(props.serviceMode === 'health' ? 'stress' : 'electric')
 const activeSection = computed({
   get: () => (props.sectionOnly && props.modelSection) ? props.modelSection : _activeSection.value,
   set: (val: RemoteSectionId) => {
@@ -666,7 +667,7 @@ let gearboxVibrationChart: echarts.ECharts | null = null
 /** 结构应力孪生侧：当前选中的测点 code */
 const selectedTwinKey = ref('')
 
-const navItems: { id: RemoteSectionId; label: string; tabLabel: string }[] = [
+const allNavItems: { id: RemoteSectionId; label: string; tabLabel: string }[] = [
   { id: 'electric',label: '电控系统监控',                          tabLabel: '电控系统监控' },
   { id: 'stress',  label: '结构应力监测（6 测点·应变）',           tabLabel: '结构应力监测' },
   { id: 'damage',  label: '结构损伤监测（6 测点·应变+声发射）',    tabLabel: '结构损伤监测' },
@@ -674,6 +675,18 @@ const navItems: { id: RemoteSectionId; label: string; tabLabel: string }[] = [
   { id: 'brake',   label: '制动器状态监测（占位）',                tabLabel: '制动器状态监测' },
   { id: 'wheel',   label: '行走车轮状态监测（8 测点·温度/声音/振动）', tabLabel: '行走车轮状态监测' }
 ]
+const navItems = computed(() => {
+  if (props.serviceMode === 'safety') return allNavItems.filter(item => item.id === 'electric')
+  if (props.serviceMode === 'health') return allNavItems.filter(item => item.id !== 'electric')
+  return allNavItems
+})
+
+watch(() => props.serviceMode, () => {
+  const allowed = navItems.value
+  if (!allowed.some(item => item.id === activeSection.value)) {
+    activeSection.value = allowed[0]?.id ?? 'electric'
+  }
+}, { immediate: true })
 
 const monitoringData = computed(() => getRemoteMonitoringData(props.device))
 
