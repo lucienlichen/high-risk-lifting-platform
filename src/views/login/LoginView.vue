@@ -14,14 +14,14 @@
 
       <div class="login-card">
       <div class="demo-accounts">
-        <button type="button" class="demo-account-btn" @click="fillDemo('group_admin')">
-          超级管理员 <span>group_admin</span>
-        </button>
-        <button type="button" class="demo-account-btn" @click="fillDemo('company_admin')">
-          集团管理员 <span>company_admin</span>
-        </button>
-        <button type="button" class="demo-account-btn" @click="fillDemo('factory_admin')">
-          分厂管理员 <span>factory_admin</span>
+        <button
+          v-for="account in loginShortcuts"
+          :key="account.username"
+          type="button"
+          class="demo-account-btn"
+          @click="fillDemo(account.username)"
+        >
+          {{ account.label }} <span>{{ account.username }} · {{ account.scopeLabel }}</span>
         </button>
       </div>
       <!-- Form -->
@@ -86,7 +86,7 @@ import { computed, ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { User, Lock } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
-import { useAuthStore } from '@/stores/auth'
+import { DEMO_ACCOUNTS, landingLocation, useAuthStore } from '@/stores/auth'
 import { useSceneStore } from '@/stores/scene'
 import { SCENES } from '@/mock'
 import type { SceneId } from '@/mock'
@@ -94,6 +94,8 @@ import type { SceneId } from '@/mock'
 const router = useRouter()
 const auth   = useAuthStore()
 const sceneStore = useSceneStore()
+
+const loginShortcuts = DEMO_ACCOUNTS.filter(account => account.username !== 'admin')
 
 const formRef = ref<FormInstance>()
 const loading = ref(false)
@@ -126,7 +128,7 @@ function handleLogin() {
     window.setTimeout(() => {
       auth.login(form.username)
       sceneStore.setScene(canSwitchScene.value ? form.scene : 'metallurgy')
-      router.push('/services')
+      router.push(landingLocation())
     }, 500)
   })
 }
@@ -135,12 +137,10 @@ function handleLogin() {
 <style scoped>
 .login-page {
   position: relative;
-  height: 100vh;
+  min-height: 100vh;
   width: 100vw;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
+  overflow: auto;
   background: linear-gradient(135deg, var(--color-header-bg) 0%, var(--color-header-bg2) 100%);
 }
 
@@ -171,14 +171,16 @@ function handleLogin() {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 28px;
-  max-width: calc(100vw - 32px);
+  gap: 20px;
+  width: min(760px, calc(100vw - 32px));
+  margin: auto;
+  padding: 28px 0;
 }
 
 .login-card {
   width: 100%;
   max-width: 100%;
-  padding: 56px 48px 44px;
+  padding: 28px 36px 24px;
   background: rgba(13, 33, 64, 0.42);
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: var(--radius-lg);

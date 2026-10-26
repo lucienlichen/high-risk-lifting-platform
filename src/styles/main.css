@@ -141,6 +141,23 @@ body {
   opacity: 0.85;
 }
 
+.top-nav-entry {
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 4px;
+  background: transparent;
+  color: #ffffff;
+  font-size: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.top-nav-entry:hover,
+.top-nav-entry.is-active {
+  background: rgba(255, 255, 255, 0.12);
+}
+
 .platform-title {
   display: flex;
   flex-direction: column;

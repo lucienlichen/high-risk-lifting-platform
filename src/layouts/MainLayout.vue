@@ -5,12 +5,19 @@
     <header class="top-bar">
       <div class="top-bar-left">
         <!-- Platform logo mark -->
-        <div class="platform-logo" title="服务菜单" @click="router.push('/services')">
+        <div class="platform-logo" title="返回首页" @click="router.push(landingLocation())">
           <img src="/logo.png" alt="平台 Logo" />
         </div>
         <div class="platform-title">
           <h1>高风险起重装备智能运维与事故防控云服务平台</h1>
         </div>
+        <button
+          v-if="auth.role !== 'superAdmin'"
+          type="button"
+          class="top-nav-entry"
+          :class="{ 'is-active': route.path.startsWith('/overview') }"
+          @click="router.push(landingLocation())"
+        >设备总览</button>
       </div>
 
       <div class="top-bar-right">
@@ -93,7 +100,7 @@
 import { ref, computed, onMounted, onUnmounted, defineComponent, h } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useSceneStore } from '@/stores/scene'
-import { useAuthStore }  from '@/stores/auth'
+import { landingLocation, useAuthStore } from '@/stores/auth'
 import SceneServiceSwitcher from '@/components/SceneServiceSwitcher.vue'
 import { flatServices, type ServiceKey } from '@/components/serviceCatalog'
 import { getDeviceById, getDevices, SCENES } from '@/mock'
