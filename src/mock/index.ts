@@ -1,5 +1,6 @@
 import { demoDeviceRecords, type DemoDeviceRecord } from './demoDeviceRecords'
 import { shagangDeviceRecords } from './shagangDevices'
+import yonggangUnitMap from './yonggangUnitMap.json'
 
 export type SceneId = 'metallurgy' | 'port' | 'construction' | 'shipbuilding'
 export type DeviceStatus = 'running' | 'stopped' | 'maintenance' | 'standby'
@@ -143,36 +144,7 @@ function takePrefix(value: string, length: number) {
 function normalizeYonggangLocationUnit(location: string | undefined, fallback = '未分组') {
   const raw = (location || '').trim()
   if (!raw) return fallback
-  const normalized = raw
-    .replace(/PC构建/g, 'PC构件')
-    .replace(/\d+(?:\.\d+)?\s*[Tt吨].*$/, '')
-    .trim()
-
-  const semanticPrefix =
-    normalized.match(/^(线材[一二三四五六七八九十0-9]分厂)/)?.[1] ||
-    normalized.match(/^(线材[一二三四五六七八九十0-9]厂)/)?.[1] ||
-    normalized.match(/^(线[一二三四五六七八九十0-9]车间)/)?.[1] ||
-    normalized.match(/^(炼钢[一二三四五六七八九十0-9]厂)/)?.[1] ||
-    normalized.match(/^(炼铁[一二三四五六七八九十0-9]厂)/)?.[1] ||
-    normalized.match(/^(棒材[一二三四五六七八九十0-9]厂)/)?.[1] ||
-    normalized.match(/^(棒材[一二三四五六七八九十0-9]分厂)/)?.[1] ||
-    normalized.match(/^(棒[一二三四五六七八九十0-9]车间)/)?.[1] ||
-    normalized.match(/^(\d+#高炉)/)?.[1] ||
-    normalized.match(/^(球团厂)/)?.[1] ||
-    normalized.match(/^(.{1,3}车间)/)?.[1]
-  if (semanticPrefix) return semanticPrefix
-
-  const compact = normalized
-    .replace(/[东南西北中]?\d+台.*$/, '')
-    .replace(/\d+跨.*$/, '')
-    .trim()
-  const chars = Array.from(compact)
-  let prefix4 = chars.slice(0, 4).join('')
-  if (prefix4.endsWith('分') && chars[4] === '厂') prefix4 += '厂'
-  if (prefix4.endsWith('高') && chars[4] === '炉') prefix4 += '炉'
-  if (prefix4.endsWith('码') && chars[4] === '头') prefix4 += '头'
-  const prefix3 = takePrefix(compact, 3)
-  return (prefix4 || prefix3 || fallback).replace(/[东南西北中]$/, '') || fallback
+  return yonggangUnitMap[raw as keyof typeof yonggangUnitMap] || '未标明厂区'
 }
 
 function normalizeShipbuildingLocationUnit(location: string | undefined, fallback = '未分组') {

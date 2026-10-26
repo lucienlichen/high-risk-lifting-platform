@@ -7,6 +7,7 @@
  * 二级单位：在去掉括号备注后，取「设备使用地点」从开头到首个
  * 「车间 / 项目 / 厂 / 库」（含该词）的前缀。无法匹配的归入「待归属」。
  * 明显变体：全角转半角、去空白、阿拉伯数字转中文数字、练钢→炼钢、板坏→板坯。
+ * 解析后再按 SHAGANG_UNIT_ALIASES 合并写法相同的单位；没有厂名的碎片归入待归属。
  */
 import fs from 'node:fs'
 import path from 'node:path'
@@ -97,7 +98,41 @@ export function parseSecondaryUnit(location) {
   unit = unit.replace(/练钢/g, '炼钢').replace(/板坏/g, '板坯')
   unit = unit.replace(/\d+/g, digitsToChinese)
   if (!unit || MARKERS.includes(unit)) return UNASSIGNED
-  return unit
+  return SHAGANG_UNIT_ALIASES[unit] || unit
+}
+
+/**
+ * 已解析单位的归并。只合并写法变体，或把没有厂名的碎片收进待归属。
+ * 润忠、沙景、宏发、华盛、宏昌仍分开。
+ */
+const SHAGANG_UNIT_ALIASES = {
+  硅钢二车间: '冷轧硅钢二车间',
+  电炉炼钢一车间: '电炉一车间',
+  电炉炼钢三车间: '电炉三车间',
+  转炉炼钢一车间: '转炉一车间',
+  转炉炼钢二车间: '转炉二车间',
+  荣盛炼钢车间: '荣盛炼钢项目',
+  沙景宽厚板二车间: '沙景宽厚板厂',
+  沙钢集团炼铁厂: '炼铁厂',
+  '135MW电厂': '东区电厂',
+  '东区135MW电厂': '东区电厂',
+  润忠耐材西库: '润忠耐材库',
+  热板酸洗跨东库: '热板酸洗库',
+  热板酸洗跨西库: '热板酸洗库',
+  宏发炼钢连铸车间: '宏发炼钢厂',
+  '三.五m板坯库': '板坯库',
+  '3500mm中板生产线加热炉板坯库': '板坯库',
+  沙钢老机修车间: '机修总厂',
+  炼焦二车间: '焦化厂',
+  电炉四沙景耐材库: '沙景耐材库',
+  '热卷板-车间': '热卷板车间',
+  一车间: UNASSIGNED,
+  二车间: UNASSIGNED,
+  三车间: UNASSIGNED,
+  四车间: UNASSIGNED,
+  七车间: UNASSIGNED,
+  仓库: UNASSIGNED,
+  二期主厂: UNASSIGNED
 }
 
 function param(name, value) {

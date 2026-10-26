@@ -2,7 +2,7 @@
  * 设备概览的统一状态。
  * 每项服务给出 正常 / 黄 / 红，设备取最严重的一项。
  * 黄 = 报警，红 = 预警，与常见习惯相反，待业务确认。
- * 分布按设备编号确定性生成：多数正常，少量黄，极少红。
+ * 分布按设备编号确定性生成：多数正常，黄大约 3%–5%，红不超过大约 1%。
  * 不复用各服务列表里“几乎全红”的占位规则。
  */
 
@@ -140,12 +140,12 @@ const REASONS: Record<OverviewServiceKey, Record<'yellow' | 'red', readonly Reas
   },
   risk: {
     yellow: [
-      { text: '综合分 32/60，进入中风险段，主要指标为现场作业人数', accident: '钢水包倾覆' },
-      { text: '综合分 34/60，进入中风险段，主要指标为使用年限', accident: '焊缝开裂' }
+      { text: '综合分 46/60，刚过收窄后的报警线，主要指标为现场作业人数', accident: '钢水包倾覆' },
+      { text: '综合分 46/60，刚过收窄后的报警线，主要指标为使用年限', accident: '焊缝开裂' }
     ],
     red: [
-      { text: '综合分 48/60，进入高风险段，主要指标为年故障次数', accident: '坠落' },
-      { text: '综合分 46/60，进入高风险段，主要指标为定期检验情况', accident: '倒塌' }
+      { text: '红灯档命中，主要指标为年故障次数', accident: '坠落' },
+      { text: '红灯档命中，主要指标为定期检验情况', accident: '倒塌' }
     ]
   }
 }
@@ -176,32 +176,48 @@ function blankLamp(meta: OverviewServiceMeta): ServiceLamp {
   return { ...meta, level: 'normal', reason: '未见需关注项', accident: null }
 }
 
+/**
+ * 风险综合分，刻度与 15 项指标之和相同（15–60）。
+ * 用设备编号哈希，不用会在大整数上丢掉低位的累加器。
+ * 草案：黄灯只留 46 分（原书面黄档是 26–40）；红灯另看千分位，见 serviceLevel。
+ */
+export function overviewRiskScore(deviceId: string): number {
+  return 15 + (hash(`${deviceId}:risk-score`) % 46)
+}
+
+const RISK_YELLOW_SCORE = 46
+const RISK_RED_PERMILLE = 4
+const OTHER_RED_PERMILLE = 1
+const OTHER_YELLOW_WIDTH = 3
+
+function serviceLevel(key: OverviewServiceKey, deviceId: string): LampLevel {
+  if (key === 'risk') {
+    if (hash(`${deviceId}:risk`) % 1000 < RISK_RED_PERMILLE) return 'red'
+    if (overviewRiskScore(deviceId) === RISK_YELLOW_SCORE) return 'yellow'
+    return 'normal'
+  }
+  const permille = hash(`${deviceId}:${key}`) % 1000
+  if (permille < OTHER_RED_PERMILLE) return 'red'
+  if (permille < OTHER_RED_PERMILLE + OTHER_YELLOW_WIDTH) return 'yellow'
+  return 'normal'
+}
+
 const cache = new Map<string, DeviceOverview>()
 
 export function getDeviceOverview(deviceId: string): DeviceOverview {
   const cached = cache.get(deviceId)
   if (cached) return cached
 
-  const services = OVERVIEW_SERVICES.map(blankLamp)
-  const roll = hash(`${deviceId}:lamp`) % 1000
-  const primaryIndex = hash(`${deviceId}:svc`) % services.length
+  const services = OVERVIEW_SERVICES.map(meta => {
+    const level = serviceLevel(meta.key, deviceId)
+    if (level === 'normal') return blankLamp(meta)
+    const reason = reasonFor(meta.key, level, deviceId)
+    return { ...meta, level, reason: reason.text, accident: reason.accident }
+  })
   let overall: LampLevel = 'normal'
-
-  if (roll < 18) {
-    overall = 'red'
-    const reason = reasonFor(services[primaryIndex].key, 'red', deviceId)
-    services[primaryIndex] = { ...services[primaryIndex], level: 'red', reason: reason.text, accident: reason.accident }
-    if (hash(`${deviceId}:sec`) % 100 < 35) {
-      let secondary = hash(`${deviceId}:svc2`) % services.length
-      if (secondary === primaryIndex) secondary = (secondary + 1) % services.length
-      const extra = reasonFor(services[secondary].key, 'yellow', deviceId)
-      services[secondary] = { ...services[secondary], level: 'yellow', reason: extra.text, accident: extra.accident }
-    }
-  } else if (roll < 110) {
-    overall = 'yellow'
-    const reason = reasonFor(services[primaryIndex].key, 'yellow', deviceId)
-    services[primaryIndex] = { ...services[primaryIndex], level: 'yellow', reason: reason.text, accident: reason.accident }
-  }
+  services.forEach(service => {
+    if (LAMP_RANK[service.level] > LAMP_RANK[overall]) overall = service.level
+  })
 
   const leading = [...services].sort((a, b) => LAMP_RANK[b.level] - LAMP_RANK[a.level] || serviceOrder(a.key) - serviceOrder(b.key))[0]
   const accident = leading && leading.level !== 'normal' ? leading.accident : null
