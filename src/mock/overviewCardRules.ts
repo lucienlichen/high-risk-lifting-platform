@@ -16,7 +16,11 @@ export const OVERVIEW_CARD_RULES = {
   /** 累计吊重的演示日均下限（次/天）。实际日均 = min + hash % span。 */
   liftDailyMin: 8,
   /** 演示日均的散列跨度，使日均落在约 8.0–12.0，与当日吊重作业次数同一量级。 */
-  liftDailySpan: 4.1
+  liftDailySpan: 4.1,
+  /** 累计重量的均载占额定起重量的下限。均载 = 额定 ×（下限 + 散列）。 */
+  liftAvgLoadMinRatio: 0.35,
+  /** 均载比例的散列跨度，使均载约为额定的 35%–65%。 */
+  liftAvgLoadRatioSpan: 0.3
 } as const
 
 /** 挂不到结构树顶层分组时的兜底。风险定量评估算在「其他」。 */

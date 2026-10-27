@@ -67,6 +67,9 @@ export interface OverviewCard {
   todayLifts: number | null
   totalLifts: number | null
   liftAvg: number
+  /** 累计重量 = 累计吊重次数 × 均载（吨）。 */
+  totalTons: number | null
+  avgLoadTons: number
   counts: CountCell[]
   overview: DeviceOverview
   order: number
@@ -185,15 +188,21 @@ function commissioningTime(installDate: string, id: string): number {
   return new Date(1998 + (n % 22), n % 12, 1 + (n % 28)).getTime()
 }
 
-function liftStats(id: string, installDate: string, online: boolean) {
+function liftStats(id: string, installDate: string, online: boolean, rated: number | null) {
   const tenths = Math.round(OVERVIEW_CARD_RULES.liftDailySpan * 10)
   const avg = Math.round((OVERVIEW_CARD_RULES.liftDailyMin + (hashId(`${id}:lift-avg`) % (tenths + 1)) / 10) * 10) / 10
+  const ratioSteps = Math.round(OVERVIEW_CARD_RULES.liftAvgLoadRatioSpan * 100)
+  const ratio = OVERVIEW_CARD_RULES.liftAvgLoadMinRatio + (hashId(`${id}:lift-load`) % (ratioSteps + 1)) / 100
+  const avgLoad = rated != null && rated > 0
+    ? Math.round(rated * ratio * 10) / 10
+    : Math.round((12 + (hashId(`${id}:lift-load`) % 28)) * 10) / 10
   const today = online ? getOperationList(id, new Date()).length : null
-  if (!online || today == null) return { today, total: null as number | null, avg }
+  if (!online || today == null) return { today, total: null as number | null, avg, avgLoad, totalTons: null as number | null }
   const start = new Date()
   start.setHours(0, 0, 0, 0)
   const days = Math.max(1, Math.round((start.getTime() - commissioningTime(installDate, id)) / 86400000))
-  return { today, total: Math.max(today, Math.round(days * avg)), avg }
+  const total = Math.max(today, Math.round(days * avg))
+  return { today, total, avg, avgLoad, totalTons: Math.round(total * avgLoad) }
 }
 
 function toCard(device: Device, inspect?: { daysUntil: number; status: string }): OverviewCard {
@@ -221,7 +230,7 @@ function toCard(device: Device, inspect?: { daysUntil: number; status: string })
   const leading = overview.services.find(service => service.level === lamp && service.level !== 'normal')
   const rated = ratedTons(device)
   const loadPct = device.status === 'running' ? device.load : device.online ? 0 : null
-  const lifts = liftStats(device.id, device.installDate, device.online)
+  const lifts = liftStats(device.id, device.installDate, device.online, rated)
   const hasRed = overview.alarms.some(alarm => alarm.level === 'red')
   const hasYellow = overview.alarms.some(alarm => alarm.level === 'yellow')
   const order = state === 'off' ? 3 : machine === 'normal' ? 4 : hasRed ? 0 : hasYellow ? 1 : 2
@@ -258,6 +267,8 @@ function toCard(device: Device, inspect?: { daysUntil: number; status: string })
     todayLifts: lifts.today,
     totalLifts: lifts.total,
     liftAvg: lifts.avg,
+    totalTons: lifts.totalTons,
+    avgLoadTons: lifts.avgLoad,
     counts: [
       countCell('结构预警', groups.structure, 'hot'),
       countCell('机构预警', groups.mechanism, 'hot'),
