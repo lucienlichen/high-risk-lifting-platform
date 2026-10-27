@@ -18,10 +18,10 @@
         @click.stop="toggle(row.node.id)"
       >{{ row.open ? '▾' : '▸' }}</span>
       <span v-else class="ov-struct-twist is-leaf"></span>
-      <i class="ov-struct-lamp" :class="`is-${row.node.lamp}`" :title="lampTitle(row.node.lamp)"></i>
+      <i class="ov-struct-lamp" :class="`is-${displayLamp(row.node.lamp)}`" :title="lampTitle(row.node.lamp)"></i>
       <span class="name" :title="row.node.name">{{ row.node.name }}</span>
       <span class="ov-badges">
-        <span v-if="row.node.alarmCount" class="ov-badge" :class="row.node.lamp === 'yellow' ? 'yellow' : 'red'">{{ row.node.alarmCount }}</span>
+        <span v-if="row.node.alarmCount" class="ov-badge red">{{ row.node.alarmCount }}</span>
         <span v-if="row.node.pointStatus" class="ov-struct-point" :title="`测点${row.node.pointStatus}，不计入结构灯`">{{ row.node.pointStatus === '异常' ? '测异常' : '测预警' }}</span>
       </span>
     </button>
@@ -86,6 +86,11 @@ function toggle(id: string) {
   if (next.has(id)) next.delete(id)
   else next.add(id)
   openIds.value = next
+}
+
+function displayLamp(lamp: LampLevel | 'none') {
+  if (lamp === 'red' || lamp === 'yellow') return 'red'
+  return lamp
 }
 
 function lampTitle(lamp: LampLevel | 'none') {

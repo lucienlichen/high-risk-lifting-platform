@@ -7,8 +7,8 @@
           <div class="ov-idline">
             <h1>{{ card.name }}</h1>
             <span>{{ card.code }}</span>
-            <span class="ov-status" :class="`is-${card.level}`">{{ levelText(card.level) }}</span>
-            <span class="ov-tag">{{ card.workLabel }}</span>
+            <span class="ov-status" :class="`is-${card.state}`">{{ levelText(card.state) }}</span>
+            <span v-if="card.run" class="ov-tag" :class="card.run === 'running' ? 'is-run' : 'is-stop'">{{ card.workLabel }}</span>
           </div>
           <div class="ov-facts">
             <span>{{ card.unit }} · {{ card.location || '—' }}</span>
@@ -56,7 +56,7 @@
               <text x="400" y="312" fill="#a5c4ea" font-size="13" text-anchor="middle">吊具</text>
             </svg>
             <button v-for="node in nodes" :key="node.id" type="button" class="ov-node" :style="{ left: node.left, top: node.top }" @click="pickNode(node.id, node.label)">{{ node.label }}</button>
-            <p v-if="callout" class="ov-callout" :class="{ 'is-yellow': calloutYellow }">{{ callout }}</p>
+            <p v-if="callout" class="ov-callout">{{ callout }}</p>
             <div class="ov-stage-foot">
               <span>{{ layer === 'stress' ? '应力云图为示意，无实测色标' : 'Unity 3D 模型接入位' }}</span>
               <span v-if="activeNode">当前结构节点：{{ activeNode }}</span>
@@ -119,7 +119,7 @@
           <span class="ov-sub">{{ isRoot ? '结论来自六项服务的概览灯，详情进入原有模块' : '只显示该节点绑定的服务' }}</span>
         </div>
         <div class="ov-services">
-          <div v-for="service in shownServices" :key="service.key" class="ov-service" :class="`is-${service.level === 'normal' ? 'normal' : service.level}`">
+          <div v-for="service in shownServices" :key="service.key" class="ov-service" :class="`is-${service.level === 'normal' ? 'normal' : 'red'}`">
             <span class="name">{{ service.label }}</span>
             <span class="result">{{ lampLabel(service.level) }}</span>
             <span class="detail">{{ service.reason }}</span>
@@ -140,7 +140,7 @@ import { useRoute, useRouter } from 'vue-router'
 import * as echarts from 'echarts'
 import OverviewStructureTree from '@/components/overview/OverviewStructureTree.vue'
 import { getOverviewCard, levelText, servicePageKey } from '@/mock/overviewDemo'
-import { lampLabel, notifyStructureNode, type OverviewServiceKey } from '@/mock/overviewStatus'
+import { lampLabel, notifyStructureNode, type LampLevel, type OverviewServiceKey } from '@/mock/overviewStatus'
 import { findStructureNode, getDeviceStructure, subtreeAlarms, subtreeServices, type StructureNode } from '@/mock/structureTree'
 import { overviewAccessOf, useAuthStore } from '@/stores/auth'
 import { useSceneStore } from '@/stores/scene'
@@ -169,15 +169,20 @@ const nodes = [
 ]
 
 const card = computed(() => getOverviewCard(String(route.params.id || '')))
-const structure = computed(() => card.value
-  ? getDeviceStructure({
-    id: card.value.id,
-    name: card.value.name,
-    type: card.value.type,
-    capacityText: card.value.capacityText,
-    riskLevel: card.value.riskLevel
+const structure = computed(() => {
+  const current = card.value
+  if (!current) return null
+  const model = getDeviceStructure({
+    id: current.id,
+    name: current.name,
+    type: current.type,
+    capacityText: current.capacityText,
+    riskLevel: current.riskLevel
   })
-  : null)
+  const lamp: LampLevel = current.machine === 'abnormal' ? 'red' : 'normal'
+  if (model.root.lamp === lamp) return model
+  return { ...model, root: { ...model.root, lamp } }
+})
 const selectedNode = computed(() => structure.value ? findStructureNode(structure.value.root, selectedId.value) ?? structure.value.root : null)
 const isRoot = computed(() => !structure.value || !selectedNode.value || selectedNode.value.id === structure.value.rootId)
 watch(structure, current => {
@@ -212,16 +217,23 @@ const shownServices = computed(() => {
 })
 const alarmTime = computed(() => shownAlarms.value[0]?.time || '—')
 const sourceText = computed(() => shownAlarms.value[0]?.serviceLabel || '—')
+const overdueText = computed(() => {
+  const current = card.value
+  if (!current?.inspOverdue || current.inspDays == null) return ''
+  return `定期检验已超期 ${-current.inspDays} 天`
+})
 const detailText = computed(() => {
   const current = card.value
   if (!current) return ''
   if (!isRoot.value) {
-    if (!shownAlarms.value.length) return '该节点没有红黄告警。测点状态不计入结构灯。'
+    if (!shownAlarms.value.length) return '该节点没有异常告警。测点状态不计入结构灯。'
     return shownAlarms.value.map(alarm => alarm.text).join('；')
   }
-  if (current.level === 'off') return '设备台账标记为不在线。红黄灯仍按六项服务规则单独计算。'
-  if (current.level === 'normal') return '六项服务当前都是正常。'
-  return current.message || '—'
+  if (current.state === 'off' && current.machine === 'normal') return '设备台账标记为不在线。'
+  if (current.machine === 'normal') return '当前没有异常。'
+  const texts = current.overview.alarms.map(alarm => alarm.text)
+  if (overdueText.value) texts.push(overdueText.value)
+  return texts.join('；') || '—'
 })
 const callout = computed(() => {
   const current = card.value
@@ -230,19 +242,14 @@ const callout = computed(() => {
     const alarm = shownAlarms.value[0]
     return alarm ? [alarm.accident, alarm.text].filter(Boolean).join(' · ') : ''
   }
-  if (current.level !== 'red' && current.level !== 'yellow') return ''
-  return [current.scene, current.message].filter(Boolean).join(' · ')
-})
-const calloutYellow = computed(() => {
-  if (!isRoot.value) return shownAlarms.value[0]?.level === 'yellow'
-  return card.value?.level === 'yellow'
+  if (current.machine !== 'abnormal') return ''
+  const alarm = current.overview.alarms[0]
+  if (alarm) return [alarm.accident, alarm.text].filter(Boolean).join(' · ')
+  return overdueText.value
 })
 const alertClass = computed(() => {
-  if (!isRoot.value) {
-    const level = shownAlarms.value[0]?.level
-    return level === 'yellow' ? 'is-yellow' : level === 'red' ? '' : 'is-ok'
-  }
-  return card.value?.level === 'yellow' ? 'is-yellow' : card.value?.level === 'normal' ? 'is-ok' : ''
+  if (!isRoot.value) return shownAlarms.value.length ? '' : 'is-ok'
+  return card.value?.machine === 'abnormal' ? '' : 'is-ok'
 })
 
 function back() {
@@ -279,15 +286,8 @@ function draw() {
 }
 
 const detailHeading = computed(() => {
-  if (!isRoot.value) {
-    const level = shownAlarms.value[0]?.level
-    if (level === 'yellow') return '报警详情'
-    if (level === 'red') return '预警详情'
-    return '当前状态'
-  }
-  if (card.value?.level === 'yellow') return '报警详情'
-  if (card.value?.level === 'red') return '预警详情'
-  return '当前状态'
+  if (!isRoot.value) return shownAlarms.value.length ? '异常详情' : '当前状态'
+  return card.value?.machine === 'abnormal' ? '异常详情' : '当前状态'
 })
 const detailAccident = computed(() => {
   if (!isRoot.value) return shownAlarms.value[0]?.accident || ''

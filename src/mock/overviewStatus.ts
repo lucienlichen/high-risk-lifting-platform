@@ -244,8 +244,7 @@ function serviceOrder(key: OverviewServiceKey) {
 }
 
 export function lampLabel(level: LampLevel): string {
-  if (level === 'red') return '预警'
-  if (level === 'yellow') return '报警'
+  if (level === 'red' || level === 'yellow') return '异常'
   return '正常'
 }
 

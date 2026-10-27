@@ -14,8 +14,7 @@
             <button type="button" class="ov-tree-btn depth-sector" :class="{ active: !unit && enterprise === group.enterprise }" @click="select(group.enterprise, '')">
               <span class="name" :title="group.sector">{{ group.sector }}</span>
               <span class="ov-badges">
-                <span v-if="group.red" class="ov-badge red">{{ group.red }}</span>
-                <span v-if="group.yellow" class="ov-badge yellow">{{ group.yellow }}</span>
+                <span v-if="group.abnormal" class="ov-badge red">{{ group.abnormal }}</span>
                 <span>{{ group.total }}</span>
               </span>
             </button>
@@ -30,8 +29,7 @@
           >
             <span class="name" :title="item.unit">{{ item.unit }}</span>
             <span class="ov-badges">
-              <span v-if="item.red" class="ov-badge red">{{ item.red }}</span>
-              <span v-if="item.yellow" class="ov-badge yellow">{{ item.yellow }}</span>
+              <span v-if="item.abnormal" class="ov-badge red">{{ item.abnormal }}</span>
               <span>{{ item.total }}</span>
             </span>
           </button>
@@ -60,10 +58,14 @@
         </div>
       </section>
       <section class="ov-chips" role="group" aria-label="按状态筛选">
-        <button v-for="chip in chips" :key="chip.id" type="button" class="ov-chip" :class="[`is-${chip.id === 'all' ? 'all' : chip.id}`, { ['active-' + chip.id]: filter === chip.id }]" @click="filter = chip.id; limit = 40">
+        <button v-for="chip in chips" :key="chip.id" type="button" class="ov-chip" :class="[`is-${chip.id === 'all' ? 'all' : chip.id}`, { ['active-' + chip.id]: stateFilter === chip.id }]" @click="stateFilter = chip.id; limit = 40">
           <span class="dot"></span>{{ chip.label }}<b>{{ chip.n }}</b>
         </button>
-        <span class="ov-chip-note">预警设备自动排在最前</span>
+        <span class="ov-chip-split"></span>
+        <button v-for="chip in runChips" :key="chip.id" type="button" class="ov-chip" :class="[`is-${chip.id}`, { ['active-' + chip.id]: runFilter === chip.id }]" @click="toggleRun(chip.id)">
+          <span class="dot"></span>{{ chip.label }}<b>{{ chip.n }}</b>
+        </button>
+        <span class="ov-chip-note">异常设备自动排在最前</span>
       </section>
 
       <template v-if="view === 'cards'">
@@ -79,10 +81,10 @@
         <div class="ov-section-head">
           <h2>{{ scopeName }}平面布置 · 点击起重机查看设备卡片</h2>
           <span class="ov-legend">
-            <span><i class="ov-swatch" style="background:#f5222d"></i> 红色预警</span>
-            <span><i class="ov-swatch" style="background:#faad14"></i> 黄色报警</span>
-            <span><i class="ov-swatch" style="background:#fff;border:1px dashed #64748b"></i> 离线</span>
+            <span><i class="ov-swatch" style="background:#f5222d"></i> 异常</span>
             <span><i class="ov-swatch" style="background:#c7d4e5"></i> 正常</span>
+            <span><i class="ov-swatch" style="background:#fff;border:1px dashed #64748b"></i> 离线</span>
+            <span><i class="ov-swatch" style="background:#c7d4e5;box-shadow:inset 0 0 0 2px #1677ff"></i> 作业中</span>
           </span>
         </div>
         <div class="ov-baybox">
@@ -96,7 +98,7 @@
                 :key="crane.id"
                 type="button"
                 class="ov-plan-crane"
-                :class="[`is-${crane.level}`, { dim: !match(crane), sel: selectedId === crane.id }]"
+                :class="[`is-${crane.state}`, { 'is-run': crane.run === 'running', dim: !match(crane), sel: selectedId === crane.id }]"
                 :style="craneStyle(index, bay.cards.length)"
                 :title="crane.code"
                 @click="selectedId = selectedId === crane.id ? '' : crane.id"
@@ -109,7 +111,7 @@
         </div>
         <p class="ov-footnote">示意布局：每一行是台账里的一个使用地点，竖条是该地点的起重机。没有坐标，不能当成厂区 CAD。</p>
       </section>
-      <p class="ov-footnote">编号、地点和额定参数来自设备台账。红黄来自六项服务概览规则。起升高度、大车位置、今日循环没有数据，卡片里写 —。</p>
+      <p class="ov-footnote">编号来自设备台账，悬停可看类型、额定起重量和位置。异常 = 结构、机构或其他预警，或定期检验已超期。吊重次数为演示派生值。</p>
     </main>
   </div>
 </template>
@@ -128,8 +130,9 @@ import {
   rollupUnits,
   sortCards,
   worstUnit,
-  type CardLevel,
-  type OverviewCard
+  type CardState,
+  type OverviewCard,
+  type RunState
 } from '@/mock/overviewDemo'
 import { overviewAccessOf, useAuthStore } from '@/stores/auth'
 
@@ -141,7 +144,8 @@ const access = computed(() => overviewAccessOf(auth))
 const q = ref('')
 const brief = ref(false)
 const view = ref<'cards' | 'plan'>('cards')
-const filter = ref<'all' | CardLevel>('all')
+const stateFilter = ref<'all' | CardState>('all')
+const runFilter = ref<'all' | RunState>('all')
 const limit = ref(40)
 const selectedId = ref('')
 const openGroups = ref(new Set<string>())
@@ -181,7 +185,7 @@ const tree = computed(() => {
       if (a.unit === '待归属') return 1
       if (b.unit === '待归属') return -1
       if (id === BENGANG) return plateOrder.indexOf(a.unit) - plateOrder.indexOf(b.unit)
-      return b.red - a.red || b.yellow - a.yellow || b.total - a.total || a.unit.localeCompare(b.unit, 'zh-CN')
+      return b.abnormal - a.abnormal || b.total - a.total || a.unit.localeCompare(b.unit, 'zh-CN')
     })
     return {
       id,
@@ -190,8 +194,7 @@ const tree = computed(() => {
       sector: id === BENGANG ? '板材板块' : '',
       hint: legalHint(id),
       total: cards.length,
-      red: cards.filter(card => card.level === 'red').length,
-      yellow: cards.filter(card => card.level === 'yellow').length,
+      abnormal: cards.filter(card => card.state === 'abnormal').length,
       units
     }
   }).filter(group => group.total > 0)
@@ -204,18 +207,28 @@ const searched = computed(() => {
   return scopeCards.value.filter(card => card.code.includes(keyword) || card.location.includes(keyword) || card.unit.includes(keyword) || card.name.includes(keyword))
 })
 const counts = computed(() => {
-  const base = { all: searched.value.length, red: 0, yellow: 0, off: 0, normal: 0 }
-  searched.value.forEach(card => { base[card.level] += 1 })
+  const base = { all: searched.value.length, abnormal: 0, normal: 0, off: 0, running: 0, stopped: 0 }
+  searched.value.forEach(card => {
+    base[card.state] += 1
+    if (card.run) base[card.run] += 1
+  })
   return base
 })
 const chips = computed(() => [
   { id: 'all' as const, label: '全部', n: counts.value.all },
-  { id: 'red' as const, label: '红色预警', n: counts.value.red },
-  { id: 'yellow' as const, label: '黄色报警', n: counts.value.yellow },
-  { id: 'off' as const, label: '离线', n: counts.value.off },
-  { id: 'normal' as const, label: '正常', n: counts.value.normal }
+  { id: 'abnormal' as const, label: '异常', n: counts.value.abnormal },
+  { id: 'normal' as const, label: '正常', n: counts.value.normal },
+  { id: 'off' as const, label: '离线', n: counts.value.off }
 ])
-const filtered = computed(() => sortCards(searched.value.filter(card => filter.value === 'all' || card.level === filter.value)))
+const runChips = computed(() => [
+  { id: 'running' as const, label: '作业中', n: counts.value.running },
+  { id: 'stopped' as const, label: '停机', n: counts.value.stopped }
+])
+const filtered = computed(() => sortCards(searched.value.filter(card => {
+  const stateOk = stateFilter.value === 'all' || card.state === stateFilter.value
+  const runOk = runFilter.value === 'all' || card.run === runFilter.value
+  return stateOk && runOk
+})))
 const visible = computed(() => filtered.value.slice(0, limit.value))
 const scopeName = computed(() => unit.value || (enterprise.value === BENGANG ? '板材板块' : enterpriseLabel(enterprise.value)))
 const crumb = computed(() => [enterpriseLabel(enterprise.value), enterprise.value === BENGANG ? '板材板块' : '', unit.value].filter(Boolean).join(' / '))
@@ -250,10 +263,16 @@ function select(nextEnterprise: string, nextUnit: string) {
   limit.value = 40
   router.push({ name: 'overviewPlant', query: { enterprise: nextEnterprise, unit: nextUnit } })
 }
+function toggleRun(id: RunState) {
+  runFilter.value = runFilter.value === id ? 'all' : id
+  limit.value = 40
+}
 function match(card: OverviewCard) {
   const keyword = q.value.trim()
   const hit = !keyword || card.code.includes(keyword) || card.location.includes(keyword)
-  return hit && (filter.value === 'all' || card.level === filter.value)
+  const stateOk = stateFilter.value === 'all' || card.state === stateFilter.value
+  const runOk = runFilter.value === 'all' || card.run === runFilter.value
+  return hit && stateOk && runOk
 }
 function craneStyle(index: number, count: number) {
   const width = Math.min(5.5, 70 / Math.max(count, 1))

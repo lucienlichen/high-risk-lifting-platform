@@ -327,6 +327,28 @@ export function findStructureNode(node: StructureNode, id: string): StructureNod
   return null
 }
 
+export type AlarmTopGroup = 'structure' | 'mechanism' | 'other' | 'fallback'
+
+function pathOfAlarm(node: StructureNode, alarmId: string, trail: StructureNode[]): StructureNode[] | null {
+  const next = [...trail, node]
+  if (node.alarms.some(alarm => alarm.id === alarmId)) return next
+  for (const child of node.children) {
+    const found = pathOfAlarm(child, alarmId, next)
+    if (found) return found
+  }
+  return null
+}
+
+/** 告警挂点上溯到深度 1。未归属或根节点返回 fallback，由卡片规则再分。 */
+export function alarmTopGroup(root: StructureNode, alarmId: string): AlarmTopGroup {
+  const top = pathOfAlarm(root, alarmId, [])?.[1]
+  if (!top || top.type === 'unassigned') return 'fallback'
+  if (top.id.includes('.structure')) return 'structure'
+  if (top.id.includes('.mechanism')) return 'mechanism'
+  if (top.id.includes('.electrical')) return 'other'
+  return 'fallback'
+}
+
 function pushPoint(bucket: Map<string, StructurePoint[]>, id: string, point: StructurePoint) {
   const list = bucket.get(id) ?? []
   list.push(point)
