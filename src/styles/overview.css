@@ -468,35 +468,41 @@
 
 .ov-live {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 4px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 3px;
   align-items: stretch;
 }
 .ov-metric {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 1px;
-  padding: 3px 4px 4px;
+  align-items: center;
+  gap: 0;
+  padding: 2px 1px 3px;
   border-radius: 4px;
   background: #fff;
 }
-.ov-metric > span { font-size: 10px; line-height: 1.2; color: #64748b; }
 .ov-metric > b {
-  font-size: 13px;
-  line-height: 1.2;
+  max-width: 100%;
+  font-size: 12px;
+  line-height: 1.15;
   color: #0f172a;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 .ov-metric > b.is-hot { color: #ad6800; }
 .ov-metric > b.is-over { color: #cf1322; }
-.ov-metric > small { font-size: 10px; line-height: 1.2; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ov-track { display: block; height: 3px; margin-top: 2px; border-radius: 2px; background: #e2e8f0; overflow: hidden; }
-.ov-track i { display: block; height: 3px; border-radius: 2px; background: #1677ff; }
+.ov-metric > em {
+  max-width: 100%;
+  font-style: normal;
+  font-size: 10px;
+  line-height: 1.2;
+  color: #475569;
+  white-space: nowrap;
+}
+.ov-metric .ov-track { width: 100%; height: 2px; margin: 2px 0 1px; border-radius: 1px; background: #e2e8f0; overflow: hidden; }
+.ov-track i { display: block; height: 2px; border-radius: 1px; background: #1677ff; }
 .ov-track i.is-hot { background: #faad14; }
 .ov-track i.is-over { background: #f5222d; }
 

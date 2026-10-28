@@ -21,18 +21,21 @@
       <span class="ov-code" :title="metaTitle">{{ card.code }}</span>
       <span v-if="!brief" class="ov-live">
         <span class="ov-metric">
-          <span>起升重量</span>
           <b :class="loadClass">{{ weightText }}</b>
           <i class="ov-track" aria-hidden="true"><i :class="loadClass" :style="{ width: barWidth }"></i></i>
+          <em>起升重量</em>
         </span>
         <span class="ov-metric" :title="tonsTitle">
-          <span>累计重量</span>
           <b>{{ tonText(card.totalTons) }}</b>
+          <em>累计重量</em>
         </span>
-        <span class="ov-metric" :title="liftTitle">
-          <span>吊重次数</span>
+        <span class="ov-metric" :title="todayTitle">
           <b>{{ card.todayLifts == null ? '—' : card.todayLifts + '次' }}</b>
-          <small v-if="card.totalLifts != null">累计 {{ countText(card.totalLifts) }}</small>
+          <em>今日吊重次数</em>
+        </span>
+        <span class="ov-metric" :title="totalLiftTitle">
+          <b>{{ card.totalLifts == null ? '—' : countText(card.totalLifts) }}</b>
+          <em>累计吊重次数</em>
         </span>
       </span>
       <span class="ov-counts">
@@ -77,15 +80,20 @@ const tonsTitle = computed(() => {
   if (props.card.totalTons == null) return '离线，不显示累计重量'
   return `演示派生值。累计重量 ${tonText(props.card.totalTons)} = 累计吊重 ${props.card.totalLifts} 次 × 均载 ${props.card.avgLoadTons} t。`
 })
-const liftTitle = computed(() => {
+const todayTitle = computed(() => {
   if (props.card.todayLifts == null) return '离线，不显示吊重次数'
-  return `演示派生值。今日 ${props.card.todayLifts} 次为当日吊重作业；累计 ${props.card.totalLifts} 次按投用日期 × 日均 ${props.card.liftAvg} 次估算。`
+  return `演示派生值。今日 ${props.card.todayLifts} 次为当日吊重作业。`
+})
+const totalLiftTitle = computed(() => {
+  if (props.card.totalLifts == null) return '离线，不显示累计吊重次数'
+  return `演示派生值。累计 ${props.card.totalLifts} 次按投用日期 × 日均 ${props.card.liftAvg} 次估算。`
 })
 
 function countText(value: number) {
   if (value >= 10000) {
     const wan = value / 10000
-    return `${wan >= 10 ? Math.round(wan) : wan.toFixed(1)}万`
+    const num = wan >= 10 ? String(Math.round(wan)) : wan.toFixed(1)
+    return `${num}万次`
   }
   return `${value}次`
 }
