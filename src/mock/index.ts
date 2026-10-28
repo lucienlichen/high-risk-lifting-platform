@@ -46,13 +46,13 @@ export const SCENES: SceneInfo[] = [
     id: 'metallurgy',
     name: '冶金起重装备',
     description: '面向钢铁、有色金属等冶金行业起重装备的智能运维与风险防控服务',
-    totalDevices: 1964
+    totalDevices: 1979
   },
   {
     id: 'port',
     name: '港口起重装备',
     description: '面向港口、码头装卸作业起重装备的智能运维与安全监测服务',
-    totalDevices: 1008
+    totalDevices: 1097
   },
   {
     id: 'shipbuilding',
@@ -104,6 +104,154 @@ interface AllocationRecord {
   deviceType?: string
 }
 
+const LOCATION_UNIT_ENTERPRISES = new Set(['招商局金陵船舶（江苏）有限公司', '江苏永钢集团有限公司'])
+
+function shouldUseLocationAsSecondLevel(record: Pick<DemoDeviceRecord, 'enterprise'>) {
+  return LOCATION_UNIT_ENTERPRISES.has(record.enterprise)
+}
+
+function normalizeUsageLocationUnit(location: string | undefined, fallback = '未分组') {
+  const raw = (location || '').trim()
+  if (!raw) return fallback
+  const withoutCapacity = raw.replace(/\d+(?:\.\d+)?\s*[Tt吨].*$/, '').trim()
+  const workshopMatch = withoutCapacity.match(/^(.+?车间)/)
+  if (workshopMatch?.[1]) return workshopMatch[1]
+  if (withoutCapacity.startsWith('管加工')) return '管加工车间'
+
+  const spanIndex = withoutCapacity.search(/[一二三四五六七八九十两0-9东南西北中]+跨/)
+  if (spanIndex > 0) {
+    return withoutCapacity
+      .slice(0, spanIndex)
+      .replace(/[东南西北中]$/, '')
+      .trim() || fallback
+  }
+
+  const factoryMatch = withoutCapacity.match(/^(.+?分厂)/)
+  if (factoryMatch?.[1]) return factoryMatch[1]
+
+  return withoutCapacity
+    .replace(/[东南西北中]台$/, '')
+    .replace(/[一二三四五六七八九十两0-9]+号.*$/, '')
+    .trim() || raw
+}
+
+function takePrefix(value: string, length: number) {
+  return Array.from(value).slice(0, length).join('')
+}
+
+function normalizeYonggangLocationUnit(location: string | undefined, fallback = '未分组') {
+  const raw = (location || '').trim()
+  if (!raw) return fallback
+  const normalized = raw
+    .replace(/PC构建/g, 'PC构件')
+    .replace(/\d+(?:\.\d+)?\s*[Tt吨].*$/, '')
+    .trim()
+
+  const semanticPrefix =
+    normalized.match(/^(线材[一二三四五六七八九十0-9]分厂)/)?.[1] ||
+    normalized.match(/^(线材[一二三四五六七八九十0-9]厂)/)?.[1] ||
+    normalized.match(/^(线[一二三四五六七八九十0-9]车间)/)?.[1] ||
+    normalized.match(/^(炼钢[一二三四五六七八九十0-9]厂)/)?.[1] ||
+    normalized.match(/^(炼铁[一二三四五六七八九十0-9]厂)/)?.[1] ||
+    normalized.match(/^(棒材[一二三四五六七八九十0-9]厂)/)?.[1] ||
+    normalized.match(/^(棒材[一二三四五六七八九十0-9]分厂)/)?.[1] ||
+    normalized.match(/^(棒[一二三四五六七八九十0-9]车间)/)?.[1] ||
+    normalized.match(/^(\d+#高炉)/)?.[1] ||
+    normalized.match(/^(球团厂)/)?.[1] ||
+    normalized.match(/^(.{1,3}车间)/)?.[1]
+  if (semanticPrefix) return semanticPrefix
+
+  const compact = normalized
+    .replace(/[东南西北中]?\d+台.*$/, '')
+    .replace(/\d+跨.*$/, '')
+    .trim()
+  const chars = Array.from(compact)
+  let prefix4 = chars.slice(0, 4).join('')
+  if (prefix4.endsWith('分') && chars[4] === '厂') prefix4 += '厂'
+  if (prefix4.endsWith('高') && chars[4] === '炉') prefix4 += '炉'
+  if (prefix4.endsWith('码') && chars[4] === '头') prefix4 += '头'
+  const prefix3 = takePrefix(compact, 3)
+  return (prefix4 || prefix3 || fallback).replace(/[东南西北中]$/, '') || fallback
+}
+
+function normalizeShipbuildingLocationUnit(location: string | undefined, fallback = '未分组') {
+  const raw = (location || '').trim()
+  if (!raw) return fallback
+  const normalized = raw
+    .replace(/\d+(?:\.\d+)?\s*[Tt吨].*$/, '')
+    .replace(/[（(].*?[）)]/g, '')
+    .trim()
+
+  const semanticPrefix =
+    normalized.match(/^(机舱分段车间)/)?.[1] ||
+    normalized.match(/^(船体厂房)/)?.[1] ||
+    normalized.match(/^(管加工)/)?.[1] ||
+    normalized.match(/^(集配仓库)/)?.[1] ||
+    normalized.match(/^(船[一二三四五六七八九十0-9]车间)/)?.[1] ||
+    normalized.match(/^([东西南北中]?码头)/)?.[1] ||
+    normalized.match(/^(\d+#船坞)/)?.[1] ||
+    normalized.match(/^(\d+#坞)/)?.[1] ||
+    normalized.match(/^(.{1,6}车间)/)?.[1]
+  if (semanticPrefix) return semanticPrefix
+
+  const compact = normalized
+    .replace(/[一二三四五六七八九十两0-9]+跨.*$/, '')
+    .replace(/[东西南北中]侧?[东西南北中]?$/, '')
+    .replace(/[东西南北中]$/, '')
+    .trim()
+  const chars = Array.from(compact)
+  let prefix4 = chars.slice(0, 4).join('')
+  if (prefix4.endsWith('船') && chars[4] === '坞') prefix4 += '坞'
+  if (prefix4.endsWith('码') && chars[4] === '头') prefix4 += '头'
+  const prefix3 = takePrefix(compact, 3)
+  return (prefix4 || prefix3 || fallback).replace(/[东南西北中]$/, '') || fallback
+}
+
+function normalizeRecordHierarchy(record: DemoDeviceRecord) {
+  if (!shouldUseLocationAsSecondLevel(record)) {
+    return {
+      affiliatedUnit: record.affiliatedUnit || '本部',
+      workArea: record.workArea || '未分组'
+    }
+  }
+
+  if (record.enterprise === '江苏永钢集团有限公司') {
+    const affiliatedUnit = record.affiliatedUnit?.trim()
+    const workArea = record.workArea?.trim()
+    const hasExplicitHierarchy = affiliatedUnit && workArea && affiliatedUnit !== '本部' && workArea !== '总厂'
+    if (hasExplicitHierarchy) {
+      return { affiliatedUnit, workArea }
+    }
+  }
+
+  const unit = record.enterprise === '江苏永钢集团有限公司'
+    ? normalizeYonggangLocationUnit(record.location || record.workArea, record.workArea || '未分组')
+    : record.enterprise === '招商局金陵船舶（江苏）有限公司'
+      ? normalizeShipbuildingLocationUnit(record.location || record.workArea, record.workArea || '未分组')
+    : normalizeUsageLocationUnit(record.location || record.workArea, record.workArea || '未分组')
+  return {
+    affiliatedUnit: unit,
+    workArea: unit
+  }
+}
+
+function allocationsFromDemoRecords(scene: SceneId, enterprise: string): AllocationRecord[] {
+  const counts = new Map<string, AllocationRecord>()
+  demoDeviceRecords
+    .filter(record => record.scene === scene && record.enterprise === enterprise)
+    .forEach(record => {
+      const { affiliatedUnit, workArea } = normalizeRecordHierarchy(record)
+      const key = `${affiliatedUnit}::${workArea}`
+      const existing = counts.get(key)
+      if (existing) {
+        existing.count += 1
+      } else {
+        counts.set(key, { enterprise, affiliatedUnit, workArea, count: 1 })
+      }
+    })
+  return Array.from(counts.values())
+}
+
 const BENXI_STEEL_ALLOCATIONS: AllocationRecord[] = [
   { enterprise: '本钢集团', affiliatedUnit: '板材板块', workArea: '冷轧厂', count: 187 },
   { enterprise: '本钢集团', affiliatedUnit: '板材板块', workArea: '原料厂', count: 125 },
@@ -114,12 +262,12 @@ const BENXI_STEEL_ALLOCATIONS: AllocationRecord[] = [
   { enterprise: '本钢集团', affiliatedUnit: '板材板块', workArea: '能源总厂（供水系统）', count: 43 },
   { enterprise: '本钢集团', affiliatedUnit: '板材板块', workArea: '储运（板材区域）', count: 27 },
   { enterprise: '本钢集团', affiliatedUnit: '板材板块', workArea: '焦化厂', count: 25 },
-  { enterprise: '本钢集团', affiliatedUnit: '板材板块', workArea: '储运（北营区域）', count: 23 },
+  { enterprise: '本钢集团', affiliatedUnit: '北营板块', workArea: '储运（北营区域）', count: 23 },
   { enterprise: '本钢集团', affiliatedUnit: '板材板块', workArea: '冶金渣公司', count: 21 },
   { enterprise: '本钢集团', affiliatedUnit: '板材板块', workArea: '发电', count: 20 },
   { enterprise: '本钢集团', affiliatedUnit: '板材板块', workArea: '废钢厂', count: 20 },
   { enterprise: '本钢集团', affiliatedUnit: '板材板块', workArea: '能源总厂（燃气系统）', count: 18 },
-  { enterprise: '本钢集团', affiliatedUnit: '板材板块', workArea: '储运（矿业区域）', count: 17 },
+  { enterprise: '本钢集团', affiliatedUnit: '矿业板块', workArea: '储运（矿业区域）', count: 17 },
   { enterprise: '本钢集团', affiliatedUnit: '板材板块', workArea: '铁运公司', count: 12 },
   { enterprise: '本钢集团', affiliatedUnit: '北营板块', workArea: '炼钢厂', count: 130 },
   { enterprise: '本钢集团', affiliatedUnit: '北营板块', workArea: '轧钢厂', count: 116 },
@@ -154,36 +302,28 @@ const LIANYUNGANG_ALLOCATIONS: AllocationRecord[] = [
   { enterprise: '连云港港口', affiliatedUnit: '连云港新苏港码头有限公司', workArea: '新苏港码头', count: 7 }
 ]
 
-const SHIPBUILDING_ALLOCATIONS: AllocationRecord[] = [
-  { enterprise: '招商局金陵船舶（江苏）有限公司', affiliatedUnit: '本部', workArea: '安保处', count: 49 },
-  { enterprise: '招商局金陵船舶（江苏）有限公司', affiliatedUnit: '本部', workArea: '船修车间', count: 20 },
-  { enterprise: '招商局金陵船舶（江苏）有限公司', affiliatedUnit: '本部', workArea: '设备', count: 20 },
-  { enterprise: '招商局金陵船舶（江苏）有限公司', affiliatedUnit: '本部', workArea: '设备科', count: 17 },
-  { enterprise: '招商局金陵船舶（江苏）有限公司', affiliatedUnit: '本部', workArea: '未分组', count: 14 },
-  { enterprise: '招商局金陵船舶（江苏）有限公司', affiliatedUnit: '本部', workArea: '办公室', count: 3 },
-  { enterprise: '招商局金陵船舶（江苏）有限公司', affiliatedUnit: '本部', workArea: '设备部', count: 1 },
-  { enterprise: '招商局金陵船舶（江苏）有限公司', affiliatedUnit: '本部', workArea: '安全处', count: 1 }
-]
+const SHIPBUILDING_ALLOCATIONS: AllocationRecord[] = allocationsFromDemoRecords('shipbuilding', '招商局金陵船舶（江苏）有限公司')
+const YONGGANG_ALLOCATIONS: AllocationRecord[] = allocationsFromDemoRecords('metallurgy', '江苏永钢集团有限公司')
 
 const QINGDAO_PORT_ALLOCATIONS: AllocationRecord[] = [
-  { enterprise: '青岛港', affiliatedUnit: '青岛前湾集装箱码头有限责任公司', workArea: '前湾集装箱码头', count: 153 },
-  { enterprise: '青岛港', affiliatedUnit: '青岛前湾联合集装箱码头有限责任公司', workArea: '前湾联合集装箱码头', count: 122 },
-  { enterprise: '青岛港', affiliatedUnit: '青岛新前湾集装箱码头有限责任公司', workArea: '新前湾集装箱码头', count: 117 },
-  { enterprise: '青岛港', affiliatedUnit: '青岛前湾新联合集装箱码头有限责任公司', workArea: '前湾新联合集装箱码头', count: 27 },
-  { enterprise: '青岛港', affiliatedUnit: '青岛前湾西港联合码头有限责任公司', workArea: '前湾西港联合码头', count: 28 },
-  { enterprise: '青岛港', affiliatedUnit: '青岛港国际股份有限公司董家口分公司', workArea: '董家口分公司', count: 66 },
-  { enterprise: '青岛港', affiliatedUnit: '青岛港国际股份有限公司前港分公司', workArea: '前港分公司', count: 27 },
-  { enterprise: '青岛港', affiliatedUnit: '青岛港国际股份有限公司大港分公司', workArea: '大港分公司', count: 13 },
-  { enterprise: '青岛港', affiliatedUnit: '青岛港国际物流有限公司', workArea: '国际物流公司', count: 40 },
-  { enterprise: '青岛港', affiliatedUnit: '青岛港董家口矿石码头有限公司', workArea: '董家口矿石码头', count: 18 },
-  { enterprise: '青岛港', affiliatedUnit: '青岛港通用码头有限公司', workArea: '通用码头', count: 12 }
+  { enterprise: '青岛港', affiliatedUnit: '青岛前湾新联合集装箱码头有限责任公司', workArea: '保税港区', count: 31 },
+  { enterprise: '青岛港', affiliatedUnit: '青岛前湾联合集装箱码头有限责任公司', workArea: '保税港区', count: 119 },
+  { enterprise: '青岛港', affiliatedUnit: '青岛前湾西港联合码头有限责任公司', workArea: '保税港区', count: 28 },
+  { enterprise: '青岛港', affiliatedUnit: '青岛前湾集装箱码头有限责任公司', workArea: '黄岛街道办事处', count: 159 },
+  { enterprise: '青岛港', affiliatedUnit: '青岛新前湾集装箱码头有限责任公司', workArea: '薛家岛街道办事处', count: 120 },
+  { enterprise: '青岛港', affiliatedUnit: '青岛港国际物流有限公司', workArea: '保税港区', count: 57 },
+  { enterprise: '青岛港', affiliatedUnit: '青岛港国际股份有限公司前港分公司', workArea: '黄岛街道办事处', count: 28 },
+  { enterprise: '青岛港', affiliatedUnit: '青岛港国际股份有限公司大港分公司', workArea: '大港街道办事处', count: 71 },
+  { enterprise: '青岛港', affiliatedUnit: '青岛港国际股份有限公司董家口分公司', workArea: '泊里镇', count: 66 },
+  { enterprise: '青岛港', affiliatedUnit: '青岛港董家口矿石码头有限公司', workArea: '泊里镇', count: 21 },
+  { enterprise: '青岛港', affiliatedUnit: '青岛港通用码头有限公司', workArea: '泊里镇', count: 12 }
 ]
 
 const SCENE_ALLOCATIONS: Record<SceneId, AllocationRecord[]> = {
   shipbuilding: SHIPBUILDING_ALLOCATIONS,
   metallurgy: [
     ...BENXI_STEEL_ALLOCATIONS,
-    { enterprise: '江苏永钢集团有限公司', affiliatedUnit: '本部', workArea: '总厂', count: 350 }
+    ...YONGGANG_ALLOCATIONS
   ],
   port: [
     ...QINGDAO_PORT_ALLOCATIONS,
@@ -289,6 +429,7 @@ function deviceFromRecord(record: DemoDeviceRecord, index: number, rng: ReturnTy
   const fallbackStatus: DeviceStatus = rng(0, 99) < 85 ? 'running' : 'standby'
   const status = statusFromSource(record.statusText, fallbackStatus)
   const riskLevel = riskFromId(record.id)
+  const hierarchy = normalizeRecordHierarchy(record)
   const hasAlarm = riskLevel !== 'normal' || rng(0, 9) > 7
   const alarmDate = new Date()
   alarmDate.setDate(alarmDate.getDate() - rng(0, 29))
@@ -313,10 +454,10 @@ function deviceFromRecord(record: DemoDeviceRecord, index: number, rng: ReturnTy
     installDate: record.installDate || `${2010 + rng(0, 12)}-${String(rng(1, 12)).padStart(2, '0')}-01`,
     location: record.location || record.workArea,
     group: record.enterprise,
-    subsidiary: record.workArea,
+    subsidiary: hierarchy.workArea,
     enterprise: record.enterprise,
-    affiliatedUnit: record.affiliatedUnit,
-    workArea: record.workArea,
+    affiliatedUnit: hierarchy.affiliatedUnit,
+    workArea: hierarchy.workArea,
     technicalParams: record.technicalParams.length ? record.technicalParams : TECH_PARAM_NAMES.map((name) => {
       const u = TECH_PARAM_UNITS[name]
       const val =
@@ -332,8 +473,8 @@ function deviceFromRecord(record: DemoDeviceRecord, index: number, rng: ReturnTy
 }
 
 function isCoveredByExactRecord(sceneId: SceneId, allocation: AllocationRecord) {
-  if (sceneId === 'metallurgy') return allocation.enterprise === '本钢集团'
-  if (sceneId === 'port') return allocation.enterprise === '连云港港口'
+  if (sceneId === 'metallurgy') return allocation.enterprise === '本钢集团' || allocation.enterprise === '江苏永钢集团有限公司'
+  if (sceneId === 'port') return allocation.enterprise === '连云港港口' || allocation.enterprise === '青岛港'
   if (sceneId === 'shipbuilding') return allocation.enterprise === '招商局金陵船舶（江苏）有限公司'
   return false
 }
@@ -665,3 +806,6 @@ export {
 
 // 数据智能服务共享 mock 层（点巡检 / 维修 / 检验 / 基础数据 / 供给）
 export * from './serviceData'
+
+// 故障排查服务（固定复现参考项目的日常点巡检看板）
+export * from './faultTroubleshooting'

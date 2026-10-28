@@ -141,6 +141,23 @@ body {
   opacity: 0.85;
 }
 
+.top-nav-entry {
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 4px;
+  background: transparent;
+  color: #ffffff;
+  font-size: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.top-nav-entry:hover,
+.top-nav-entry.is-active {
+  background: rgba(255, 255, 255, 0.12);
+}
+
 .platform-title {
   display: flex;
   flex-direction: column;
@@ -361,13 +378,20 @@ body {
 
 .top-hierarchy-nav {
   flex-shrink: 0;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  padding: 12px 18px;
-  background: #ffffff;
+  min-height: 40px;
+  padding: 7px 18px;
+  background: var(--color-card-bg);
   border-bottom: 1px solid var(--color-border);
   box-shadow: 0 1px 4px rgba(15, 23, 42, 0.05);
+}
+
+.top-hierarchy-nav--service {
+  padding-top: 6px;
+  padding-bottom: 6px;
 }
 
 .hierarchy-crumbs {
@@ -380,6 +404,22 @@ body {
   font-size: 16px;
   font-weight: 600;
   white-space: nowrap;
+}
+
+.hierarchy-crumbs--service {
+  width: 100%;
+}
+
+.hierarchy-service-scope {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--color-text-primary);
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.hierarchy-crumbs--service .hierarchy-count {
+  margin-left: 0;
 }
 
 .hierarchy-crumb {
@@ -404,6 +444,17 @@ body {
   color: var(--color-primary);
   font-size: 14px;
   font-weight: 800;
+}
+
+.hierarchy-service-divider {
+  width: 1px;
+  height: 18px;
+  background: var(--color-border-light);
+  flex-shrink: 0;
+}
+
+.top-service-switcher .scene-service-switcher-dropdown {
+  top: calc(100% + 1px);
 }
 
 /* 路由出口占满主内容区 */

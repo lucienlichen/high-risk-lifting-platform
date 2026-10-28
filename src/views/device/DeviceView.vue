@@ -31,10 +31,10 @@
 
     <!-- ─── 服务内容区（定位容器：抽屉铺满此区域，位于服务菜单下方，不遮挡菜单） ─── -->
     <div class="device-content-region">
-    <div :class="['content-scrollable', { 'monitor-tab-content': store.activeService === 'remote' }]" style="flex:1">
+    <div :class="['content-scrollable', { 'monitor-tab-content': isMonitoringWorkspaceService }]" style="flex:1">
 
-      <!-- 远程监测：监测数据工作区（左数据 + 右数字孪生） -->
-      <template v-if="store.activeService === 'remote'">
+      <!-- 安全监控 / 健康监测：按服务边界拆分监测工作区 -->
+      <template v-if="isMonitoringWorkspaceService">
         <div class="monitor-workspace-wrapper">
           <div class="monitor-filter-bar">
             <WorkCyclePicker
@@ -47,6 +47,7 @@
           <DeviceMonitoringWorkspace
             v-if="device"
             :device="device"
+            :service-mode="store.activeService === 'healthMonitor' ? 'health' : 'safety'"
             :hide-op-list="true"
             :model-op-id="monitorOpId"
             :model-op-date="monitorOpDate"
@@ -382,6 +383,12 @@
       @close="store.setService(null)"
     />
 
+    <FaultTroubleshootingServicePanel
+      v-if="store.activeService === 'troubleshoot'"
+      :device="device"
+      @close="store.setService(null)"
+    />
+
     <RepairServicePanel
       v-if="store.activeService === 'maintain'"
       :device="device"
@@ -420,6 +427,7 @@ import RiskMonitoringDrawer from '@/components/RiskMonitoringDrawer.vue'
 import HazardInspectionDrawer from '@/components/HazardInspectionDrawer.vue'
 import IssueHandlingDrawer from '@/components/IssueHandlingDrawer.vue'
 import SpotCheckServicePanel from '@/components/SpotCheckServicePanel.vue'
+import FaultTroubleshootingServicePanel from '@/components/FaultTroubleshootingServicePanel.vue'
 import RepairServicePanel from '@/components/RepairServicePanel.vue'
 import InspectionServicePanel from '@/components/InspectionServicePanel.vue'
 import SupervisionServicePanel from '@/components/SupervisionServicePanel.vue'
@@ -467,17 +475,21 @@ const riskLabels:   Record<string,string> = { normal:'正常', low:'低风险', 
 
 // 12 项服务里需占位面板的「数据智能服务 / 知识库」
 const PLACEHOLDER_SERVICES: Record<string, { label: string; desc: string }> = {
-  kbDetect:  { label: '检测检验知识库', desc: '检测检验领域知识库检索服务，功能开发中，演示版暂不展示' },
+  kbDetect:  { label: '检验检测知识库', desc: '检验检测领域知识库检索服务，功能开发中，演示版暂不展示' },
   kbLaw:     { label: '法律法规知识库', desc: '法律法规标准知识库检索服务，功能开发中，演示版暂不展示' },
+  kbStandard: { label: '常用标准知识库', desc: '常用标准知识库检索服务，功能开发中，演示版暂不展示' }
 }
 const placeholderServiceMeta = computed(() =>
   store.activeService ? (PLACEHOLDER_SERVICES[store.activeService] ?? null) : null
 )
 
 // 以独立面板铺满内容区展示的服务（原「抽屉」，现为内容区面板）
-const DRAWER_SERVICES = ['health', 'fault', 'crack', 'risk', 'hazard', 'issue', 'point', 'maintain', 'inspect', 'basicdata', 'supply']
+const DRAWER_SERVICES = ['health', 'fault', 'crack', 'risk', 'hazard', 'issue', 'point', 'troubleshoot', 'maintain', 'inspect', 'basicdata', 'supply']
 const isDrawerService = computed(() =>
   store.activeService ? DRAWER_SERVICES.includes(store.activeService) : false
+)
+const isMonitoringWorkspaceService = computed(() =>
+  store.activeService === 'remote' || store.activeService === 'healthMonitor'
 )
 
 // ── 远程监测：告警数据模拟与曲线 ──
@@ -908,10 +920,13 @@ watch(() => store.activeService, (newVal) => {
 
 function loadDevice() {
   const id = route.params.id as string
+  const activeService = store.activeService
   device.value = getDeviceById(id)
   if (device.value) {
-    store.setDevice(id)          // setDevice 会清空 activeService
-    store.setService('remote')   // 进入设备详情默认选中「远程监测」并展示监测工作区
+    store.setDevice(id, !!activeService)
+    if (!activeService) {
+      store.setService('remote')   // 直接进入设备详情时默认展示监测工作区
+    }
   }
 }
 

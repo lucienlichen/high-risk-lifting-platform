@@ -77,9 +77,10 @@ function handleClick(key: ServiceKey) {
   box-shadow: inset 0 1px 3px rgba(255, 255, 255, 0.8), 0 2px 6px rgba(0, 0, 0, 0.02);
 }
 
-.sg-monitor   { flex: 4; }
-.sg-diagnosis { flex: 4; }
-.sg-support   { flex: 4; }
+.sg-monitor     { flex: 4; }
+.sg-diagnosis   { flex: 3; }
+.sg-maintenance { flex: 3; }
+.sg-knowledge   { flex: 3; }
 
 .group-btns {
   display: flex;
@@ -110,7 +111,8 @@ function handleClick(key: ServiceKey) {
 
 .monitor-btn:hover:not(.disabled),
 .diagnosis-btn:hover:not(.disabled),
-.support-btn:hover:not(.disabled) {
+.maintenance-btn:hover:not(.disabled),
+.knowledge-btn:hover:not(.disabled) {
   background: rgba(22, 119, 255, 0.07);
   border-color: rgba(22, 119, 255, 0.35);
   color: #1677ff;
@@ -119,7 +121,8 @@ function handleClick(key: ServiceKey) {
 
 .monitor-btn.active,
 .diagnosis-btn.active,
-.support-btn.active {
+.maintenance-btn.active,
+.knowledge-btn.active {
   background: rgba(22, 119, 255, 0.12);
   border-color: #1677ff;
   color: #1677ff;
