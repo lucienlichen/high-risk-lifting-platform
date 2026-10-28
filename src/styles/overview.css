@@ -395,11 +395,12 @@
   transition: box-shadow .15s, transform .15s;
 }
 .ov-card:hover { box-shadow: 0 4px 12px rgba(15, 23, 42, .1); transform: translateY(-1px); }
-.ov-card.is-running { background: #f3f8ff; }
-.ov-card.is-stopped { background: #f4f5f7; }
+.ov-card.is-running { background: #d4e6ff; }
+.ov-card.is-stopped { background: #e0e3e8; }
 .ov-card.is-off { background: #fff; border: 1px dashed #94a3b8; }
 .ov-card.is-normal { border: 1px solid #e2e8f0; }
-.ov-card.is-normal.is-running { border-color: #d6e4ff; }
+.ov-card.is-normal.is-running { border-color: #93c2f7; }
+.ov-card.is-normal.is-stopped { border-color: #c5c9d0; }
 .ov-card.is-abnormal { border: 2px solid #f5222d; }
 
 .ov-run {
@@ -419,7 +420,7 @@
   background-size: 22.6px 22.6px;
   animation: ov-stripe .9s linear infinite;
 }
-.ov-run.is-stopped { color: #475569; background: #e8eaed; }
+.ov-run.is-stopped { color: #334155; background: #cfd3d9; }
 .ov-run.is-off { color: #64748b; background: #fff; border-bottom: 1px dashed #94a3b8; }
 .ov-run .ov-status { margin-left: auto; }
 .ov-breath {
@@ -478,7 +479,7 @@
   gap: 1px;
   padding: 3px 4px 4px;
   border-radius: 4px;
-  background: rgba(255, 255, 255, .88);
+  background: #fff;
 }
 .ov-metric > span { font-size: 10px; line-height: 1.2; color: #64748b; }
 .ov-metric > b {
@@ -515,7 +516,7 @@
 .ov-counts .ov-count.due b { color: #d46b08; }
 .ov-counts .ov-count em { font-style: normal; font-size: 10px; color: #475569; white-space: nowrap; }
 .ov-card.is-running .ov-counts .ov-count:not(.hot):not(.due),
-.ov-card.is-stopped .ov-counts .ov-count:not(.hot):not(.due) { background: rgba(255, 255, 255, .88); }
+.ov-card.is-stopped .ov-counts .ov-count:not(.hot):not(.due) { background: #fff; }
 
 .ov-more, .ov-empty {
   align-self: center;
