@@ -3,7 +3,7 @@
  * 整机状态是异常 / 正常 / 离线。异常 = 结构、机构或其他预警，或定期检验已超期。
  * 阈值在 overviewCardRules.ts。
  */
-import { getDevices, type Device, type DeviceStatus } from '@/mock'
+import { getDevices, type Device } from '@/mock'
 import type { DemoDeviceRecord } from '@/mock/demoDeviceRecords'
 import { SHAGANG_LEGAL_ENTITY, shagangDeviceRecords } from '@/mock/shagangDevices'
 import yonggangUnitMap from '@/mock/yonggangUnitMap.json'
@@ -133,6 +133,70 @@ function yonggangUnit(device: Device) {
   return byLocation || byWork || '未标明厂区'
 }
 
+function overviewUnit(device: Device): string {
+  if (device.enterprise === YONGGANG) return yonggangUnit(device)
+  return device.workArea || device.affiliatedUnit || '未分组'
+}
+
+function groupBy(devices: Device[], keyOf: (device: Device) => string): { key: string; devices: Device[] }[] {
+  const map = new Map<string, Device[]>()
+  devices.forEach(device => {
+    const key = keyOf(device)
+    const list = map.get(key) ?? []
+    list.push(device)
+    map.set(key, list)
+  })
+  return [...map.entries()].map(([key, list]) => ({ key, devices: list }))
+}
+
+/** 把 target 个「作业中」名额按人数分到各组，余数给比例最高的组。 */
+function apportion(groups: { key: string; devices: Device[] }[], target: number): Map<string, number> {
+  const total = groups.reduce((sum, group) => sum + group.devices.length, 0)
+  const rows = groups.map(group => {
+    const exact = total === 0 ? 0 : group.devices.length * target / total
+    return { key: group.key, base: Math.floor(exact), frac: exact - Math.floor(exact), size: group.devices.length }
+  })
+  let extra = target - rows.reduce((sum, row) => sum + row.base, 0)
+  rows.sort((a, b) => b.frac - a.frac || a.key.localeCompare(b.key, 'zh-CN'))
+  const quotas = new Map<string, number>()
+  rows.forEach(row => {
+    let quota = row.base
+    if (extra > 0 && quota < row.size) {
+      quota += 1
+      extra -= 1
+    }
+    quotas.set(row.key, quota)
+  })
+  return quotas
+}
+
+function markRunning(devices: Device[], quota: number, into: Set<string>) {
+  const sorted = [...devices].sort((a, b) => hashId(`${a.id}:run`) - hashId(`${b.id}:run`) || a.id.localeCompare(b.id))
+  sorted.slice(0, quota).forEach(device => into.add(device.id))
+}
+
+/**
+ * 在线设备按公司、厂区、使用地点层层分摊作业中名额。
+ * 名额由设备编号的散列排序决定，同一组每次结果相同。
+ */
+function runningIdSet(devices: Device[]): Set<string> {
+  const online = devices.filter(device => device.online)
+  const running = new Set<string>()
+  const target = Math.round(online.length * OVERVIEW_CARD_RULES.runningRatio)
+  const enterprises = groupBy(online, device => device.enterprise || '')
+  const enterpriseQuota = apportion(enterprises, target)
+  enterprises.forEach(enterprise => {
+    const plants = groupBy(enterprise.devices, overviewUnit)
+    const plantQuota = apportion(plants, enterpriseQuota.get(enterprise.key) ?? 0)
+    plants.forEach(plant => {
+      const areas = groupBy(plant.devices, device => device.location || '未填地点')
+      const areaQuota = apportion(areas, plantQuota.get(plant.key) ?? 0)
+      areas.forEach(area => markRunning(area.devices, areaQuota.get(area.key) ?? 0, running))
+    })
+  })
+  return running
+}
+
 export function getOverviewCards(): OverviewCard[] {
   if (cache) return cache
   const ledger = getDevices('metallurgy', 1, 99999).list.filter(device =>
@@ -141,7 +205,8 @@ export function getOverviewCards(): OverviewCard[] {
   )
   const devices = [...ledger, ...shagangDeviceRecords.map(deviceFromShagang)]
   const inspect = new Map(getInspectionRows(devices.map(device => ({ id: device.id, name: device.name })), 'inspection').map(row => [row.deviceId, row]))
-  cache = devices.map(device => toCard(device, inspect.get(device.id)))
+  const runningIds = runningIdSet(devices)
+  cache = devices.map(device => toCard(device, inspect.get(device.id), runningIds.has(device.id)))
   return cache
 }
 
@@ -188,7 +253,7 @@ function commissioningTime(installDate: string, id: string): number {
   return new Date(1998 + (n % 22), n % 12, 1 + (n % 28)).getTime()
 }
 
-function liftStats(id: string, installDate: string, online: boolean, rated: number | null) {
+function liftStats(id: string, installDate: string, online: boolean, rated: number | null, running: boolean) {
   const tenths = Math.round(OVERVIEW_CARD_RULES.liftDailySpan * 10)
   const avg = Math.round((OVERVIEW_CARD_RULES.liftDailyMin + (hashId(`${id}:lift-avg`) % (tenths + 1)) / 10) * 10) / 10
   const ratioSteps = Math.round(OVERVIEW_CARD_RULES.liftAvgLoadRatioSpan * 100)
@@ -196,8 +261,8 @@ function liftStats(id: string, installDate: string, online: boolean, rated: numb
   const avgLoad = rated != null && rated > 0
     ? Math.round(rated * ratio * 10) / 10
     : Math.round((12 + (hashId(`${id}:lift-load`) % 28)) * 10) / 10
-  const today = online ? getOperationList(id, new Date()).length : null
-  if (!online || today == null) return { today, total: null as number | null, avg, avgLoad, totalTons: null as number | null }
+  if (!online) return { today: null as number | null, total: null as number | null, avg, avgLoad, totalTons: null as number | null }
+  const today = running ? getOperationList(id, new Date()).length : 0
   const start = new Date()
   start.setHours(0, 0, 0, 0)
   const days = Math.max(1, Math.round((start.getTime() - commissioningTime(installDate, id)) / 86400000))
@@ -205,7 +270,14 @@ function liftStats(id: string, installDate: string, online: boolean, rated: numb
   return { today, total, avg, avgLoad, totalTons: Math.round(total * avgLoad) }
 }
 
-function toCard(device: Device, inspect?: { daysUntil: number; status: string }): OverviewCard {
+function displayLoad(device: Device, running: boolean): number | null {
+  if (!device.online) return null
+  if (!running) return 0
+  if (device.status === 'running' && device.load > 0) return device.load
+  return 20 + (hashId(`${device.id}:load`) % 76)
+}
+
+function toCard(device: Device, inspect: { daysUntil: number; status: string } | undefined, running: boolean): OverviewCard {
   const overview = getDeviceOverview(device.id)
   const capacity = capacityText(device)
   const structure = getDeviceStructure({
@@ -229,8 +301,8 @@ function toCard(device: Device, inspect?: { daysUntil: number; status: string })
   const lamp = overview.overall
   const leading = overview.services.find(service => service.level === lamp && service.level !== 'normal')
   const rated = ratedTons(device)
-  const loadPct = device.status === 'running' ? device.load : device.online ? 0 : null
-  const lifts = liftStats(device.id, device.installDate, device.online, rated)
+  const loadPct = displayLoad(device, running)
+  const lifts = liftStats(device.id, device.installDate, device.online, rated, running)
   const hasRed = overview.alarms.some(alarm => alarm.level === 'red')
   const hasYellow = overview.alarms.some(alarm => alarm.level === 'yellow')
   const order = state === 'off' ? 3 : machine === 'normal' ? 4 : hasRed ? 0 : hasYellow ? 1 : 2
@@ -250,8 +322,8 @@ function toCard(device: Device, inspect?: { daysUntil: number; status: string })
     unit: device.enterprise === YONGGANG ? yonggangUnit(device) : (device.workArea || device.affiliatedUnit || '未分组'),
     location: device.location || '',
     online: device.online,
-    workLabel: workLabel(device.status, device.online),
-    run: device.online ? (device.status === 'running' ? 'running' : 'stopped') : null,
+    workLabel: !device.online ? '离线' : running ? '作业中' : '停机',
+    run: !device.online ? null : running ? 'running' : 'stopped',
     state,
     machine,
     lamp,
@@ -278,12 +350,6 @@ function toCard(device: Device, inspect?: { daysUntil: number; status: string })
     overview,
     order
   }
-}
-
-function workLabel(status: DeviceStatus, online: boolean): string {
-  if (!online) return '离线'
-  if (status === 'running') return '作业中'
-  return '停机'
 }
 
 function paramText(device: Device, names: string[]): string {

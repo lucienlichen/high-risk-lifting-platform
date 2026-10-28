@@ -20,7 +20,12 @@ export const OVERVIEW_CARD_RULES = {
   /** 累计重量的均载占额定起重量的下限。均载 = 额定 ×（下限 + 散列）。 */
   liftAvgLoadMinRatio: 0.35,
   /** 均载比例的散列跨度，使均载约为额定的 35%–65%。 */
-  liftAvgLoadRatioSpan: 0.3
+  liftAvgLoadRatioSpan: 0.3,
+  /**
+   * 在线设备里「作业中」的比例，其余为「停机」。
+   * 按公司厂区和使用地点分别摊，使每一组都接近这个比例。
+   */
+  runningRatio: 0.5
 } as const
 
 /** 挂不到结构树顶层分组时的兜底。风险定量评估算在「其他」。 */
