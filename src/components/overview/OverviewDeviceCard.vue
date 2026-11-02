@@ -1,33 +1,28 @@
 <template>
   <button type="button" class="ov-card" :class="`is-${tone}`" :aria-label="`${card.code} ${toneLabel}`" @click="emit('open')">
-    <svg class="ov-sil" viewBox="0 0 160 72" aria-hidden="true">
-      <g v-if="shape === 'gantry'" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
-        <path d="M28 58 V22 H132 V58" />
-        <path d="M46 22 V14 H114 V22" />
-        <rect x="70" y="14" width="22" height="8" />
-        <path d="M81 22 V40" />
-        <path d="M74 40 h14 l-2 8 h-10 z" />
-      </g>
-      <g v-else-if="shape === 'portal'" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
-        <path d="M78 58 V34" />
-        <path d="M58 58 H98" />
-        <path d="M70 34 H86" />
-        <path d="M86 34 L128 18" />
-        <path d="M128 18 V32" />
-        <path d="M122 32 h12 l-2 7 h-8 z" />
-        <path d="M48 34 H70" />
-      </g>
-      <g v-else fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
-        <path d="M18 28 H142" />
-        <path d="M18 36 H142" />
-        <path d="M28 36 V50 M132 36 V50" />
-        <path d="M22 50 H36 M126 50 H140" />
-        <rect x="68" y="20" width="26" height="8" />
-        <path d="M81 28 V46" />
-        <path d="M74 46 h14 l-2 8 h-10 z" />
-      </g>
-    </svg>
-    <span class="ov-code" :title="metaTitle">{{ card.code }}</span>
+    <span class="ov-card-top">
+      <svg class="ov-mark" viewBox="0 0 16 16" aria-hidden="true">
+        <g v-if="shape === 'gantry'" fill="none" stroke="currentColor" stroke-width="1.2">
+          <path d="M3 13 V5 H13 V13" />
+          <path d="M5 5 V3 H11 V5" />
+          <path d="M8 5 V9" />
+        </g>
+        <g v-else-if="shape === 'portal'" fill="none" stroke="currentColor" stroke-width="1.2">
+          <path d="M8 13 V7" />
+          <path d="M5 13 H11" />
+          <path d="M8 7 L13 4" />
+          <path d="M4 7 H8" />
+        </g>
+        <g v-else fill="none" stroke="currentColor" stroke-width="1.2">
+          <path d="M2 6 H14" />
+          <path d="M2 8 H14" />
+          <path d="M4 8 V12 M12 8 V12" />
+          <path d="M7 4 H10 V6" />
+        </g>
+      </svg>
+      <span class="ov-code" :title="metaTitle">{{ card.code }}</span>
+      <span class="ov-status" :class="`is-${tone}`">{{ toneLabel }}</span>
+    </span>
   </button>
 </template>
 

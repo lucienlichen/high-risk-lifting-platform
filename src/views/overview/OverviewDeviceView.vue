@@ -7,6 +7,7 @@
           <div class="ov-idline">
             <h1>{{ card.name }}</h1>
             <span>{{ card.code }}</span>
+            <span class="ov-status" :class="`is-${tone}`">{{ toneLabel }}</span>
           </div>
           <div class="ov-facts">
             <span>{{ card.unit }} · {{ card.location || '—' }}</span>
@@ -27,12 +28,12 @@
 
       <template v-if="card">
         <section v-if="hero" class="ov-hero" :class="{ 'is-yellow': hero.level === 'yellow' }">
-          <p class="ov-hero-kicker">{{ card.code }} {{ hero.level === 'red' ? '预警' : '报警' }}</p>
+          <p class="ov-hero-kicker">{{ card.code }} · {{ hero.level === 'red' ? '预警' : '报警' }}</p>
           <h2>{{ hero.text }}</h2>
           <div class="ov-hero-meta">
-            <span>发生时间 {{ hero.time }}</span>
-            <span>来源：{{ sourceOf(hero) }}</span>
-            <span>关联对象：{{ heroLink }}</span>
+            <span>发生时间 <b>{{ hero.time }}</b></span>
+            <span>数据来源 <b>{{ sourceOf(hero) }}</b></span>
+            <span>关联对象 <b>{{ heroLink }}</b></span>
           </div>
         </section>
         <p v-else class="ov-hero-empty">当前没有需要处置的告警。</p>
@@ -42,69 +43,52 @@
             <button v-for="item in specialties" :key="item.id" type="button" role="tab" :class="{ active: specialty === item.id }" :aria-selected="specialty === item.id" @click="specialty = item.id">{{ item.label }}</button>
           </nav>
           <div class="ov-workbench">
-            <aside class="ov-spec-side">
-              <p class="ov-spec-caption">{{ specialtyName }}模型</p>
+            <aside class="ov-struct" :aria-label="`${specialtyName}模型`">
+              <div class="ov-struct-caption">{{ specialtyName }}模型</div>
               <button
                 v-for="row in modelRows"
                 :key="row.id"
                 type="button"
-                class="ov-spec-row"
-                :class="{ hit: row.hit, dim: row.dim }"
-                :style="{ paddingLeft: `${8 + row.depth * 16}px` }"
+                class="ov-struct-btn"
+                :class="{ active: row.hit, dim: row.dim }"
+                :style="{ paddingLeft: `${8 + row.depth * 14}px` }"
                 @click="focusRow(row)"
               >
-                <i></i>
-                <span>{{ row.name }}</span>
+                <span class="ov-struct-twist is-leaf"></span>
+                <i class="ov-struct-lamp" :class="row.hit ? 'is-red' : 'is-none'"></i>
+                <span class="name" :title="row.name">{{ row.name }}</span>
               </button>
               <p v-if="!modelRows.length" class="ov-sub">这一专业没有单独的结构分支。</p>
-              <button type="button" class="ov-spec-full" @click="showFull = !showFull">{{ showFull ? '收起整机模型' : '查看整机模型拆解 >' }}</button>
+              <button type="button" class="ov-spec-full" @click="showFull = !showFull">{{ showFull ? '收起整机模型' : '查看整机模型拆解 →' }}</button>
             </aside>
-            <div class="ov-spec-main">
-              <figure v-if="specialty !== 'other'" class="ov-sketch">
-                <svg viewBox="0 0 640 140" role="img" :aria-label="`${specialtyName}示意`">
-                  <template v-if="specialty === 'structure'">
-                    <path d="M40 70 H600" fill="none" stroke="#7fa6d6" stroke-width="8" />
-                    <path d="M40 92 H600" fill="none" stroke="#7fa6d6" stroke-width="3" />
-                    <rect x="250" y="48" width="140" height="28" fill="none" stroke="#f5222d" stroke-width="2" />
-                    <text x="320" y="40" fill="#f5222d" font-size="13" text-anchor="middle">{{ partName || '结构' }}</text>
-                  </template>
-                  <template v-else-if="specialty === 'mechanism'">
-                    <rect x="80" y="40" width="70" height="50" fill="none" stroke="#7fa6d6" stroke-width="2" />
-                    <circle cx="240" cy="65" r="28" fill="none" stroke="#7fa6d6" stroke-width="2" />
-                    <rect x="360" y="42" width="90" height="46" fill="none" stroke="#f5222d" stroke-width="2" />
-                    <text x="405" y="30" fill="#f5222d" font-size="13" text-anchor="middle">{{ partName || '机构' }}</text>
-                  </template>
-                  <template v-else>
-                    <rect x="70" y="28" width="200" height="90" fill="none" stroke="#7fa6d6" stroke-width="2" />
-                    <path d="M90 50 H250 M90 70 H250 M90 90 H250" stroke="#334a6b" stroke-width="1" />
-                    <rect x="340" y="36" width="160" height="74" fill="none" stroke="#f5222d" stroke-width="2" />
-                    <text x="420" y="24" fill="#f5222d" font-size="13" text-anchor="middle">{{ partName || '电控' }}</text>
-                  </template>
-                </svg>
-                <figcaption>{{ specialtyName }}示意，只标出和这条告警相关的部位</figcaption>
-              </figure>
-              <div class="ov-rel-head">
+            <section class="ov-block">
+              <div class="ov-section-head">
                 <h2>相关服务</h2>
+                <span class="ov-sub">{{ specialtyName }} · {{ partName || '整机' }}</span>
               </div>
-              <article v-for="service in relatedServices" :key="service.key" class="ov-rel-card" :class="{ focus: service.key === hero.serviceKey }">
-                <div>
-                  <h3>{{ service.label }}</h3>
-                  <p>{{ service.reason }}</p>
+              <div class="ov-services">
+                <div v-for="service in relatedServices" :key="service.key" class="ov-service" :class="{ focus: service.key === hero.serviceKey, 'is-red': service.level !== 'normal' }">
+                  <span class="name">{{ service.label }}</span>
+                  <span class="result">{{ service.level === 'normal' ? '正常' : '异常' }}</span>
+                  <span class="detail">{{ service.reason }}</span>
+                  <button type="button" @click="openModule(service.key)">进入模块 →</button>
                 </div>
-                <button type="button" @click="openModule(service.key)">进入模块 →</button>
-              </article>
+              </div>
               <p v-if="!relatedServices.length" class="ov-sub">这条告警没有对应的调查服务。</p>
               <details class="ov-other-services">
                 <summary>其他服务</summary>
-                <div v-for="service in otherServices" :key="service.key" class="ov-rel-mini">
-                  <span>{{ service.label }} · {{ service.reason }}</span>
-                  <button type="button" @click="openModule(service.key)">进入</button>
+                <div class="ov-services">
+                  <div v-for="service in otherServices" :key="service.key" class="ov-service">
+                    <span class="name">{{ service.label }}</span>
+                    <span class="detail">{{ service.reason }}</span>
+                    <button type="button" @click="openModule(service.key)">进入模块 →</button>
+                  </div>
                 </div>
               </details>
-            </div>
+            </section>
           </div>
         </template>
-        <button v-else type="button" class="ov-spec-full" @click="showFull = !showFull">{{ showFull ? '收起整机模型' : '查看整机模型拆解 >' }}</button>
+        <button v-else type="button" class="ov-spec-full" @click="showFull = !showFull">{{ showFull ? '收起整机模型' : '查看整机模型拆解 →' }}</button>
 
         <div v-if="showFull && structure" class="ov-struct-split">
           <OverviewStructureTree :model="structure" :selected-id="selectedId" @select="selectNode" />
@@ -145,6 +129,8 @@ let timer = 0
 
 const specialties = SPECIALTIES
 const card = computed(() => getOverviewCard(String(route.params.id || '')))
+const tone = computed(() => card.value?.lamp === 'red' ? 'red' : card.value?.lamp === 'yellow' ? 'yellow' : 'green')
+const toneLabel = computed(() => tone.value === 'red' ? '红' : tone.value === 'yellow' ? '黄' : '绿')
 const structure = computed(() => {
   const current = card.value
   if (!current) return null
