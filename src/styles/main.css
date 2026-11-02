@@ -725,6 +725,7 @@ body {
 .badge-running  { background: var(--color-info-bg); color: var(--color-info); }
 .badge-standby  { background: var(--color-info-bg);    color: var(--color-info); }
 .badge-stopped  { background: var(--color-standby-bg); color: var(--color-standby); }
+.badge-offline  { background: var(--color-standby-bg); color: var(--color-standby); }
 .badge-maintenance { background: var(--color-warning-bg); color: var(--color-warning); }
 .badge-normal   { background: var(--color-success-bg); color: var(--color-success); }
 .badge-low      { background: var(--color-info-bg);    color: var(--color-info); }
@@ -734,6 +735,7 @@ body {
 .badge-running  .badge-dot { background: var(--color-info); }
 .badge-standby  .badge-dot { background: var(--color-info); }
 .badge-stopped  .badge-dot { background: var(--color-standby); }
+.badge-offline  .badge-dot { background: var(--color-standby); }
 .badge-maintenance .badge-dot { background: var(--color-warning); }
 .badge-normal   .badge-dot { background: var(--color-success); }
 .badge-low      .badge-dot { background: var(--color-info); }

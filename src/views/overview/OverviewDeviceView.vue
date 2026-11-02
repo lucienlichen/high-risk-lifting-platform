@@ -238,7 +238,7 @@ const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 const sceneStore = useSceneStore()
-const specialty = ref<Specialty>('structure')
+const specialty = ref<Specialty>('metal')
 const showFull = ref(false)
 const treeCollapsed = ref(false)
 const selectedAlertId = ref('')
@@ -252,6 +252,7 @@ const pageSize = OVERVIEW_CARD_RULES.detailPointPageSize
 const card = computed(() => getOverviewCard(String(route.params.id || '')))
 const ledgerDevice = computed(() => card.value ? getDeviceById(card.value.id) : null)
 const headerStatus = computed(() => {
+  if (card.value && !card.value.online) return 'offline' as const
   const status = ledgerDevice.value?.status
   if (status === 'running' || status === 'standby' || status === 'stopped') return status
   return card.value?.run === 'running' ? 'running' : 'standby'

@@ -59,7 +59,7 @@
         <button v-for="chip in chips" :key="chip.id" type="button" class="ov-chip" :class="[`is-${chip.id === 'all' ? 'all' : chip.id}`, { ['active-' + chip.id]: hue === chip.id }]" @click="hue = chip.id; limit = 40">
           <span class="dot"></span>{{ chip.label }}<b>{{ chip.n }}</b>
         </button>
-        <span class="ov-chip-note">停机只用于筛选，卡片仍按红黄绿着色</span>
+        <span class="ov-chip-note">停机只筛停机，不含离线。卡片保持最近一次灯色，不另标离线。</span>
       </section>
 
       <template v-if="view === 'cards'">
@@ -75,9 +75,9 @@
         <div class="ov-section-head">
           <h2>{{ scopeName }}平面布置 · 点击起重机查看设备卡片</h2>
           <span class="ov-legend">
-            <span><i class="ov-swatch" style="background:#f5222d"></i> 红</span>
-            <span><i class="ov-swatch" style="background:#faad14"></i> 黄</span>
-            <span><i class="ov-swatch" style="background:#52c41a"></i> 绿</span>
+            <span><i class="ov-swatch" style="background:#f5222d"></i> 报警</span>
+            <span><i class="ov-swatch" style="background:#faad14"></i> 异常</span>
+            <span><i class="ov-swatch" style="background:#52c41a"></i> 正常</span>
           </span>
         </div>
         <div class="ov-baybox">
@@ -104,7 +104,7 @@
         </div>
         <p class="ov-footnote">示意布局：每一行是台账里的一个使用地点，竖条是该地点的起重机。没有坐标，不能当成厂区 CAD。</p>
       </section>
-      <p class="ov-footnote">卡片颜色是六项服务里最严重的一盏灯：红、黄或绿。停机不改变颜色，只在筛选里单独列出。悬停编号可看类型和位置。</p>
+      <p class="ov-footnote">卡片颜色是六项服务里最严重的一盏灯：报警、异常或正常。停机不改变颜色，只在筛选里单独列出，并且不含离线。离线设备仍用最近一次灯色，卡片上不另标离线。悬停编号可看类型和位置。</p>
     </main>
   </div>
 </template>
@@ -124,6 +124,7 @@ import {
   worstUnit,
   type OverviewCard
 } from '@/mock/overviewDemo'
+import { SEVERITY_DICT } from '@/config/statusDict'
 import { overviewAccessOf, useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
@@ -201,15 +202,16 @@ const counts = computed(() => {
     if (card.lamp === 'red') base.red += 1
     else if (card.lamp === 'yellow') base.yellow += 1
     else base.green += 1
+    // 停机不含离线。离线时 run 为 null，卡片仍按 lamp 计入报警/异常/正常。
     if (card.run === 'stopped') base.stopped += 1
   })
   return base
 })
 const chips = computed(() => [
   { id: 'all' as const, label: '全部', n: counts.value.all },
-  { id: 'red' as const, label: '红', n: counts.value.red },
-  { id: 'yellow' as const, label: '黄', n: counts.value.yellow },
-  { id: 'green' as const, label: '绿', n: counts.value.green },
+  { id: 'red' as const, label: SEVERITY_DICT.red.label, n: counts.value.red },
+  { id: 'yellow' as const, label: SEVERITY_DICT.yellow.label, n: counts.value.yellow },
+  { id: 'green' as const, label: SEVERITY_DICT.green.label, n: counts.value.green },
   { id: 'stopped' as const, label: '停机', n: counts.value.stopped }
 ])
 function colorRank(card: OverviewCard) {

@@ -6,7 +6,7 @@
         {{ name }}
       </span>
       <span :class="`badge badge-${status}`">
-        <span class="badge-dot"></span>{{ statusLabels[status] }}
+        <span class="badge-dot"></span>{{ runStatusLabel(status) }}
       </span>
       <span class="device-info-meta-sep">·</span>
       <span class="device-info-meta-item">编号：<strong>{{ code }}</strong></span>
@@ -27,9 +27,11 @@
 </template>
 
 <script setup lang="ts">
+import { runStatusLabel } from '@/config/statusDict'
+
 defineProps<{
   name: string
-  status: 'running' | 'standby' | 'stopped' | 'maintenance'
+  status: 'running' | 'standby' | 'stopped' | 'offline' | 'maintenance'
   code: string
   type: string
   location: string
@@ -38,13 +40,6 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{ back: [] }>()
-
-const statusLabels = {
-  running: '运行中',
-  standby: '待机',
-  stopped: '停机',
-  maintenance: '待机'
-} as const
 </script>
 
 <style scoped>

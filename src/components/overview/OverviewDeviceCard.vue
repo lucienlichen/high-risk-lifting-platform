@@ -28,13 +28,14 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { severityLabel } from '@/config/statusDict'
 import type { OverviewCard } from '@/mock/overviewDemo'
 
 const props = defineProps<{ card: OverviewCard }>()
 const emit = defineEmits<{ open: [] }>()
 
 const tone = computed(() => props.card.lamp === 'red' ? 'red' : props.card.lamp === 'yellow' ? 'yellow' : 'green')
-const toneLabel = computed(() => tone.value === 'red' ? '红' : tone.value === 'yellow' ? '黄' : '绿')
+const toneLabel = computed(() => severityLabel(tone.value))
 const shape = computed(() => {
   const type = props.card.type || ''
   if (/门座/.test(type)) return 'portal'
