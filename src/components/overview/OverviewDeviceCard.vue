@@ -1,109 +1,50 @@
 <template>
-  <button type="button" class="ov-card" :class="[`is-${card.state}`, runClass]" :aria-label="`${card.code} ${card.workLabel} ${levelText(card.state)}`" @click="emit('open')">
-    <span class="ov-run" :class="runClass">
-      <span class="ov-run-main">
-        <svg v-if="card.run === 'running'" width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
-          <path d="M8 1v6M5 7h6v2a3 3 0 1 1-3 3" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" />
-        </svg>
-        <svg v-else-if="card.run === 'stopped'" width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
-          <rect x="4" y="3" width="2.4" height="10" rx="0.6" fill="#475569" />
-          <rect x="9.6" y="3" width="2.4" height="10" rx="0.6" fill="#475569" />
-        </svg>
-        <svg v-else width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
-          <rect x="2.5" y="2.5" width="11" height="11" rx="2" fill="none" stroke="#64748b" stroke-width="1.4" stroke-dasharray="2.2 1.6" />
-        </svg>
-        {{ card.workLabel }}
-        <i v-if="card.run === 'running'" class="ov-breath"></i>
-      </span>
-      <span class="ov-status" :class="`is-${card.state}`">{{ levelText(card.state) }}</span>
-    </span>
-    <span class="ov-card-body">
-      <span class="ov-code" :title="metaTitle">{{ card.code }}</span>
-      <span v-if="!brief" class="ov-live">
-        <span class="ov-metric">
-          <b :class="loadClass">{{ weightText }}</b>
-          <i class="ov-track" aria-hidden="true"><i :class="loadClass" :style="{ width: barWidth }"></i></i>
-          <em>起升重量</em>
-        </span>
-        <span class="ov-metric" :title="tonsTitle">
-          <b>{{ tonText(card.totalTons) }}</b>
-          <em>累计重量</em>
-        </span>
-        <span class="ov-metric" :title="todayTitle">
-          <b>{{ card.todayLifts == null ? '—' : card.todayLifts + '次' }}</b>
-          <em>今日吊重次数</em>
-        </span>
-        <span class="ov-metric" :title="totalLiftTitle">
-          <b>{{ card.totalLifts == null ? '—' : countText(card.totalLifts) }}</b>
-          <em>累计吊重次数</em>
-        </span>
-      </span>
-      <span class="ov-counts">
-        <span v-for="item in card.counts" :key="item.label" class="ov-count" :class="item.tone">
-          <b>{{ item.n }}</b>
-          <em>{{ item.label }}</em>
-        </span>
-      </span>
-    </span>
+  <button type="button" class="ov-card" :class="`is-${tone}`" :aria-label="`${card.code} ${toneLabel}`" @click="emit('open')">
+    <svg class="ov-sil" viewBox="0 0 160 72" aria-hidden="true">
+      <g v-if="shape === 'gantry'" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
+        <path d="M28 58 V22 H132 V58" />
+        <path d="M46 22 V14 H114 V22" />
+        <rect x="70" y="14" width="22" height="8" />
+        <path d="M81 22 V40" />
+        <path d="M74 40 h14 l-2 8 h-10 z" />
+      </g>
+      <g v-else-if="shape === 'portal'" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
+        <path d="M78 58 V34" />
+        <path d="M58 58 H98" />
+        <path d="M70 34 H86" />
+        <path d="M86 34 L128 18" />
+        <path d="M128 18 V32" />
+        <path d="M122 32 h12 l-2 7 h-8 z" />
+        <path d="M48 34 H70" />
+      </g>
+      <g v-else fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
+        <path d="M18 28 H142" />
+        <path d="M18 36 H142" />
+        <path d="M28 36 V50 M132 36 V50" />
+        <path d="M22 50 H36 M126 50 H140" />
+        <rect x="68" y="20" width="26" height="8" />
+        <path d="M81 28 V46" />
+        <path d="M74 46 h14 l-2 8 h-10 z" />
+      </g>
+    </svg>
+    <span class="ov-code" :title="metaTitle">{{ card.code }}</span>
   </button>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { OVERVIEW_CARD_RULES } from '@/mock/overviewCardRules'
-import { levelText, type OverviewCard } from '@/mock/overviewDemo'
+import type { OverviewCard } from '@/mock/overviewDemo'
 
-const props = defineProps<{ card: OverviewCard; brief?: boolean }>()
+const props = defineProps<{ card: OverviewCard }>()
 const emit = defineEmits<{ open: [] }>()
 
+const tone = computed(() => props.card.lamp === 'red' ? 'red' : props.card.lamp === 'yellow' ? 'yellow' : 'green')
+const toneLabel = computed(() => tone.value === 'red' ? '红' : tone.value === 'yellow' ? '黄' : '绿')
+const shape = computed(() => {
+  const type = props.card.type || ''
+  if (/门座/.test(type)) return 'portal'
+  if (/门式/.test(type)) return 'gantry'
+  return 'bridge'
+})
 const metaTitle = computed(() => [props.card.type, props.card.capacityText, `${props.card.unit} ${props.card.location}`.trim()].filter(Boolean).join(' · '))
-const weightText = computed(() => {
-  if (props.card.curTons == null) return '—'
-  const current = props.card.curTons.toFixed(1)
-  if (props.card.ratedTons == null) return `${current}t`
-  return `${current}/${props.card.ratedTons}t`
-})
-const barWidth = computed(() => `${Math.min(props.card.loadPct ?? 0, 100)}%`)
-const loadClass = computed(() => {
-  const pct = props.card.loadPct
-  if (pct == null) return ''
-  if (pct > OVERVIEW_CARD_RULES.loadOverPercent) return 'is-over'
-  if (pct >= OVERVIEW_CARD_RULES.loadHotPercent) return 'is-hot'
-  return ''
-})
-const runClass = computed(() => {
-  if (props.card.run === 'running') return 'is-running'
-  if (props.card.run === 'stopped') return 'is-stopped'
-  return 'is-off'
-})
-const tonsTitle = computed(() => {
-  if (props.card.totalTons == null) return '离线，不显示累计重量'
-  return `演示派生值。累计重量 ${tonText(props.card.totalTons)} = 累计吊重 ${props.card.totalLifts} 次 × 均载 ${props.card.avgLoadTons} t。`
-})
-const todayTitle = computed(() => {
-  if (props.card.todayLifts == null) return '离线，不显示吊重次数'
-  return `演示派生值。今日 ${props.card.todayLifts} 次为当日吊重作业。`
-})
-const totalLiftTitle = computed(() => {
-  if (props.card.totalLifts == null) return '离线，不显示累计吊重次数'
-  return `演示派生值。累计 ${props.card.totalLifts} 次按投用日期 × 日均 ${props.card.liftAvg} 次估算。`
-})
-
-function countText(value: number) {
-  if (value >= 10000) {
-    const wan = value / 10000
-    const num = wan >= 10 ? String(Math.round(wan)) : wan.toFixed(1)
-    return `${num}万次`
-  }
-  return `${value}次`
-}
-
-function tonText(value: number | null) {
-  if (value == null) return '—'
-  if (value >= 10000) {
-    const wan = value / 10000
-    return `${wan >= 100 ? Math.round(wan) : wan.toFixed(1)}万t`
-  }
-  return `${Math.round(value)}t`
-}
 </script>

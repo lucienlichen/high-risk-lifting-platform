@@ -7,16 +7,11 @@
           <div class="ov-idline">
             <h1>{{ card.name }}</h1>
             <span>{{ card.code }}</span>
-            <span class="ov-status" :class="`is-${card.state}`">{{ levelText(card.state) }}</span>
-            <span v-if="card.run" class="ov-tag" :class="card.run === 'running' ? 'is-run' : 'is-stop'">{{ card.workLabel }}</span>
           </div>
           <div class="ov-facts">
             <span>{{ card.unit }} · {{ card.location || '—' }}</span>
             <span>额定起重量 <b>{{ card.capacityText }}</b></span>
-            <span>跨度 <b>{{ card.spanText }}</b></span>
-            <span>工作级别 <b>{{ card.classText }}</b></span>
-            <span>投用 <b>{{ card.yearText }}</b></span>
-            <span>设备负责人 <b>—</b></span>
+            <span>类型 <b>{{ card.type || '—' }}</b></span>
           </div>
         </div>
         <div>
@@ -30,118 +25,110 @@
       </section>
       <p v-else>没有这台设备。</p>
 
-      <div v-if="card && structure" class="ov-struct-split">
-      <OverviewStructureTree :model="structure" :selected-id="selectedId" @select="selectNode" />
-      <div class="ov-struct-main">
-      <section class="ov-device-grid">
-        <div class="ov-twin">
-          <div class="ov-section-head">
-            <h2>数字孪生</h2>
-            <div class="ov-layers" role="group" aria-label="孪生图层">
-              <button v-for="item in layers" :key="item.id" type="button" :class="{ active: layer === item.id }" @click="layer = item.id">{{ item.name }}</button>
-            </div>
+      <template v-if="card">
+        <section v-if="hero" class="ov-hero" :class="{ 'is-yellow': hero.level === 'yellow' }">
+          <p class="ov-hero-kicker">{{ card.code }} {{ hero.level === 'red' ? '预警' : '报警' }}</p>
+          <h2>{{ hero.text }}</h2>
+          <div class="ov-hero-meta">
+            <span>发生时间 {{ hero.time }}</span>
+            <span>来源：{{ sourceOf(hero) }}</span>
+            <span>关联对象：{{ heroLink }}</span>
           </div>
-          <div class="ov-stage">
-            <svg viewBox="0 0 800 400" role="img" aria-label="桥式起重机结构示意">
-              <line x1="40" y1="350" x2="760" y2="350" stroke="#334a6b" stroke-width="2" />
-              <rect x="60" y="110" width="680" height="34" fill="none" stroke="#7fa6d6" stroke-width="2" />
-              <rect x="60" y="150" width="680" height="34" fill="none" stroke="#7fa6d6" stroke-width="2" />
-              <rect v-if="layer === 'stress'" x="250" y="110" width="300" height="74" fill="rgba(148,163,184,.25)" />
-              <rect x="330" y="82" width="140" height="28" fill="none" stroke="#a5c4ea" stroke-width="2" />
-              <rect x="60" y="100" width="24" height="94" fill="none" stroke="#7fa6d6" stroke-width="2" />
-              <rect x="716" y="100" width="24" height="94" fill="none" stroke="#7fa6d6" stroke-width="2" />
-              <line x1="380" y1="184" x2="380" y2="270" stroke="#a5c4ea" stroke-width="2" />
-              <line x1="420" y1="184" x2="420" y2="270" stroke="#a5c4ea" stroke-width="2" />
-              <path d="M360 270 h80 l-12 60 h-56 z" fill="none" stroke="#a5c4ea" stroke-width="2" />
-              <text x="400" y="312" fill="#a5c4ea" font-size="13" text-anchor="middle">吊具</text>
-            </svg>
-            <button v-for="node in nodes" :key="node.id" type="button" class="ov-node" :style="{ left: node.left, top: node.top }" @click="pickNode(node.id, node.label)">{{ node.label }}</button>
-            <p v-if="callout" class="ov-callout">{{ callout }}</p>
-            <div class="ov-stage-foot">
-              <span>{{ layer === 'stress' ? '应力云图为示意，无实测色标' : 'Unity 3D 模型接入位' }}</span>
-              <span v-if="activeNode">当前结构节点：{{ activeNode }}</span>
-            </div>
-          </div>
-          <div class="ov-lives">
-            <div>
-              <span>当前起重量</span>
-              <b>{{ card.curTons == null ? '—' : card.curTons.toFixed(0) }}<em>t</em></b>
-            </div>
-            <div><span>主起升制动力矩</span><b>—<em></em></b></div>
-            <div><span>减速机高速轴温度</span><b>—<em></em></b></div>
-            <div><span>主梁跨中应力</span><b>—<em></em></b></div>
-            <div><span>大车运行速度</span><b>—<em></em></b></div>
-          </div>
-        </div>
-        <aside class="ov-side">
-          <div class="ov-block ov-alert" :class="alertClass">
-            <div class="ov-section-head">
-              <h2>{{ detailHeading }}</h2>
-              <span v-if="detailAccident" class="ov-pill">关联事故：{{ detailAccident }}</span>
-            </div>
-            <p>{{ detailText }}</p>
-            <ul v-if="!isRoot && selectedNode?.points.length" class="ov-struct-points">
-              <li v-for="point in selectedNode.points" :key="point.name">
-                <b>{{ point.name }}</b>
-                <span>{{ pointStatusText(point.status) }}</span>
-                <em>{{ point.value }}</em>
-              </li>
-            </ul>
-            <div class="ov-kv">
-              <span>发生时间 <b>{{ alarmTime }}</b></span>
-              <span>已持续 <b>—</b></span>
-              <span>数据来源 <b>{{ sourceText }}</b></span>
-              <span>处置状态 <b>—</b></span>
-            </div>
-            <div>
-              <span class="ov-sub">近 7 日曲线</span>
-              <div ref="chartEl" class="ov-chart"></div>
-            </div>
-          </div>
-          <div class="ov-block">
-            <h2>处置建议</h2>
-            <p class="ov-sub">—</p>
-          </div>
-          <div class="ov-block">
-            <h2>处置进度</h2>
-            <div v-for="alarm in shownAlarms" :key="alarm.id" class="ov-step">
-              <i></i>
-              <span>{{ alarm.serviceLabel }} · {{ alarm.text }}<em>{{ alarm.time }}</em></span>
-            </div>
-            <p v-if="!shownAlarms.length" class="ov-sub">—</p>
-          </div>
-        </aside>
-      </section>
+        </section>
+        <p v-else class="ov-hero-empty">当前没有需要处置的告警。</p>
 
-      <section v-if="card" class="ov-block">
-        <div class="ov-section-head">
-          <h2>各服务结论速览</h2>
-          <span class="ov-sub">{{ isRoot ? '结论来自六项服务的概览灯，详情进入原有模块' : '只显示该节点绑定的服务' }}</span>
-        </div>
-        <div class="ov-services">
-          <div v-for="service in shownServices" :key="service.key" class="ov-service" :class="`is-${service.level === 'normal' ? 'normal' : 'red'}`">
-            <span class="name">{{ service.label }}</span>
-            <span class="result">{{ lampLabel(service.level) }}</span>
-            <span class="detail">{{ service.reason }}</span>
-            <button type="button" @click="openModule(service.key)">进入模块 →</button>
+        <template v-if="hero">
+          <nav class="ov-spec-tabs" role="tablist" aria-label="专业">
+            <button v-for="item in specialties" :key="item.id" type="button" role="tab" :class="{ active: specialty === item.id }" :aria-selected="specialty === item.id" @click="specialty = item.id">{{ item.label }}</button>
+          </nav>
+          <div class="ov-workbench">
+            <aside class="ov-spec-side">
+              <p class="ov-spec-caption">{{ specialtyName }}模型</p>
+              <button
+                v-for="row in modelRows"
+                :key="row.id"
+                type="button"
+                class="ov-spec-row"
+                :class="{ hit: row.hit, dim: row.dim }"
+                :style="{ paddingLeft: `${8 + row.depth * 16}px` }"
+                @click="focusRow(row)"
+              >
+                <i></i>
+                <span>{{ row.name }}</span>
+              </button>
+              <p v-if="!modelRows.length" class="ov-sub">这一专业没有单独的结构分支。</p>
+              <button type="button" class="ov-spec-full" @click="showFull = !showFull">{{ showFull ? '收起整机模型' : '查看整机模型拆解 >' }}</button>
+            </aside>
+            <div class="ov-spec-main">
+              <figure v-if="specialty !== 'other'" class="ov-sketch">
+                <svg viewBox="0 0 640 140" role="img" :aria-label="`${specialtyName}示意`">
+                  <template v-if="specialty === 'structure'">
+                    <path d="M40 70 H600" fill="none" stroke="#7fa6d6" stroke-width="8" />
+                    <path d="M40 92 H600" fill="none" stroke="#7fa6d6" stroke-width="3" />
+                    <rect x="250" y="48" width="140" height="28" fill="none" stroke="#f5222d" stroke-width="2" />
+                    <text x="320" y="40" fill="#f5222d" font-size="13" text-anchor="middle">{{ partName || '结构' }}</text>
+                  </template>
+                  <template v-else-if="specialty === 'mechanism'">
+                    <rect x="80" y="40" width="70" height="50" fill="none" stroke="#7fa6d6" stroke-width="2" />
+                    <circle cx="240" cy="65" r="28" fill="none" stroke="#7fa6d6" stroke-width="2" />
+                    <rect x="360" y="42" width="90" height="46" fill="none" stroke="#f5222d" stroke-width="2" />
+                    <text x="405" y="30" fill="#f5222d" font-size="13" text-anchor="middle">{{ partName || '机构' }}</text>
+                  </template>
+                  <template v-else>
+                    <rect x="70" y="28" width="200" height="90" fill="none" stroke="#7fa6d6" stroke-width="2" />
+                    <path d="M90 50 H250 M90 70 H250 M90 90 H250" stroke="#334a6b" stroke-width="1" />
+                    <rect x="340" y="36" width="160" height="74" fill="none" stroke="#f5222d" stroke-width="2" />
+                    <text x="420" y="24" fill="#f5222d" font-size="13" text-anchor="middle">{{ partName || '电控' }}</text>
+                  </template>
+                </svg>
+                <figcaption>{{ specialtyName }}示意，只标出和这条告警相关的部位</figcaption>
+              </figure>
+              <div class="ov-rel-head">
+                <h2>相关服务</h2>
+              </div>
+              <article v-for="service in relatedServices" :key="service.key" class="ov-rel-card" :class="{ focus: service.key === hero.serviceKey }">
+                <div>
+                  <h3>{{ service.label }}</h3>
+                  <p>{{ service.reason }}</p>
+                </div>
+                <button type="button" @click="openModule(service.key)">进入模块 →</button>
+              </article>
+              <p v-if="!relatedServices.length" class="ov-sub">这条告警没有对应的调查服务。</p>
+              <details class="ov-other-services">
+                <summary>其他服务</summary>
+                <div v-for="service in otherServices" :key="service.key" class="ov-rel-mini">
+                  <span>{{ service.label }} · {{ service.reason }}</span>
+                  <button type="button" @click="openModule(service.key)">进入</button>
+                </div>
+              </details>
+            </div>
+          </div>
+        </template>
+        <button v-else type="button" class="ov-spec-full" @click="showFull = !showFull">{{ showFull ? '收起整机模型' : '查看整机模型拆解 >' }}</button>
+
+        <div v-if="showFull && structure" class="ov-struct-split">
+          <OverviewStructureTree :model="structure" :selected-id="selectedId" @select="selectNode" />
+          <div class="ov-struct-main">
+            <section class="ov-block">
+              <h2>整机模型</h2>
+              <p class="ov-sub">物理结构树默认收起。这里按部件查看，不代替上面的告警调查。</p>
+              <p v-if="activeNode" class="ov-sub">当前节点：{{ activeNode }}</p>
+            </section>
           </div>
         </div>
-        <p v-if="!shownServices.length" class="ov-sub">该节点没有绑定服务</p>
-      </section>
-      </div>
-      </div>
+      </template>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import * as echarts from 'echarts'
 import OverviewStructureTree from '@/components/overview/OverviewStructureTree.vue'
-import { getOverviewCard, levelText, servicePageKey } from '@/mock/overviewDemo'
-import { lampLabel, notifyStructureNode, type LampLevel, type OverviewServiceKey } from '@/mock/overviewStatus'
-import { findStructureNode, getDeviceStructure, subtreeAlarms, subtreeServices, type StructureNode } from '@/mock/structureTree'
+import { alertNode, alertSource, latestAlert, servicesForSpecialty, SPECIALTIES, specialtyLabel, specialtyOfService, specialtyRows, type Specialty } from '@/mock/alertSpecialty'
+import { getOverviewCard, servicePageKey } from '@/mock/overviewDemo'
+import { notifyStructureNode, type OverviewServiceKey } from '@/mock/overviewStatus'
+import { getDeviceStructure } from '@/mock/structureTree'
 import { overviewAccessOf, useAuthStore } from '@/stores/auth'
 import { useSceneStore } from '@/stores/scene'
 
@@ -150,45 +137,65 @@ const router = useRouter()
 const auth = useAuthStore()
 const sceneStore = useSceneStore()
 const hint = ref('')
-const layer = ref<'stress' | 'motion' | 'points'>('stress')
-const activeNode = ref('')
+const specialty = ref<Specialty>('structure')
+const showFull = ref(false)
 const selectedId = ref('')
-const chartEl = ref<HTMLDivElement | null>(null)
-let chart: echarts.ECharts | null = null
+const activeNode = ref('')
 let timer = 0
 
-const layers = [
-  { id: 'stress' as const, name: '应力云图' },
-  { id: 'motion' as const, name: '运动状态' },
-  { id: 'points' as const, name: '监测点位' }
-]
-const nodes = [
-  { id: 'girder', label: '主梁', left: '46%', top: '18%' },
-  { id: 'leg', label: '支腿', left: '8%', top: '42%' },
-  { id: 'trolley', label: '小车', left: '48%', top: '36%' }
-]
-
+const specialties = SPECIALTIES
 const card = computed(() => getOverviewCard(String(route.params.id || '')))
 const structure = computed(() => {
   const current = card.value
   if (!current) return null
-  const model = getDeviceStructure({
+  return getDeviceStructure({
     id: current.id,
     name: current.name,
     type: current.type,
     capacityText: current.capacityText,
     riskLevel: current.riskLevel
   })
-  const lamp: LampLevel = current.machine === 'abnormal' ? 'red' : 'normal'
-  if (model.root.lamp === lamp) return model
-  return { ...model, root: { ...model.root, lamp } }
 })
-const selectedNode = computed(() => structure.value ? findStructureNode(structure.value.root, selectedId.value) ?? structure.value.root : null)
-const isRoot = computed(() => !structure.value || !selectedNode.value || selectedNode.value.id === structure.value.rootId)
-watch(structure, current => {
-  selectedId.value = current?.rootId ?? ''
-  if (current) notifyStructureNode(current.rootId)
+const hero = computed(() => card.value ? latestAlert(card.value.overview.alarms) : null)
+const heroNode = computed(() => {
+  const alarm = hero.value
+  const root = structure.value?.root
+  if (!alarm || !root) return null
+  return alertNode(root, alarm.id)
+})
+const partName = computed(() => heroNode.value && heroNode.value.id !== structure.value?.rootId ? heroNode.value.name : '')
+const heroLink = computed(() => {
+  const alarm = hero.value
+  if (!alarm) return '—'
+  const name = specialtyLabel(specialtyOfService(alarm.serviceKey))
+  return partName.value ? `${name} · ${partName.value}` : name
+})
+const specialtyName = computed(() => specialtyLabel(specialty.value))
+const modelRows = computed(() => {
+  const root = structure.value?.root
+  if (!root) return []
+  return specialtyRows(root, specialty.value, hero.value?.id || '')
+})
+const relatedServices = computed(() => {
+  const alarm = hero.value
+  const current = card.value
+  if (!alarm || !current) return []
+  const keys = new Set(servicesForSpecialty(specialtyOfService(alarm.serviceKey)))
+  return current.overview.services.filter(service => keys.has(service.key))
+})
+const otherServices = computed(() => {
+  const related = new Set(relatedServices.value.map(service => service.key))
+  return card.value?.overview.services.filter(service => !related.has(service.key)) ?? []
+})
+
+watch(() => card.value?.id, () => {
+  const alarm = hero.value
+  specialty.value = alarm ? specialtyOfService(alarm.serviceKey) : 'structure'
+  showFull.value = false
+  selectedId.value = structure.value?.rootId || ''
+  activeNode.value = ''
 }, { immediate: true })
+
 watch(card, current => {
   const access = overviewAccessOf(auth)
   if (!current || access.kind === 'super') return
@@ -200,68 +207,18 @@ watch(card, current => {
     query: { enterprise: access.enterprise || '', ...(access.unit ? { unit: access.unit } : {}) }
   })
 }, { immediate: true })
-const shownAlarms = computed(() => {
-  const current = card.value
-  const node = selectedNode.value
-  if (!current) return []
-  if (isRoot.value || !node) return current.overview.alarms
-  return subtreeAlarms(node)
-})
-const shownServices = computed(() => {
-  const current = card.value
-  const node = selectedNode.value
-  if (!current) return []
-  if (isRoot.value || !node) return current.overview.services
-  const keys = subtreeServices(node)
-  return current.overview.services.filter(service => keys.has(service.key))
-})
-const alarmTime = computed(() => shownAlarms.value[0]?.time || '—')
-const sourceText = computed(() => shownAlarms.value[0]?.serviceLabel || '—')
-const overdueText = computed(() => {
-  const current = card.value
-  if (!current?.inspOverdue || current.inspDays == null) return ''
-  return `定期检验已超期 ${-current.inspDays} 天`
-})
-const detailText = computed(() => {
-  const current = card.value
-  if (!current) return ''
-  if (!isRoot.value) {
-    if (!shownAlarms.value.length) return '该节点没有异常告警。测点状态不计入结构灯。'
-    return shownAlarms.value.map(alarm => alarm.text).join('；')
-  }
-  if (current.state === 'off' && current.machine === 'normal') return '设备台账标记为不在线。'
-  if (current.machine === 'normal') return '当前没有异常。'
-  const texts = current.overview.alarms.map(alarm => alarm.text)
-  if (overdueText.value) texts.push(overdueText.value)
-  return texts.join('；') || '—'
-})
-const callout = computed(() => {
-  const current = card.value
-  if (!current) return ''
-  if (!isRoot.value) {
-    const alarm = shownAlarms.value[0]
-    return alarm ? [alarm.accident, alarm.text].filter(Boolean).join(' · ') : ''
-  }
-  if (current.machine !== 'abnormal') return ''
-  const alarm = current.overview.alarms[0]
-  if (alarm) return [alarm.accident, alarm.text].filter(Boolean).join(' · ')
-  return overdueText.value
-})
-const alertClass = computed(() => {
-  if (!isRoot.value) return shownAlarms.value.length ? '' : 'is-ok'
-  return card.value?.machine === 'abnormal' ? '' : 'is-ok'
-})
 
+function sourceOf(alarm: { serviceKey: OverviewServiceKey }) {
+  return alertSource(alarm.serviceKey)
+}
 function back() {
   router.push({ name: 'overviewPlant', query: route.query })
 }
-
 function demo() {
   hint.value = '演示按钮，尚未接入'
   window.clearTimeout(timer)
   timer = window.setTimeout(() => { hint.value = '' }, 1600)
 }
-
 function openModule(key: OverviewServiceKey) {
   const current = card.value
   if (!current) return
@@ -270,69 +227,13 @@ function openModule(key: OverviewServiceKey) {
   sceneStore.setDevice(current.id, true)
   router.push(`/device/${current.id}`)
 }
-
-function draw() {
-  if (!chartEl.value) return
-  chart?.dispose()
-  chart = echarts.init(chartEl.value)
-  chart.setOption({
-    graphic: [{
-      type: 'text',
-      left: 'center',
-      top: 'middle',
-      style: { text: '暂无近 7 日序列', fill: '#64748b', fontSize: 12 }
-    }]
-  })
-}
-
-const detailHeading = computed(() => {
-  if (!isRoot.value) return shownAlarms.value.length ? '异常详情' : '当前状态'
-  return card.value?.machine === 'abnormal' ? '异常详情' : '当前状态'
-})
-const detailAccident = computed(() => {
-  if (!isRoot.value) return shownAlarms.value[0]?.accident || ''
-  return card.value?.scene || ''
-})
-
-function pointStatusText(status: StructureNode['points'][number]['status']) {
-  if (status === 'danger') return '异常'
-  if (status === 'warn') return '预警'
-  if (status === 'reading') return '有读数'
-  return '正常'
-}
-
-function nodeByName(node: StructureNode, text: string): StructureNode | null {
-  if (node.name.includes(text)) return node
-  for (const child of node.children) {
-    const found = nodeByName(child, text)
-    if (found) return found
-  }
-  return null
-}
-
 function selectNode(id: string) {
   selectedId.value = id
-  const node = structure.value ? findStructureNode(structure.value.root, id) : null
-  activeNode.value = node?.name ?? ''
+  activeNode.value = id
   notifyStructureNode(id)
 }
-
-function pickNode(id: string, label: string) {
-  const root = structure.value?.root
-  if (!root) {
-    activeNode.value = label
-    notifyStructureNode(id)
-    return
-  }
-  const named = label === '支腿'
-    ? nodeByName(root, '支腿') ?? nodeByName(root, '未归属测点')
-    : nodeByName(root, label)
-  if (named) selectNode(named.id)
-  else {
-    activeNode.value = label
-    notifyStructureNode(id)
-  }
+function focusRow(row: { id: string; name: string }) {
+  activeNode.value = row.name
+  if (!row.id.startsWith('other-')) notifyStructureNode(row.id)
 }
-onMounted(draw)
-onBeforeUnmount(() => chart?.dispose())
 </script>

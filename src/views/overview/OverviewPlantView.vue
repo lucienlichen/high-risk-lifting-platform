@@ -14,7 +14,8 @@
             <button type="button" class="ov-tree-btn depth-sector" :class="{ active: !unit && enterprise === group.enterprise }" @click="select(group.enterprise, '')">
               <span class="name" :title="group.sector">{{ group.sector }}</span>
               <span class="ov-badges">
-                <span v-if="group.abnormal" class="ov-badge red">{{ group.abnormal }}</span>
+                <span v-if="group.red" class="ov-badge red">{{ group.red }}</span>
+                <span v-if="group.yellow" class="ov-badge yellow">{{ group.yellow }}</span>
                 <span>{{ group.total }}</span>
               </span>
             </button>
@@ -29,7 +30,8 @@
           >
             <span class="name" :title="item.unit">{{ item.unit }}</span>
             <span class="ov-badges">
-              <span v-if="item.abnormal" class="ov-badge red">{{ item.abnormal }}</span>
+              <span v-if="item.red" class="ov-badge red">{{ item.red }}</span>
+              <span v-if="item.yellow" class="ov-badge yellow">{{ item.yellow }}</span>
               <span>{{ item.total }}</span>
             </span>
           </button>
@@ -47,10 +49,6 @@
             <span class="ov-sr">搜索设备编号或位置</span>
             <input v-model="q" type="search" placeholder="设备编号 / 位置" />
           </label>
-          <div class="ov-toggle" role="group" aria-label="卡片信息量">
-            <button type="button" :class="{ active: !brief }" @click="brief = false">详细</button>
-            <button type="button" :class="{ active: brief }" @click="brief = true">精简</button>
-          </div>
           <div class="ov-toggle" role="group" aria-label="显示方式">
             <button type="button" :class="{ active: view === 'cards' }" @click="view = 'cards'">卡片</button>
             <button type="button" :class="{ active: view === 'plan' }" @click="view = 'plan'">厂区平面图</button>
@@ -58,19 +56,15 @@
         </div>
       </section>
       <section class="ov-chips" role="group" aria-label="按状态筛选">
-        <button v-for="chip in chips" :key="chip.id" type="button" class="ov-chip" :class="[`is-${chip.id === 'all' ? 'all' : chip.id}`, { ['active-' + chip.id]: stateFilter === chip.id }]" @click="stateFilter = chip.id; limit = 40">
+        <button v-for="chip in chips" :key="chip.id" type="button" class="ov-chip" :class="[`is-${chip.id === 'all' ? 'all' : chip.id}`, { ['active-' + chip.id]: hue === chip.id }]" @click="hue = chip.id; limit = 40">
           <span class="dot"></span>{{ chip.label }}<b>{{ chip.n }}</b>
         </button>
-        <span class="ov-chip-split"></span>
-        <button v-for="chip in runChips" :key="chip.id" type="button" class="ov-chip" :class="[`is-${chip.id}`, { ['active-' + chip.id]: runFilter === chip.id }]" @click="toggleRun(chip.id)">
-          <span class="dot"></span>{{ chip.label }}<b>{{ chip.n }}</b>
-        </button>
-        <span class="ov-chip-note">异常设备自动排在最前</span>
+        <span class="ov-chip-note">停机只用于筛选，卡片仍按红黄绿着色</span>
       </section>
 
       <template v-if="view === 'cards'">
         <section class="ov-grid" aria-label="设备卡片">
-          <OverviewDeviceCard v-for="card in visible" :key="card.id" :card="card" :brief="brief" @open="open(card.id)" />
+          <OverviewDeviceCard v-for="card in visible" :key="card.id" :card="card" @open="open(card.id)" />
         </section>
         <button v-if="filtered.length > limit" type="button" class="ov-more" @click="limit += 40">显示更多（还有 {{ filtered.length - limit }} 台）</button>
         <p v-if="!filtered.length" class="ov-empty">没有符合条件的设备</p>
@@ -81,10 +75,9 @@
         <div class="ov-section-head">
           <h2>{{ scopeName }}平面布置 · 点击起重机查看设备卡片</h2>
           <span class="ov-legend">
-            <span><i class="ov-swatch" style="background:#f5222d"></i> 异常</span>
-            <span><i class="ov-swatch" style="background:#c7d4e5"></i> 正常</span>
-            <span><i class="ov-swatch" style="background:#fff;border:1px dashed #64748b"></i> 离线</span>
-            <span><i class="ov-swatch" style="background:#c7d4e5;box-shadow:inset 0 0 0 2px #1677ff"></i> 作业中</span>
+            <span><i class="ov-swatch" style="background:#f5222d"></i> 红</span>
+            <span><i class="ov-swatch" style="background:#faad14"></i> 黄</span>
+            <span><i class="ov-swatch" style="background:#52c41a"></i> 绿</span>
           </span>
         </div>
         <div class="ov-baybox">
@@ -98,20 +91,20 @@
                 :key="crane.id"
                 type="button"
                 class="ov-plan-crane"
-                :class="[`is-${crane.state}`, { 'is-run': crane.run === 'running', dim: !match(crane), sel: selectedId === crane.id }]"
+                :class="[craneTone(crane), { dim: !match(crane), sel: selectedId === crane.id }]"
                 :style="craneStyle(index, bay.cards.length)"
                 :title="crane.code"
                 @click="selectedId = selectedId === crane.id ? '' : crane.id"
               >{{ bay.cards.length <= 18 ? crane.code.slice(-4) : '' }}</button>
               <div v-if="bayPop(bay)" class="ov-pop">
-                <OverviewDeviceCard :card="bayPop(bay)!" :brief="brief" @open="open(bayPop(bay)!.id)" />
+                <OverviewDeviceCard :card="bayPop(bay)!" @open="open(bayPop(bay)!.id)" />
               </div>
             </span>
           </div>
         </div>
         <p class="ov-footnote">示意布局：每一行是台账里的一个使用地点，竖条是该地点的起重机。没有坐标，不能当成厂区 CAD。</p>
       </section>
-      <p class="ov-footnote">编号来自设备台账，悬停可看类型、额定起重量和位置。异常 = 结构、机构或其他预警，或定期检验已超期。吊重次数和累计重量为演示派生值。</p>
+      <p class="ov-footnote">卡片颜色是六项服务里最严重的一盏灯：红、黄或绿。停机不改变颜色，只在筛选里单独列出。悬停编号可看类型和位置。</p>
     </main>
   </div>
 </template>
@@ -128,11 +121,8 @@ import {
   getOverviewCards,
   legalHint,
   rollupUnits,
-  sortCards,
   worstUnit,
-  type CardState,
-  type OverviewCard,
-  type RunState
+  type OverviewCard
 } from '@/mock/overviewDemo'
 import { overviewAccessOf, useAuthStore } from '@/stores/auth'
 
@@ -142,10 +132,8 @@ const auth = useAuthStore()
 const all = getOverviewCards()
 const access = computed(() => overviewAccessOf(auth))
 const q = ref('')
-const brief = ref(false)
 const view = ref<'cards' | 'plan'>('cards')
-const stateFilter = ref<'all' | CardState>('all')
-const runFilter = ref<'all' | RunState>('all')
+const hue = ref<'all' | 'red' | 'yellow' | 'green' | 'stopped'>('all')
 const limit = ref(40)
 const selectedId = ref('')
 const openGroups = ref(new Set<string>())
@@ -185,7 +173,7 @@ const tree = computed(() => {
       if (a.unit === '待归属') return 1
       if (b.unit === '待归属') return -1
       if (id === BENGANG) return plateOrder.indexOf(a.unit) - plateOrder.indexOf(b.unit)
-      return b.abnormal - a.abnormal || b.total - a.total || a.unit.localeCompare(b.unit, 'zh-CN')
+      return b.red - a.red || b.yellow - a.yellow || b.total - a.total || a.unit.localeCompare(b.unit, 'zh-CN')
     })
     return {
       id,
@@ -194,7 +182,8 @@ const tree = computed(() => {
       sector: id === BENGANG ? '板材板块' : '',
       hint: legalHint(id),
       total: cards.length,
-      abnormal: cards.filter(card => card.state === 'abnormal').length,
+      red: cards.filter(card => card.lamp === 'red').length,
+      yellow: cards.filter(card => card.lamp === 'yellow').length,
       units
     }
   }).filter(group => group.total > 0)
@@ -207,28 +196,34 @@ const searched = computed(() => {
   return scopeCards.value.filter(card => card.code.includes(keyword) || card.location.includes(keyword) || card.unit.includes(keyword) || card.name.includes(keyword))
 })
 const counts = computed(() => {
-  const base = { all: searched.value.length, abnormal: 0, normal: 0, off: 0, running: 0, stopped: 0 }
+  const base = { all: searched.value.length, red: 0, yellow: 0, green: 0, stopped: 0 }
   searched.value.forEach(card => {
-    base[card.state] += 1
-    if (card.run) base[card.run] += 1
+    if (card.lamp === 'red') base.red += 1
+    else if (card.lamp === 'yellow') base.yellow += 1
+    else base.green += 1
+    if (card.run === 'stopped') base.stopped += 1
   })
   return base
 })
 const chips = computed(() => [
   { id: 'all' as const, label: '全部', n: counts.value.all },
-  { id: 'abnormal' as const, label: '异常', n: counts.value.abnormal },
-  { id: 'normal' as const, label: '正常', n: counts.value.normal },
-  { id: 'off' as const, label: '离线', n: counts.value.off }
-])
-const runChips = computed(() => [
-  { id: 'running' as const, label: '作业中', n: counts.value.running },
+  { id: 'red' as const, label: '红', n: counts.value.red },
+  { id: 'yellow' as const, label: '黄', n: counts.value.yellow },
+  { id: 'green' as const, label: '绿', n: counts.value.green },
   { id: 'stopped' as const, label: '停机', n: counts.value.stopped }
 ])
-const filtered = computed(() => sortCards(searched.value.filter(card => {
-  const stateOk = stateFilter.value === 'all' || card.state === stateFilter.value
-  const runOk = runFilter.value === 'all' || card.run === runFilter.value
-  return stateOk && runOk
-})))
+function colorRank(card: OverviewCard) {
+  if (card.lamp === 'red') return 0
+  if (card.lamp === 'yellow') return 1
+  return 2
+}
+const filtered = computed(() => searched.value.filter(card => {
+  if (hue.value === 'stopped') return card.run === 'stopped'
+  if (hue.value === 'red') return card.lamp === 'red'
+  if (hue.value === 'yellow') return card.lamp === 'yellow'
+  if (hue.value === 'green') return card.lamp !== 'red' && card.lamp !== 'yellow'
+  return true
+}).sort((a, b) => colorRank(a) - colorRank(b) || a.code.localeCompare(b.code, 'zh-CN')))
 const visible = computed(() => filtered.value.slice(0, limit.value))
 const scopeName = computed(() => unit.value || (enterprise.value === BENGANG ? '板材板块' : enterpriseLabel(enterprise.value)))
 const crumb = computed(() => [enterpriseLabel(enterprise.value), enterprise.value === BENGANG ? '板材板块' : '', unit.value].filter(Boolean).join(' / '))
@@ -251,7 +246,7 @@ const bays = computed(() => {
     const rest = rows.slice(5).flatMap(([, list]) => list)
     rows = [...rows.slice(0, 5), ['其他地点', rest]]
   }
-  return rows.map(([name, cards]) => ({ name, cards: sortCards(cards) }))
+  return rows.map(([name, cards]) => ({ name, cards: [...cards].sort((a, b) => colorRank(a) - colorRank(b) || a.code.localeCompare(b.code, 'zh-CN')) }))
 })
 
 function isGroupActive(group: { enterprise: string }) {
@@ -263,16 +258,19 @@ function select(nextEnterprise: string, nextUnit: string) {
   limit.value = 40
   router.push({ name: 'overviewPlant', query: { enterprise: nextEnterprise, unit: nextUnit } })
 }
-function toggleRun(id: RunState) {
-  runFilter.value = runFilter.value === id ? 'all' : id
-  limit.value = 40
+function craneTone(card: OverviewCard) {
+  if (card.lamp === 'red') return 'is-red'
+  if (card.lamp === 'yellow') return 'is-yellow'
+  return 'is-green'
 }
 function match(card: OverviewCard) {
   const keyword = q.value.trim()
   const hit = !keyword || card.code.includes(keyword) || card.location.includes(keyword)
-  const stateOk = stateFilter.value === 'all' || card.state === stateFilter.value
-  const runOk = runFilter.value === 'all' || card.run === runFilter.value
-  return hit && stateOk && runOk
+  if (hue.value === 'stopped') return hit && card.run === 'stopped'
+  if (hue.value === 'red') return hit && card.lamp === 'red'
+  if (hue.value === 'yellow') return hit && card.lamp === 'yellow'
+  if (hue.value === 'green') return hit && card.lamp !== 'red' && card.lamp !== 'yellow'
+  return hit
 }
 function craneStyle(index: number, count: number) {
   const width = Math.min(5.5, 70 / Math.max(count, 1))

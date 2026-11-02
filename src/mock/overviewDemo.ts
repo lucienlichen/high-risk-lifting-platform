@@ -382,6 +382,8 @@ export interface UnitRollup {
   unit: string
   total: number
   abnormal: number
+  red: number
+  yellow: number
   off: number
   online: number
 }
@@ -396,10 +398,14 @@ export function rollupUnits(cards: OverviewCard[]): UnitRollup[] {
       unit: card.unit,
       total: 0,
       abnormal: 0,
+      red: 0,
+      yellow: 0,
       off: 0,
       online: 0
     }
     row.total += 1
+    if (card.lamp === 'red') row.red += 1
+    else if (card.lamp === 'yellow') row.yellow += 1
     if (card.state === 'abnormal') row.abnormal += 1
     else if (card.state === 'off') row.off += 1
     if (card.online) row.online += 1
@@ -410,7 +416,7 @@ export function rollupUnits(cards: OverviewCard[]): UnitRollup[] {
 
 export function worstUnit(cards: OverviewCard[], enterprise: string): string {
   const rows = rollupUnits(cards.filter(card => card.enterprise === enterprise))
-  rows.sort((a, b) => b.abnormal - a.abnormal || b.total - a.total || a.unit.localeCompare(b.unit, 'zh-CN'))
+  rows.sort((a, b) => b.red - a.red || b.yellow - a.yellow || b.total - a.total || a.unit.localeCompare(b.unit, 'zh-CN'))
   return rows[0]?.unit || ''
 }
 

@@ -361,13 +361,19 @@
 }
 .ov-chip b { font-variant-numeric: tabular-nums; }
 .ov-chip .dot { width: 8px; height: 8px; border-radius: 50%; background: #64748b; }
+.ov-chip.is-red .dot,
 .ov-chip.is-abnormal .dot { background: #f5222d; }
-.ov-chip.is-off .dot { background: #fff; border: 1px dashed #64748b; }
+.ov-chip.is-yellow .dot { background: #faad14; }
+.ov-chip.is-green .dot,
 .ov-chip.is-normal .dot { background: #52c41a; }
+.ov-chip.is-off .dot { background: #fff; border: 1px dashed #64748b; }
 .ov-chip.is-running .dot { background: #1677ff; }
 .ov-chip.is-stopped .dot { background: #94a3b8; }
 .ov-chip.active-all { background: #0f172a; color: #fff; border-color: #0f172a; }
+.ov-chip.active-red,
 .ov-chip.active-abnormal { background: #f5222d; color: #fff; border-color: #f5222d; }
+.ov-chip.active-yellow { background: #faad14; color: #3d2600; border-color: #faad14; }
+.ov-chip.active-green { background: #237804; color: #fff; border-color: #237804; }
 .ov-chip.active-off { background: #475569; color: #fff; border-color: #475569; }
 .ov-chip.active-normal { background: #237804; color: #fff; border-color: #237804; }
 .ov-chip.active-running { background: #1677ff; color: #fff; border-color: #1677ff; }
@@ -377,7 +383,7 @@
 
 .ov-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 10px;
   align-items: start;
 }
@@ -402,6 +408,16 @@
 .ov-card.is-normal.is-running { border-color: #93c2f7; }
 .ov-card.is-normal.is-stopped { border-color: #c5c9d0; }
 .ov-card.is-abnormal { border: 2px solid #f5222d; }
+.ov-card.is-red { background: #fdecec; border: 1px solid #f3b4b4; color: #3f1d1d; }
+.ov-card.is-yellow { background: #fff6d6; border: 1px solid #ead48a; color: #3d3314; }
+.ov-card.is-green { background: #e7f6e4; border: 1px solid #b7d7ae; color: #1d3a24; }
+.ov-card.is-red,
+.ov-card.is-yellow,
+.ov-card.is-green { align-items: center; justify-content: center; gap: 8px; padding: 16px 12px 14px; min-height: 148px; overflow: visible; }
+.ov-sil { width: 78%; max-width: 168px; height: 72px; }
+.ov-card.is-red .ov-code,
+.ov-card.is-yellow .ov-code,
+.ov-card.is-green .ov-code { font-size: 16px; text-align: center; }
 
 .ov-run {
   height: 24px;
@@ -591,9 +607,12 @@
   writing-mode: vertical-rl;
   letter-spacing: 1px;
 }
-.ov-plan-crane.is-abnormal { background: #f5222d; color: #fff; }
+.ov-plan-crane.is-abnormal,
+.ov-plan-crane.is-red { background: #f5222d; color: #fff; }
+.ov-plan-crane.is-yellow { background: #faad14; color: #3d2600; }
+.ov-plan-crane.is-green,
+.ov-plan-crane.is-normal { background: #b7e4a8; color: #1d3a24; }
 .ov-plan-crane.is-off { background: #fff; color: #475569; border: 1px dashed #64748b; }
-.ov-plan-crane.is-normal { background: #c7d4e5; color: #334155; }
 .ov-plan-crane.is-run { box-shadow: inset 0 0 0 2px #1677ff; }
 .ov-plan-crane.dim { opacity: .2; }
 .ov-plan-crane.sel { outline: 3px solid #1677ff; outline-offset: 2px; z-index: 2; }
@@ -748,6 +767,42 @@
 .ov-struct-points b { flex: 0 0 auto; }
 .ov-struct-points span { flex: 0 0 auto; color: #64748b; }
 .ov-struct-points em { flex: 1; min-width: 0; font-style: normal; color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.ov-hero { border: 1px dashed #f5222d; border-radius: 10px; padding: 18px 20px 14px; background: #fff; }
+.ov-hero.is-yellow { border-color: #d4b106; }
+.ov-hero-kicker { margin: 0; color: #cf1322; font-size: 16px; font-weight: 700; }
+.ov-hero.is-yellow .ov-hero-kicker,
+.ov-hero.is-yellow h2 { color: #ad6800; }
+.ov-hero h2 { margin: 6px 0 12px; font-size: 28px; line-height: 1.25; color: #cf1322; }
+.ov-hero-meta { display: flex; flex-wrap: wrap; gap: 8px 18px; padding-top: 10px; border-top: 1px solid #f0f0f0; color: #475569; font-size: 13px; }
+.ov-hero-empty { margin: 0; padding: 18px 20px; border: 1px dashed #cbd5e1; border-radius: 10px; background: #fff; color: #475569; }
+
+.ov-spec-tabs { display: flex; gap: 8px; border-bottom: 1px solid #e2e8f0; }
+.ov-spec-tabs button { border: 0; background: transparent; padding: 8px 14px; font-size: 15px; color: #64748b; border-bottom: 2px solid transparent; }
+.ov-spec-tabs button.active { color: #0f172a; font-weight: 700; border-bottom-color: #0f172a; }
+
+.ov-workbench { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 16px; align-items: start; }
+.ov-spec-side, .ov-spec-main { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; }
+.ov-spec-caption { margin: 0 0 8px; font-size: 13px; font-weight: 700; }
+.ov-spec-row { width: 100%; display: flex; align-items: center; gap: 8px; min-height: 32px; padding: 4px 8px; border: 1px solid transparent; border-radius: 6px; background: transparent; text-align: left; color: #334155; }
+.ov-spec-row.hit { border-color: #91caff; background: #f0f7ff; font-weight: 700; }
+.ov-spec-row.dim { opacity: .38; }
+.ov-spec-row i { width: 14px; height: 14px; flex: 0 0 14px; border: 1px solid #cbd5e1; border-radius: 3px; }
+.ov-spec-full { margin-top: 12px; border: 0; background: transparent; color: #64748b; font-size: 13px; padding: 4px; cursor: pointer; }
+.ov-spec-full:hover { color: #1677ff; }
+
+.ov-rel-head, .ov-rel-card { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.ov-rel-card { margin-top: 8px; padding: 12px; border: 1px dashed #cbd5e1; border-radius: 8px; }
+.ov-rel-card.focus { border-style: solid; border-color: #91caff; background: #f8fbff; }
+.ov-rel-card h3 { margin: 0 0 4px; font-size: 15px; }
+.ov-rel-card p { margin: 0; color: #475569; font-size: 13px; line-height: 1.5; }
+.ov-rel-card button, .ov-rel-mini button { border: 0; background: transparent; color: #1677ff; padding: 0; cursor: pointer; font-size: 12px; }
+.ov-other-services { margin-top: 14px; }
+.ov-other-services summary { cursor: pointer; color: #64748b; font-size: 13px; }
+.ov-rel-mini { display: flex; justify-content: space-between; gap: 8px; padding: 8px 0; border-bottom: 1px solid #f1f5f9; color: #94a3b8; font-size: 13px; }
+.ov-sketch { margin-bottom: 12px; padding: 8px; border-radius: 8px; background: #0d2137; }
+.ov-sketch svg { width: 100%; height: 120px; display: block; }
+.ov-sketch figcaption { color: #94a3b8; font-size: 12px; }
 
 @media (prefers-reduced-motion: reduce) {
   .ov-run.is-running,
