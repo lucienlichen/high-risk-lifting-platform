@@ -1,5 +1,6 @@
 <template>
   <div class="device-view-root">
+    <DeviceAreaBar v-if="areaParts.length" :parts="areaParts" />
     <DeviceInfoHeader
       v-if="card"
       :name="card.name"
@@ -14,22 +15,14 @@
     <p v-else class="ov-missing">没有这台设备。</p>
 
     <div v-if="card && workbench" class="device-content-region">
+      <RemoteSectionTabs
+        :model-value="specialty"
+        :items="specialtyTabs"
+        equal-width
+        aria-label="专业"
+        @update:model-value="chooseSpecialty($event as Specialty)"
+      />
       <div class="content-scrollable">
-        <nav class="ov-spec-tabs" role="tablist" aria-label="专业">
-          <button
-            v-for="item in specialties"
-            :key="item.id"
-            type="button"
-            role="tab"
-            :class="{ active: specialty === item.id }"
-            :aria-selected="specialty === item.id"
-            @click="chooseSpecialty(item.id)"
-          >
-            {{ item.label }}
-            <span v-if="specialtyCount(item.id)" class="ov-badge" :class="specialtyLamp(item.id) === 'yellow' ? 'yellow' : 'red'">{{ specialtyCount(item.id) }}</span>
-          </button>
-        </nav>
-
         <div class="ov-bench" :class="{ 'is-collapsed': treeCollapsed }">
           <aside class="ov-struct ov-bench-tree" :aria-label="`${specialtyName}模型`">
             <div class="ov-struct-caption">
@@ -124,8 +117,8 @@
                   <button type="button" :class="{ on: kindFilter === 'measured' }" @click="kindFilter = 'measured'; page = 1">实测</button>
                   <button type="button" :class="{ on: kindFilter === 'twin' }" @click="kindFilter = 'twin'; page = 1">孪生</button>
                   <button type="button" :class="{ on: statusFilter === 'all' }" @click="statusFilter = 'all'; page = 1">任意状态</button>
-                  <button type="button" :class="{ on: statusFilter === 'warn' }" @click="statusFilter = 'warn'; page = 1">预警</button>
-                  <button type="button" :class="{ on: statusFilter === 'danger' }" @click="statusFilter = 'danger'; page = 1">异常</button>
+                  <button type="button" :class="{ on: statusFilter === 'warn' }" @click="statusFilter = 'warn'; page = 1">异常</button>
+                  <button type="button" :class="{ on: statusFilter === 'danger' }" @click="statusFilter = 'danger'; page = 1">报警</button>
                   <button type="button" :class="{ on: partFilter === 'current' }" @click="partFilter = 'current'; page = 1">当前部件</button>
                   <button type="button" :class="{ on: partFilter === 'all' }" @click="partFilter = 'all'; page = 1">全部部件</button>
                 </div>
@@ -186,7 +179,7 @@
               <div v-if="selectedAlert" class="ov-services">
                 <div v-for="service in evidenceServices" :key="service.key" class="ov-service" :class="{ focus: service.key === selectedAlert.serviceKey, 'is-red': service.level !== 'normal' }">
                   <span class="name">{{ service.label }}</span>
-                  <span class="result">{{ service.level === 'normal' ? '正常' : '异常' }}</span>
+                  <span class="result">{{ severityText(service.level) }}</span>
                   <span class="detail">{{ service.reason }}</span>
                   <button type="button" @click="openModule(service.key)">进入模块 →</button>
                 </div>
@@ -221,7 +214,9 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import DeviceAreaBar from '@/components/DeviceAreaBar.vue'
 import DeviceInfoHeader from '@/components/DeviceInfoHeader.vue'
+import RemoteSectionTabs from '@/components/RemoteSectionTabs.vue'
 import OverviewStructureTree from '@/components/overview/OverviewStructureTree.vue'
 import { getDeviceById } from '@/mock'
 import { latestAlert, servicesForSpecialty, SPECIALTIES, specialtyLabel, specialtyOfService, type Specialty } from '@/mock/alertSpecialty'
@@ -252,9 +247,20 @@ const card = computed(() => getOverviewCard(String(route.params.id || '')))
 const ledgerDevice = computed(() => card.value ? getDeviceById(card.value.id) : null)
 const headerStatus = computed(() => {
   const status = ledgerDevice.value?.status
-  if (status === 'running' || status === 'standby' || status === 'stopped' || status === 'maintenance') return status
+  if (status === 'running' || status === 'standby' || status === 'stopped') return status
   return card.value?.run === 'running' ? 'running' : 'standby'
 })
+const areaParts = computed(() => {
+  const device = ledgerDevice.value
+  if (device) return [device.group, device.affiliatedUnit, device.subsidiary, device.name].filter(Boolean)
+  const current = card.value
+  if (!current) return []
+  return [current.enterpriseLabel, current.sector, current.unit, current.name].filter(Boolean)
+})
+const specialtyTabs = computed(() => SPECIALTIES.map(item => {
+  const count = specialtyCount(item.id)
+  return { id: item.id, label: count ? `${item.label} (${count})` : item.label }
+}))
 const headerUnit = computed(() => ledgerDevice.value?.subsidiary || ledgerDevice.value?.group || card.value?.unit || '—')
 const headerInstall = computed(() => ledgerDevice.value?.installDate || card.value?.yearText || '—')
 const structure = computed(() => {
@@ -388,8 +394,13 @@ function partOrder(point: WorkPoint) {
   return 0
 }
 function statusText(status: WorkPoint['status']) {
-  if (status === 'danger') return '异常'
-  if (status === 'warn') return '预警'
+  if (status === 'danger') return '报警'
+  if (status === 'warn') return '异常'
+  return '正常'
+}
+function severityText(level: LampLevel) {
+  if (level === 'red') return '报警'
+  if (level === 'yellow') return '异常'
   return '正常'
 }
 function firstPart(id: Specialty) {

@@ -77,13 +77,7 @@
             <SceneServiceSwitcher class="top-service-switcher" />
           </div>
           <div v-else class="hierarchy-crumbs">
-            <span class="hierarchy-crumb strong">{{ currentGroup || currentSceneInfo?.name || '设备范围' }}</span>
-            <span v-if="currentAffiliatedUnit" class="hierarchy-sep">/</span>
-            <span v-if="currentAffiliatedUnit" class="hierarchy-crumb">{{ currentAffiliatedUnit }}</span>
-            <span v-if="currentSubsidiary" class="hierarchy-sep">/</span>
-            <span v-if="currentSubsidiary" class="hierarchy-crumb">{{ currentSubsidiary }}</span>
-            <span v-if="currentDevice" class="hierarchy-sep">/</span>
-            <span v-if="currentDevice" class="hierarchy-crumb strong">{{ currentDevice.name }}</span>
+            <DeviceAreaBar :parts="deviceAreaParts" bare />
             <span v-if="route.name === 'scene'" class="hierarchy-count">{{ hierarchyDeviceCount }} 台设备</span>
           </div>
         </div>
@@ -101,6 +95,7 @@ import { ref, computed, onMounted, onUnmounted, defineComponent, h } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useSceneStore } from '@/stores/scene'
 import { landingLocation, useAuthStore } from '@/stores/auth'
+import DeviceAreaBar from '@/components/DeviceAreaBar.vue'
 import SceneServiceSwitcher from '@/components/SceneServiceSwitcher.vue'
 import { flatServices, type ServiceKey } from '@/components/serviceCatalog'
 import { getDeviceById, getDevices, SCENES } from '@/mock'
@@ -139,6 +134,12 @@ const currentAffiliatedUnit = computed(() => {
   if (currentDevice.value?.affiliatedUnit) return currentDevice.value.affiliatedUnit
   return typeof route.query.affiliatedUnit === 'string' ? route.query.affiliatedUnit : ''
 })
+const deviceAreaParts = computed(() => [
+  currentGroup.value || currentSceneInfo.value?.name || '设备范围',
+  currentAffiliatedUnit.value,
+  currentSubsidiary.value,
+  currentDevice.value?.name || ''
+].filter(Boolean))
 const hierarchyScopeLabel = computed(() => {
   const parts = [
     currentGroup.value || currentSceneInfo.value?.name || '设备范围',
