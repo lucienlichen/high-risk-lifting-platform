@@ -25,7 +25,13 @@ export const OVERVIEW_CARD_RULES = {
    * 在线设备里「作业中」的比例，其余为「停机」。
    * 按公司厂区和使用地点分别摊，使每一组都接近这个比例。
    */
-  runningRatio: 0.5
+  runningRatio: 0.5,
+  /** 单台详情：每台设备的实测点数。 */
+  detailMeasuredPoints: 5,
+  /** 单台详情：每台设备的孪生点数。 */
+  detailTwinPoints: 95,
+  /** 测点表每页条数。 */
+  detailPointPageSize: 12
 } as const
 
 /** 挂不到结构树顶层分组时的兜底。风险定量评估算在「其他」。 */
