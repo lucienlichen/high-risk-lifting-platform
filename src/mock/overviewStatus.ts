@@ -1,10 +1,10 @@
 /**
  * 设备概览的统一状态。
- * 每项服务给出 正常 / 黄 / 红，设备取最严重的一项。
- * 黄 = 报警，红 = 预警，与常见习惯相反，待业务确认。
+ * 红 = 报警，黄 = 异常，绿 = 正常。用词见 src/config/statusDict.ts。
  * 分布按设备编号确定性生成：多数正常，黄大约 3%–5%，红不超过大约 1%。
  * 不复用各服务列表里“几乎全红”的占位规则。
  */
+import { severityLabel } from '@/config/statusDict'
 
 export type LampLevel = 'normal' | 'yellow' | 'red'
 
@@ -244,8 +244,7 @@ function serviceOrder(key: OverviewServiceKey) {
 }
 
 export function lampLabel(level: LampLevel): string {
-  if (level === 'red' || level === 'yellow') return '异常'
-  return '正常'
+  return severityLabel(level)
 }
 
 export interface ScopeLampStats {

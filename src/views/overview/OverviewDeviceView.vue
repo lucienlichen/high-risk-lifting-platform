@@ -12,6 +12,10 @@
       :install-date="headerInstall"
       @back="back"
     />
+    <div v-if="card" class="ov-device-level">
+      <span>风险定量 <b>{{ riskLevelText }}</b></span>
+      <span>定期检验 <b>{{ inspectLevelText }}</b></span>
+    </div>
     <p v-else class="ov-missing">没有这台设备。</p>
 
     <div v-if="card && workbench" class="device-content-region">
@@ -57,7 +61,7 @@
               </div>
               <div class="ov-stage ov-part-stage">
                 <svg viewBox="0 0 640 280" role="img" :aria-label="`${selectedPart?.name || '部件'}三维示意`">
-                  <template v-if="specialty === 'structure'">
+                  <template v-if="specialty === 'metal'">
                     <defs>
                       <linearGradient id="stress" x1="0" x2="1">
                         <stop offset="0" stop-color="#1d4ed8" />
@@ -72,7 +76,7 @@
                     <polygon points="80,190 140,150 500,150 440,190" fill="#0c1c33" stroke="#7fa6d6" />
                     <rect v-if="selectedAlert" x="300" y="118" width="70" height="22" fill="none" stroke="#f5222d" stroke-width="2" />
                   </template>
-                  <template v-else-if="specialty === 'mechanism'">
+                  <template v-else-if="specialty === 'hoist' || specialty === 'travel'">
                     <rect x="120" y="90" width="120" height="90" rx="8" fill="#16324f" stroke="#7fa6d6" />
                     <circle cx="300" cy="135" r="48" fill="#10243c" stroke="#7fa6d6" />
                     <circle cx="300" cy="135" r="16" fill="none" stroke="#f5222d" />
@@ -81,11 +85,11 @@
                     <text x="276" y="80" fill="#94a3b8" font-size="12">减速机</text>
                     <text x="410" y="80" fill="#94a3b8" font-size="12">制动器</text>
                   </template>
-                  <template v-else-if="specialty === 'electric'">
+                  <template v-else-if="specialty === 'electric' || specialty === 'protection'">
                     <rect x="160" y="50" width="320" height="180" rx="8" fill="#10243c" stroke="#7fa6d6" />
                     <path d="M190 90 H450 M190 120 H450 M190 150 H450 M190 180 H450" stroke="#334a6b" />
                     <rect x="250" y="78" width="90" height="28" fill="none" stroke="#f5222d" />
-                    <text x="320" y="40" fill="#94a3b8" font-size="12" text-anchor="middle">安全与控制</text>
+                    <text x="320" y="40" fill="#94a3b8" font-size="12" text-anchor="middle">{{ specialty === 'protection' ? '安全保护' : '电气控制' }}</text>
                   </template>
                   <template v-else>
                     <rect x="180" y="60" width="280" height="160" rx="8" fill="#10243c" stroke="#7fa6d6" />
@@ -219,7 +223,9 @@ import DeviceInfoHeader from '@/components/DeviceInfoHeader.vue'
 import RemoteSectionTabs from '@/components/RemoteSectionTabs.vue'
 import OverviewStructureTree from '@/components/overview/OverviewStructureTree.vue'
 import { getDeviceById } from '@/mock'
-import { latestAlert, servicesForSpecialty, SPECIALTIES, specialtyLabel, specialtyOfService, type Specialty } from '@/mock/alertSpecialty'
+import { specialtyById } from '@/config/specialtyDict'
+import { severityLabel } from '@/config/statusDict'
+import { latestAlert, servicesForSpecialty, SPECIALTIES, specialtyLabel, specialtyOfAlarm, type Specialty } from '@/mock/alertSpecialty'
 import { getDeviceWorkbench, type DetailAlert, type WorkPoint } from '@/mock/detailWorkbench'
 import { getOverviewCard, servicePageKey } from '@/mock/overviewDemo'
 import { OVERVIEW_CARD_RULES } from '@/mock/overviewCardRules'
@@ -263,6 +269,17 @@ const specialtyTabs = computed(() => SPECIALTIES.map(item => {
 }))
 const headerUnit = computed(() => ledgerDevice.value?.subsidiary || ledgerDevice.value?.group || card.value?.unit || '—')
 const headerInstall = computed(() => ledgerDevice.value?.installDate || card.value?.yearText || '—')
+const riskLevelText = computed(() => {
+  const alarm = card.value?.overview.alarms.find(item => item.serviceKey === 'risk')
+  return alarm ? severityLabel(alarm.level) : '正常'
+})
+const inspectLevelText = computed(() => {
+  const current = card.value
+  if (!current || current.inspDays == null) return '—'
+  if (current.inspOverdue) return `超期 ${-current.inspDays} 天 · 异常`
+  if (current.inspRemind) return `剩余 ${current.inspDays} 天 · 提醒`
+  return '正常'
+})
 const structure = computed(() => {
   const current = card.value
   if (!current) return null
@@ -282,7 +299,7 @@ const workbench = computed(() => {
 })
 const specialtyName = computed(() => specialtyLabel(specialty.value))
 const specialtyAlerts = computed(() => {
-  const list = workbench.value?.alerts.filter(alarm => specialtyOfService(alarm.serviceKey) === specialty.value) ?? []
+  const list = workbench.value?.alerts.filter(alarm => specialtyOfAlarm(alarm) === specialty.value) ?? []
   return [...list].sort((a, b) => b.time.localeCompare(a.time))
 })
 const alertGroups = computed(() => {
@@ -342,7 +359,7 @@ const evidenceServices = computed(() => {
   const alarm = selectedAlert.value
   const current = card.value
   if (!alarm || !current) return []
-  const keys = new Set(servicesForSpecialty(specialtyOfService(alarm.serviceKey)))
+  const keys = new Set(servicesForSpecialty(specialtyOfAlarm(alarm) || 'metal'))
   return current.overview.services.filter(service => keys.has(service.key))
 })
 const otherServices = computed(() => {
@@ -350,19 +367,14 @@ const otherServices = computed(() => {
   if (!selectedAlert.value) return []
   return card.value?.overview.services.filter(service => !related.has(service.key)) ?? []
 })
-const overlayLabel = computed(() => {
-  if (specialty.value === 'structure') return '应力 / 应变云图 · 裂纹位置'
-  if (specialty.value === 'mechanism') return '电机 / 减速机 / 制动器 · 振动 / 温度'
-  if (specialty.value === 'electric') return '安全监控与控制回路'
-  return '风险定量 / 检验提醒'
-})
+const overlayLabel = computed(() => specialtyById(specialty.value).overlay)
 
 watch(() => card.value?.id, () => {
   showFull.value = false
   treeCollapsed.value = false
   page.value = 1
   const latest = card.value ? latestAlert(card.value.overview.alarms) : null
-  specialty.value = latest ? specialtyOfService(latest.serviceKey) : 'structure'
+  specialty.value = latest && specialtyOfAlarm(latest) ? specialtyOfAlarm(latest)! : 'metal'
   applySpecialty(specialty.value, true)
 }, { immediate: true })
 
@@ -384,10 +396,10 @@ function worst(alerts: { level: LampLevel }[]): LampLevel | 'none' {
   return 'none'
 }
 function specialtyCount(id: Specialty) {
-  return workbench.value?.alerts.filter(alarm => specialtyOfService(alarm.serviceKey) === id).length || 0
+  return workbench.value?.alerts.filter(alarm => specialtyOfAlarm(alarm) === id).length || 0
 }
 function specialtyLamp(id: Specialty): LampLevel | 'none' {
-  return worst(workbench.value?.alerts.filter(alarm => specialtyOfService(alarm.serviceKey) === id) || [])
+  return worst(workbench.value?.alerts.filter(alarm => specialtyOfAlarm(alarm) === id) || [])
 }
 function partOrder(point: WorkPoint) {
   if (!point.partId) return 2
@@ -408,10 +420,10 @@ function firstPart(id: Specialty) {
 }
 function applySpecialty(id: Specialty, preferGlobalLatest: boolean) {
   const pool = (workbench.value?.alerts || [])
-    .filter(alarm => specialtyOfService(alarm.serviceKey) === id)
+    .filter(alarm => specialtyOfAlarm(alarm) === id)
     .sort((a, b) => b.time.localeCompare(a.time))
-  const globalLatest = card.value ? latestAlert(card.value.overview.alarms) : null
-  const chosen = preferGlobalLatest && globalLatest && specialtyOfService(globalLatest.serviceKey) === id
+  const globalLatest = card.value ? latestAlert(card.value.overview.alarms.filter(alarm => specialtyOfAlarm(alarm))) : null
+  const chosen = preferGlobalLatest && globalLatest && specialtyOfAlarm(globalLatest) === id
     ? pool.find(alarm => alarm.id === globalLatest.id) || pool[0]
     : pool[0]
   if (chosen) selectAlert(chosen.id)
@@ -431,7 +443,7 @@ function selectAlert(id: string) {
   const alarm = workbench.value?.alerts.find(item => item.id === id)
   if (!alarm) return
   selectedAlertId.value = alarm.id
-  specialty.value = specialtyOfService(alarm.serviceKey)
+  specialty.value = specialtyOfAlarm(alarm) || specialty.value
   if (alarm.partId) selectedPartId.value = alarm.partId
   else selectedPartId.value = firstPart(specialty.value)?.id || ''
   partFilter.value = 'current'

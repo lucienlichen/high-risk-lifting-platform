@@ -784,7 +784,16 @@
 .ov-hero-meta b { color: var(--color-text-primary); font-weight: 600; }
 .ov-hero-empty { margin: 0; padding: 16px 20px; border: 1px solid var(--color-card-border); border-radius: var(--radius-md); background: var(--color-card-bg); color: var(--color-text-secondary); }
 
-.ov-spec-tabs { display: flex; gap: 0; margin-bottom: 12px; padding: 3px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; width: fit-content; }
+.ov-device-level {
+  display: flex;
+  gap: 18px;
+  padding: 8px 16px;
+  background: var(--color-card-bg);
+  border-bottom: 1px solid var(--color-border-light);
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+.ov-device-level b { color: var(--color-text-primary); font-weight: 600; }
 .ov-spec-tabs button { height: 32px; padding: 0 14px; border: 0; border-radius: 6px; background: transparent; color: #0f172a; font-size: 13px; }
 .ov-spec-tabs button.active { background: var(--color-primary); color: #fff; }
 

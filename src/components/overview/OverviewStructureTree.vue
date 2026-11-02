@@ -22,7 +22,7 @@
       <span class="name" :title="row.node.name">{{ row.node.name }}</span>
       <span class="ov-badges">
         <span v-if="row.node.alarmCount" class="ov-badge red">{{ row.node.alarmCount }}</span>
-        <span v-if="row.node.pointStatus" class="ov-struct-point" :title="`测点${row.node.pointStatus}，不计入结构灯`">{{ row.node.pointStatus === '异常' ? '测异常' : '测预警' }}</span>
+        <span v-if="row.node.pointStatus" class="ov-struct-point" :title="`测点${row.node.pointStatus}，不计入结构灯`">测{{ row.node.pointStatus }}</span>
       </span>
     </button>
   </aside>

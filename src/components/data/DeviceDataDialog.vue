@@ -165,7 +165,7 @@ function levelTagType(level: Level) {
   return level === 'danger' ? 'danger' : level === 'warn' ? 'warning' : 'success'
 }
 function levelText(level: Level) {
-  return level === 'danger' ? '异常' : level === 'warn' ? '预警' : '正常'
+  return level === 'danger' ? '报警' : level === 'warn' ? '异常' : '正常'
 }
 
 function seedHash(s: string): number {
@@ -180,7 +180,7 @@ const regSections = computed(() => {
   const d = props.device
   if (!d) return []
   const idNum = (parseInt(d.id.replace(/\D/g, ''), 10) || 0) % 1000
-  const runStateMap: Record<string, string> = { running: '运行中', standby: '备用', stopped: '停用', maintenance: '维保中' }
+  const runStateMap: Record<string, string> = { running: '运行中', standby: '待机', stopped: '停机', maintenance: '待机' }
   return [
     { title: '设备基本情况', fields: [
       { label: '设备代码', value: `3010${regPad(2024000 + idNum, 7)}` },

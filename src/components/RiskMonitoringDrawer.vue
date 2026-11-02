@@ -153,10 +153,10 @@ const vibration = computed(() => (props.device ? getDeviceVibration(props.device
 
 const statusMeta = computed(() => {
   switch (props.device?.status) {
-    case 'running':     return { text: '运行中', color: 'var(--color-success)', bg: 'var(--color-success-bg)' }
-    case 'standby':     return { text: '待机',   color: 'var(--color-warning)', bg: 'var(--color-warning-bg)' }
-    case 'maintenance': return { text: '维保中', color: 'var(--color-info)',    bg: 'var(--color-info-bg)' }
-    default:            return { text: '停机',   color: 'var(--color-standby)', bg: 'var(--color-standby-bg)' }
+    case 'running':     return { text: '运行中', color: '#1677ff', bg: '#e6f4ff' }
+    case 'standby':
+    case 'maintenance': return { text: '待机', color: '#64748b', bg: '#f1f5f9' }
+    default:            return { text: '停机', color: '#64748b', bg: '#f1f5f9' }
   }
 })
 

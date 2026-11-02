@@ -6,6 +6,7 @@ import { OVERVIEW_CARD_RULES } from '@/mock/overviewCardRules'
 import type { OverviewAlarm, OverviewServiceKey } from '@/mock/overviewStatus'
 import { OVERVIEW_SERVICES } from '@/mock/overviewStatus'
 import type { StructureNode } from '@/mock/structureTree'
+import { classifyPart } from '@/config/specialtyDict'
 import { specialtyOfService, type Specialty } from '@/mock/alertSpecialty'
 
 export interface WorkPart {
@@ -54,13 +55,6 @@ function hash(input: string): number {
   return h >>> 0
 }
 
-function specialtyOfNode(id: string): Specialty | null {
-  if (id.includes('.structure')) return 'structure'
-  if (id.includes('.mechanism')) return 'mechanism'
-  if (id.includes('.electrical')) return 'electric'
-  return null
-}
-
 function isPartType(type: string) {
   return type === 'assembly' || type === 'component'
 }
@@ -68,16 +62,15 @@ function isPartType(type: string) {
 export function collectParts(root: StructureNode): WorkPart[] {
   const parts: WorkPart[] = []
   root.children.forEach(category => {
-    const specialty = specialtyOfNode(category.id)
-    if (!specialty || category.type === 'unassigned') return
+    if (category.type === 'unassigned') return
     const walk = (node: StructureNode, systemName: string, depth: number) => {
       const nextSystem = node.type === 'system' ? node.name : systemName
       if (isPartType(node.type)) {
-        parts.push({ id: node.id, name: node.name, specialty, depth, systemName: nextSystem })
+        parts.push({ id: node.id, name: node.name, specialty: classifyPart(node.name, node.id), depth, systemName: nextSystem })
         return
       }
       if (!node.children.length && node.type === 'system') {
-        parts.push({ id: node.id, name: node.name, specialty, depth, systemName: node.name })
+        parts.push({ id: node.id, name: node.name, specialty: classifyPart(node.name, node.id), depth, systemName: node.name })
         return
       }
       node.children.forEach(child => walk(child, nextSystem, depth + 1))
@@ -116,10 +109,10 @@ function serviceLabel(key: OverviewServiceKey) {
 }
 
 function supplementStructure(deviceId: string, alerts: DetailAlert[], parts: WorkPart[]) {
-  const structure = alerts.filter(alarm => specialtyOfService(alarm.serviceKey) === 'structure')
+  const structure = alerts.filter(alarm => specialtyOfService(alarm.serviceKey) === 'metal')
   if (!structure.length || structure.length >= 3) return
   const used = new Set(structure.map(alarm => alarm.partId))
-  const pool = parts.filter(part => part.specialty === 'structure' && !used.has(part.id))
+  const pool = parts.filter(part => part.specialty === 'metal' && !used.has(part.id))
   const picked: WorkPart[] = []
   EXTRA_STRUCTURE.forEach(item => {
     if (picked.length >= 3 - structure.length) return
@@ -180,7 +173,7 @@ export function buildWorkbench(deviceId: string, root: StructureNode, alarms: Ov
   const measuredTarget = OVERVIEW_CARD_RULES.detailMeasuredPoints
   const twinTarget = OVERVIEW_CARD_RULES.detailTwinPoints
   const points: WorkPoint[] = []
-  const hosts = parts.length ? parts : [{ id: `${deviceId}:body`, name: '设备本体', specialty: 'structure' as Specialty, depth: 0, systemName: '设备本体' }]
+  const hosts = parts.length ? parts : [{ id: `${deviceId}:body`, name: '设备本体', specialty: 'metal' as Specialty, depth: 0, systemName: '设备本体' }]
   if (!parts.length) parts.push(hosts[0])
 
   for (let index = 0; index < measuredTarget; index += 1) {

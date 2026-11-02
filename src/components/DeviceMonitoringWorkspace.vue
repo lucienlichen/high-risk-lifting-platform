@@ -676,7 +676,19 @@ const navItems = computed(() => {
   if (props.serviceMode === 'health') return allNavItems.filter(item => item.id !== 'electric')
   return allNavItems
 })
-const sectionTabItems = computed(() => navItems.value.map(item => ({ id: item.id, label: item.tabLabel, title: item.label })))
+const sectionSpecialty: Record<string, string> = {
+  electric: '电气控制',
+  stress: '金属结构',
+  damage: '金属结构',
+  gearbox: '起升系统',
+  brake: '起升系统',
+  wheel: '运行机构'
+}
+const sectionTabItems = computed(() => navItems.value.map(item => ({
+  id: item.id,
+  label: item.tabLabel,
+  title: `${sectionSpecialty[item.id] || '金属结构'} · ${item.label}`
+})))
 
 watch(() => props.serviceMode, () => {
   const allowed = navItems.value

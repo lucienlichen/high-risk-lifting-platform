@@ -722,7 +722,7 @@ body {
   flex-shrink: 0;
 }
 
-.badge-running  { background: var(--color-success-bg); color: var(--color-success); }
+.badge-running  { background: var(--color-info-bg); color: var(--color-info); }
 .badge-standby  { background: var(--color-info-bg);    color: var(--color-info); }
 .badge-stopped  { background: var(--color-standby-bg); color: var(--color-standby); }
 .badge-maintenance { background: var(--color-warning-bg); color: var(--color-warning); }
@@ -731,7 +731,7 @@ body {
 .badge-medium   { background: var(--color-warning-bg); color: var(--color-warning); }
 .badge-high     { background: var(--color-danger-bg);  color: var(--color-danger); }
 
-.badge-running  .badge-dot { background: var(--color-success); }
+.badge-running  .badge-dot { background: var(--color-info); }
 .badge-standby  .badge-dot { background: var(--color-info); }
 .badge-stopped  .badge-dot { background: var(--color-standby); }
 .badge-maintenance .badge-dot { background: var(--color-warning); }

@@ -38,7 +38,7 @@ export interface StructureNode {
   depth: number
   lamp: LampLevel | 'none'
   alarmCount: number
-  pointStatus: '' | '预警' | '异常'
+  pointStatus: '' | '异常' | '报警'
   points: StructurePoint[]
   services: OverviewServiceKey[]
   alarms: OverviewAlarm[]
@@ -275,10 +275,10 @@ function toView(node: RawNode, depth: number, alarms: Map<string, OverviewAlarm[
     if (child.lamp !== 'none') lamp = worse(lamp, child.lamp)
   })
   const pointRank = ownPoints.reduce((rank, point) => {
-    if (point.status === 'danger') return '异常'
-    if (point.status === 'warn' && rank !== '异常') return '预警'
+    if (point.status === 'danger') return '报警'
+    if (point.status === 'warn' && rank !== '报警') return '异常'
     return rank
-  }, '' as '' | '预警' | '异常')
+  }, '' as '' | '异常' | '报警')
   const services = new Set<OverviewServiceKey>(servicesFor(node.id))
   ownAlarms.forEach(alarm => services.add(alarm.serviceKey))
   return {

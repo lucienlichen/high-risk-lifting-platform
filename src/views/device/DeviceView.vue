@@ -529,7 +529,7 @@ const mockAlarms = ref([
     status: 'pending', handler: '', resolveTime: ''
   },
   { id: 'a2', level: 'warning', time: '10:42:15', title: '起重力矩接近限值', desc: '当前起重力矩达到额定力矩的 92%，已经进入预警区间，建议降低载荷并持续观察。',
-    source: '参数监控', parameter: '起重力矩', currentValue: '92 %', limitValue: '90 %', peakValue: '92 %', duration: '6 min', currentState: '持续预警', conclusion: '',
+    source: '参数监控', parameter: '起重力矩', currentValue: '92 %', limitValue: '90 %', peakValue: '92 %', duration: '6 min', currentState: '持续异常', conclusion: '',
     metric: '起重力矩 (%)', limit: 90,
     times: ['10:37', '10:38', '10:39', '10:40', '10:41', '10:42'],
     values: [65, 78, 85, 88, 90, 92],
@@ -549,7 +549,7 @@ const mockAlarms = ref([
     values: [100, 100, 100, 80, 40, 20],
     status: 'resolved', handler: '李工', resolveTime: '昨天 16:50'
   },
-  { id: 'a5', level: 'warning', time: '昨天 14:32', title: '超速保护触发预警', desc: '起升机构速度瞬时接近超速保护阈值，系统记录波动并发出预警。',
+  { id: 'a5', level: 'warning', time: '昨天 14:32', title: '超速保护触发异常', desc: '起升机构速度瞬时接近超速保护阈值，系统记录波动并发出预警。',
     source: '状态监控', parameter: '超速保护', currentValue: '1.16 m/s', limitValue: '1.20 m/s', peakValue: '1.18 m/s', duration: '3 min', currentState: '已恢复', conclusion: '调整变频器输出后速度恢复稳定',
     metric: '起升速度 (m/s)', limit: 1.2,
     times: ['14:27', '14:28', '14:29', '14:30', '14:31', '14:32'],

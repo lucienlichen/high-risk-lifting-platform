@@ -180,7 +180,7 @@
           <el-table-column prop="location" label="使用地点" width="220" show-overflow-tooltip />
           <el-table-column label="作业状态" width="112" align="center">
             <template #default="{ row }">
-              <el-tag :type="row.working ? 'success' : 'info'" size="small" effect="light">
+              <el-tag :type="row.working ? 'primary' : 'info'" size="small" effect="light">
                 {{ row.working ? '作业中' : '未作业' }}
               </el-tag>
             </template>
@@ -192,7 +192,7 @@
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="预警状态" width="100" align="center">
+          <el-table-column label="报警状态" width="100" align="center">
             <template #default="{ row }">
               <el-tag :type="row.warning ? 'danger' : 'success'" size="small" effect="light">
                 {{ row.warning ? '报警' : '正常' }}
@@ -244,7 +244,7 @@
           <el-table-column prop="location" label="使用地点" width="220" show-overflow-tooltip />
           <el-table-column label="作业状态" width="112" align="center">
             <template #default="{ row }">
-              <el-tag :type="row.working ? 'success' : 'info'" size="small" effect="light">
+              <el-tag :type="row.working ? 'primary' : 'info'" size="small" effect="light">
                 {{ row.working ? '作业中' : '未作业' }}
               </el-tag>
             </template>
@@ -805,7 +805,7 @@ watch(isRiskList, (val) => {
   if (val) viewMode.value = 'list'
 }, { immediate: true })
 
-const statusLabels: Record<string, string> = { running:'运行中', standby:'待机', stopped:'停机', maintenance:'维修中' }
+const statusLabels: Record<string, string> = { running:'运行中', standby:'待机', stopped:'停机', maintenance:'待机' }
 const statusOptions = ['running','standby','stopped','maintenance'].map(v => ({ value:v, label:statusLabels[v] }))
 /** 技术参数前6项列名（与 mock 中顺序一致） */
 const techParamColumnNames = ['额定起重量', '跨度', '起升高度', '工作级别', '起升速度', '运行速度']
@@ -979,7 +979,7 @@ interface RiskRegionRow {
 
 const remoteAlarmLabels: Record<RemoteAlarmLevel, string> = {
   normal: '正常',
-  warning: '预警',
+  warning: '异常',
   danger: '报警',
   offline: '离线'
 }

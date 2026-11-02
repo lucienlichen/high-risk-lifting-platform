@@ -342,9 +342,9 @@ function toCard(device: Device, inspect: { daysUntil: number; status: string } |
     totalTons: lifts.totalTons,
     avgLoadTons: lifts.avgLoad,
     counts: [
-      countCell('结构预警', groups.structure, 'hot'),
-      countCell('机构预警', groups.mechanism, 'hot'),
-      countCell('其他预警', groups.other, 'hot'),
+      countCell('金属结构', groups.structure, 'hot'),
+      countCell('起升/运行', groups.mechanism, 'hot'),
+      countCell('电气/安全', groups.other, 'hot'),
       countCell('检验提醒', inspRemind ? 1 : 0, 'due')
     ],
     overview,

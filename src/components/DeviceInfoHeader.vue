@@ -43,7 +43,7 @@ const statusLabels = {
   running: '运行中',
   standby: '待机',
   stopped: '停机',
-  maintenance: '维修中'
+  maintenance: '待机'
 } as const
 </script>
 
