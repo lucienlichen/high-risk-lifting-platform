@@ -2,32 +2,17 @@
   <!-- Device detail: data tabs at top, content scrollable, service menu in layout -->
   <div class="device-view-root">
 
-    <!-- ─── Layer 1: Device Info Header — above tabs ─── -->
-    <div class="device-info-header device-info-header--compact" v-if="device">
-      <div class="device-info-inline">
-        <span class="device-info-name-compact">
-          <el-icon size="20" color="var(--color-primary)"><Platform /></el-icon>
-          {{ device.name }}
-        </span>
-        <span :class="`badge badge-${device.status}`">
-          <span class="badge-dot"></span>{{ statusLabels[device.status] }}
-        </span>
-        <span class="device-info-meta-sep">·</span>
-        <span class="device-info-meta-item">编号：<strong>{{ device.code }}</strong></span>
-        <span class="device-info-meta-item">类型：<strong>{{ device.type }}</strong></span>
-        <span class="device-info-meta-item">位置：<strong>{{ device.location }}</strong></span>
-        <span class="device-info-meta-item">使用单位：<strong>{{ device.subsidiary || device.group || '—' }}</strong></span>
-        <span class="device-info-meta-item">投用：<strong>{{ device.installDate }}</strong></span>
-      </div>
-      <div style="display:flex;gap:8px;flex-shrink:0">
-        <el-button size="small" @click="router.back()">
-          <el-icon class="el-icon--left"><ArrowLeft /></el-icon>返回
-        </el-button>
-        <el-button size="small" type="primary">
-          <el-icon class="el-icon--left"><Refresh /></el-icon>刷新数据
-        </el-button>
-      </div>
-    </div>
+    <DeviceInfoHeader
+      v-if="device"
+      :name="device.name"
+      :status="device.status"
+      :code="device.code"
+      :type="device.type"
+      :location="device.location"
+      :unit="device.subsidiary || device.group || '—'"
+      :install-date="device.installDate"
+      @back="router.back()"
+    />
 
     <!-- ─── 服务内容区（定位容器：抽屉铺满此区域，位于服务菜单下方，不遮挡菜单） ─── -->
     <div class="device-content-region">
@@ -419,6 +404,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useSceneStore } from '@/stores/scene'
 import { Monitor, Warning, Select, Close, InfoFilled, ArrowLeft, Refresh, Platform } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
+import DeviceInfoHeader from '@/components/DeviceInfoHeader.vue'
 import DeviceMonitoringWorkspace from '@/components/DeviceMonitoringWorkspace.vue'
 import HealthAssessmentDrawer from '@/components/HealthAssessmentDrawer.vue'
 import FaultDiagnosisDrawer from '@/components/FaultDiagnosisDrawer.vue'
@@ -470,7 +456,6 @@ watch(monitorWorkCycles, (list) => {
   monitorCycleId.value = list.length > 0 ? list[0].id : 'all'
 })
 
-const statusLabels: Record<string,string> = { running:'运行中', standby:'待机', stopped:'停机', maintenance:'维修中' }
 const riskLabels:   Record<string,string> = { normal:'正常', low:'低风险', medium:'中风险', high:'高风险' }
 
 // 12 项服务里需占位面板的「数据智能服务 / 知识库」
@@ -960,56 +945,6 @@ watch(() => route.params.id, loadDevice)
   padding: 0;
   display: flex;
   flex-direction: column;
-}
-
-/* ── 紧凑单行设备信息头 ── */
-.device-info-header--compact {
-  padding: 8px 16px;
-  margin-bottom: 0;
-  border-radius: 0;
-  border-left: none;
-  border-right: none;
-  border-top: none;
-  border-bottom: 1px solid var(--color-border-light);
-  box-shadow: none;
-  backdrop-filter: none;
-  background: var(--color-card-bg);
-}
-
-.device-info-inline {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  min-width: 0;
-  flex: 1;
-}
-
-.device-info-name-compact {
-  font-size: 20px;
-  font-weight: 800;
-  color: var(--color-primary);
-  letter-spacing: 0.5px;
-  white-space: nowrap;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.device-info-meta-sep {
-  color: var(--color-border);
-  font-size: 14px;
-}
-
-.device-info-meta-item {
-  font-size: 13px;
-  color: var(--color-text-secondary);
-  white-space: nowrap;
-}
-
-.device-info-meta-item strong {
-  color: var(--color-text-primary);
-  font-weight: 600;
 }
 
 /* ── 监测数据筛选栏 ── */

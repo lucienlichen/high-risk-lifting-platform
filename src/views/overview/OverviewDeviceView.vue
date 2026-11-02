@@ -1,32 +1,20 @@
 <template>
-  <div class="ov-scroll">
-    <div class="ov-page is-fluid">
-      <button type="button" class="ov-back" @click="back">‹ 返回设备安全态势</button>
-      <section v-if="card" class="ov-device-head">
-        <div>
-          <div class="ov-idline">
-            <h1>{{ card.name }}</h1>
-            <span>{{ card.code }}</span>
-            <span class="ov-status" :class="`is-${tone}`">{{ toneLabel }}</span>
-          </div>
-          <div class="ov-facts">
-            <span>{{ card.unit }} · {{ card.location || '—' }}</span>
-            <span>额定起重量 <b>{{ card.capacityText }}</b></span>
-            <span>类型 <b>{{ card.type || '—' }}</b></span>
-          </div>
-        </div>
-        <div>
-          <div class="ov-actions">
-            <button type="button" class="primary" @click="demo">派发工单</button>
-            <button type="button" @click="demo">现场确认</button>
-            <button type="button" @click="demo">标记误报</button>
-          </div>
-          <p v-if="hint" class="ov-demo-hint">{{ hint }}</p>
-        </div>
-      </section>
-      <p v-else>没有这台设备。</p>
+  <div class="device-view-root">
+    <DeviceInfoHeader
+      v-if="card"
+      :name="card.name"
+      :status="headerStatus"
+      :code="card.code"
+      :type="card.type || '—'"
+      :location="card.location"
+      :unit="headerUnit"
+      :install-date="headerInstall"
+      @back="back"
+    />
+    <p v-else class="ov-missing">没有这台设备。</p>
 
-      <template v-if="card && workbench">
+    <div v-if="card && workbench" class="device-content-region">
+      <div class="content-scrollable">
         <nav class="ov-spec-tabs" role="tablist" aria-label="专业">
           <button
             v-for="item in specialties"
@@ -225,7 +213,7 @@
             <p class="ov-sub">整机拆解默认收起。部件三维和测点表仍以上方当前部件为准。</p>
           </section>
         </div>
-      </template>
+      </div>
     </div>
   </div>
 </template>
@@ -233,7 +221,9 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import DeviceInfoHeader from '@/components/DeviceInfoHeader.vue'
 import OverviewStructureTree from '@/components/overview/OverviewStructureTree.vue'
+import { getDeviceById } from '@/mock'
 import { latestAlert, servicesForSpecialty, SPECIALTIES, specialtyLabel, specialtyOfService, type Specialty } from '@/mock/alertSpecialty'
 import { getDeviceWorkbench, type DetailAlert, type WorkPoint } from '@/mock/detailWorkbench'
 import { getOverviewCard, servicePageKey } from '@/mock/overviewDemo'
@@ -247,7 +237,6 @@ const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 const sceneStore = useSceneStore()
-const hint = ref('')
 const specialty = ref<Specialty>('structure')
 const showFull = ref(false)
 const treeCollapsed = ref(false)
@@ -257,13 +246,17 @@ const kindFilter = ref<'all' | 'measured' | 'twin'>('all')
 const statusFilter = ref<'all' | 'normal' | 'warn' | 'danger'>('all')
 const partFilter = ref<'current' | 'all'>('current')
 const page = ref(1)
-let timer = 0
-
 const specialties = SPECIALTIES
 const pageSize = OVERVIEW_CARD_RULES.detailPointPageSize
 const card = computed(() => getOverviewCard(String(route.params.id || '')))
-const tone = computed(() => card.value?.lamp === 'red' ? 'red' : card.value?.lamp === 'yellow' ? 'yellow' : 'green')
-const toneLabel = computed(() => tone.value === 'red' ? '红' : tone.value === 'yellow' ? '黄' : '绿')
+const ledgerDevice = computed(() => card.value ? getDeviceById(card.value.id) : null)
+const headerStatus = computed(() => {
+  const status = ledgerDevice.value?.status
+  if (status === 'running' || status === 'standby' || status === 'stopped' || status === 'maintenance') return status
+  return card.value?.run === 'running' ? 'running' : 'standby'
+})
+const headerUnit = computed(() => ledgerDevice.value?.subsidiary || ledgerDevice.value?.group || card.value?.unit || '—')
+const headerInstall = computed(() => ledgerDevice.value?.installDate || card.value?.yearText || '—')
 const structure = computed(() => {
   const current = card.value
   if (!current) return null
@@ -453,11 +446,6 @@ function selectNode(id: string) {
 }
 function back() {
   router.push({ name: 'overviewPlant', query: route.query })
-}
-function demo() {
-  hint.value = '演示按钮，尚未接入'
-  window.clearTimeout(timer)
-  timer = window.setTimeout(() => { hint.value = '' }, 1600)
 }
 function openModule(key: OverviewServiceKey) {
   const current = card.value
