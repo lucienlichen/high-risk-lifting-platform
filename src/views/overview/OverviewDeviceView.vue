@@ -89,7 +89,7 @@
                     <rect x="160" y="50" width="320" height="180" rx="8" fill="#10243c" stroke="#7fa6d6" />
                     <path d="M190 90 H450 M190 120 H450 M190 150 H450 M190 180 H450" stroke="#334a6b" />
                     <rect x="250" y="78" width="90" height="28" fill="none" stroke="#f5222d" />
-                    <text x="320" y="40" fill="#94a3b8" font-size="12" text-anchor="middle">{{ specialty === 'protection' ? '安全保护' : '电气控制' }}</text>
+                    <text x="320" y="40" fill="#94a3b8" font-size="12" text-anchor="middle">{{ specialtyLabel(specialty) }}</text>
                   </template>
                   <template v-else>
                     <rect x="180" y="60" width="280" height="160" rx="8" fill="#10243c" stroke="#7fa6d6" />
@@ -374,9 +374,16 @@ watch(() => card.value?.id, () => {
   showFull.value = false
   treeCollapsed.value = false
   page.value = 1
+  const requested = queryText(route.query.spec)
+  const known = SPECIALTIES.some(item => item.id === requested)
   const latest = card.value ? latestAlert(card.value.overview.alarms) : null
-  specialty.value = latest && specialtyOfAlarm(latest) ? specialtyOfAlarm(latest)! : 'metal'
-  applySpecialty(specialty.value, true)
+  specialty.value = known ? requested as Specialty : (latest && specialtyOfAlarm(latest) ? specialtyOfAlarm(latest)! : 'metal')
+  applySpecialty(specialty.value, !known)
+  const alarmId = queryText(route.query.alarm)
+  if (alarmId) {
+    const alarm = workbench.value?.alerts.find(item => item.id === alarmId)
+    if (alarm && (!specialtyOfAlarm(alarm) || specialtyOfAlarm(alarm) === specialty.value)) selectAlert(alarm.id)
+  }
 }, { immediate: true })
 
 watch(card, current => {
@@ -468,8 +475,19 @@ function selectPart(id: string) {
 function selectNode(id: string) {
   notifyStructureNode(id)
 }
+function queryText(value: unknown): string {
+  if (Array.isArray(value)) return String(value[0] || '')
+  return String(value || '')
+}
 function back() {
-  router.push({ name: 'overviewPlant', query: route.query })
+  const query: Record<string, string> = { spec: specialty.value }
+  const enterprise = queryText(route.query.enterprise)
+  const unit = queryText(route.query.unit)
+  const node = queryText(route.query.node)
+  if (enterprise) query.enterprise = enterprise
+  if (unit) query.unit = unit
+  if (node) query.node = node
+  router.push({ name: 'overviewParts', params: { id: String(route.params.id || '') }, query })
 }
 function openModule(key: OverviewServiceKey) {
   const current = card.value

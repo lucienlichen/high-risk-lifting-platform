@@ -677,11 +677,11 @@ const navItems = computed(() => {
   return allNavItems
 })
 const sectionSpecialty: Record<string, string> = {
-  electric: '电气控制',
+  electric: '电气系统',
   stress: '金属结构',
   damage: '金属结构',
-  gearbox: '起升系统',
-  brake: '起升系统',
+  gearbox: '起升机构',
+  brake: '起升机构',
   wheel: '运行机构'
 }
 const sectionTabItems = computed(() => navItems.value.map(item => ({

@@ -18,10 +18,10 @@ export interface SpecialtyDef {
 
 export const SPECIALTY_DICT: SpecialtyDef[] = [
   { id: 'metal', label: '金属结构', order: 1, services: ['healthMonitor', 'health', 'crack'], overlay: '应力 / 应变云图 · 裂纹位置' },
-  { id: 'hoist', label: '起升系统', order: 2, services: ['fault'], overlay: '起升机构 · 振动 / 温度' },
+  { id: 'hoist', label: '起升机构', order: 2, services: ['fault'], overlay: '起升机构 · 振动 / 温度' },
   { id: 'travel', label: '运行机构', order: 3, services: ['fault'], overlay: '运行机构 · 振动 / 温度' },
-  { id: 'electric', label: '电气控制', order: 4, services: ['safety'], overlay: '供电 / 变频 / 控制状态' },
-  { id: 'protection', label: '安全保护', order: 5, services: ['safety'], overlay: '限制器 / 限位 / 防风防滑' }
+  { id: 'electric', label: '电气系统', order: 4, services: ['safety'], overlay: '供电 / 变频 / 控制状态' },
+  { id: 'protection', label: '安全防护装置', order: 5, services: ['safety'], overlay: '限制器 / 限位 / 防风防滑' }
 ]
 
 export function specialtyById(id: SpecialtyId): SpecialtyDef {

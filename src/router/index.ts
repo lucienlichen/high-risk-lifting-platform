@@ -7,6 +7,7 @@ import LoginView   from '@/views/login/LoginView.vue'
 import OverviewView from '@/views/overview/OverviewView.vue'
 import OverviewPlantView from '@/views/overview/OverviewPlantView.vue'
 import OverviewDeviceView from '@/views/overview/OverviewDeviceView.vue'
+import OverviewPartsView from '@/views/overview/OverviewPartsView.vue'
 import { landingLocation, useAuthStore } from '@/stores/auth'
 
 const router = createRouter({
@@ -24,6 +25,7 @@ const router = createRouter({
           children: [
             { path: '', name: 'overviewHome', redirect: () => landingLocation() },
             { path: 'plant', name: 'overviewPlant', component: OverviewPlantView },
+            { path: 'device/:id/parts', name: 'overviewParts', component: OverviewPartsView },
             { path: 'device/:id', name: 'overviewDevice', component: OverviewDeviceView }
           ]
         },

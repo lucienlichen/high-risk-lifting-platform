@@ -365,7 +365,7 @@
 .ov-chip.is-abnormal .dot { background: #f5222d; }
 .ov-chip.is-yellow .dot { background: #faad14; }
 .ov-chip.is-green .dot,
-.ov-chip.is-normal .dot { background: #52c41a; }
+.ov-chip.is-normal .dot { background: #16a34a; }
 .ov-chip.is-off .dot { background: #fff; border: 1px dashed #64748b; }
 .ov-chip.is-running .dot { background: #1677ff; }
 .ov-chip.is-stopped .dot { background: #94a3b8; }
@@ -380,6 +380,8 @@
 .ov-chip.active-stopped { background: #64748b; color: #fff; border-color: #64748b; }
 .ov-chip-split { width: 1px; align-self: stretch; background: #cbd5e1; margin: 4px 2px; }
 .ov-chip-note { margin-left: auto; font-size: 12px; color: #64748b; }
+.ov-monitor-line { margin: 0 0 8px; font-size: 14px; color: #334155; }
+.ov-monitor-line b { font-size: 18px; font-weight: 700; color: #0f172a; margin: 0 2px; }
 
 .ov-grid {
   display: grid;
@@ -413,7 +415,7 @@
   --ov-tile-glow: rgba(245, 34, 45, .28);
   background: var(--ov-tile-bg);
   border-color: #f5222d;
-  animation: ov-tile-breathe 4s ease-in-out infinite;
+  animation: ov-tile-breathe 1.5s ease-in-out infinite;
 }
 .ov-card.is-yellow {
   --ov-tile-bg: #fffbe6;
@@ -421,11 +423,11 @@
   --ov-tile-glow: rgba(250, 173, 20, .32);
   background: var(--ov-tile-bg);
   border-color: #faad14;
-  animation: ov-tile-breathe 4s ease-in-out infinite;
+  animation: ov-tile-breathe 1.5s ease-in-out infinite;
 }
 .ov-card.is-green {
-  background: #f6ffed;
-  border-color: #52c41a;
+  background: #f0fdf4;
+  border-color: #16a34a;
 }
 .ov-silhouette { width: 56px; height: 36px; flex: 0 0 36px; }
 .ov-card .ov-code {
@@ -875,5 +877,9 @@
   .ov-breath,
   .ov-card,
   .ov-card.is-red,
-  .ov-card.is-yellow { animation: none; transition: none; }
+  .ov-card.is-yellow,
+  .pl-card.is-red,
+  .pl-card.is-yellow,
+  .pl-pill.is-red,
+  .pl-pill.is-yellow { animation: none; transition: none; }
 }

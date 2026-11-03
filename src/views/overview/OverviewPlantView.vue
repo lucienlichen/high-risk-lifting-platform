@@ -55,6 +55,7 @@
           </div>
         </div>
       </section>
+      <p class="ov-monitor-line">监控设备 共 <b>{{ scopeCards.length }}</b> 台</p>
       <section class="ov-chips" role="group" aria-label="按状态筛选">
         <button v-for="chip in chips" :key="chip.id" type="button" class="ov-chip" :class="[`is-${chip.id === 'all' ? 'all' : chip.id}`, { ['active-' + chip.id]: hue === chip.id }]" @click="hue = chip.id; limit = 40">
           <span class="dot"></span>{{ chip.label }}<b>{{ chip.n }}</b>
@@ -77,7 +78,7 @@
           <span class="ov-legend">
             <span><i class="ov-swatch" style="background:#f5222d"></i> 报警</span>
             <span><i class="ov-swatch" style="background:#faad14"></i> 异常</span>
-            <span><i class="ov-swatch" style="background:#52c41a"></i> 正常</span>
+            <span><i class="ov-swatch" style="background:#16a34a"></i> 正常</span>
           </span>
         </div>
         <div class="ov-baybox">
@@ -283,7 +284,7 @@ function bayPop(bay: { cards: OverviewCard[] }) {
   return bay.cards.find(card => card.id === selectedId.value) || null
 }
 function open(id: string) {
-  router.push({ name: 'overviewDevice', params: { id }, query: { enterprise: enterprise.value, unit: unit.value } })
+  router.push({ name: 'overviewParts', params: { id }, query: { enterprise: enterprise.value, unit: unit.value } })
 }
 </script>
 
