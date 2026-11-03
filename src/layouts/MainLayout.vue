@@ -5,12 +5,19 @@
     <header class="top-bar">
       <div class="top-bar-left">
         <!-- Platform logo mark -->
-        <div class="platform-logo" title="服务菜单" @click="router.push('/services')">
+        <div class="platform-logo" title="返回首页" @click="router.push(landingLocation())">
           <img src="/logo.png" alt="平台 Logo" />
         </div>
         <div class="platform-title">
           <h1>高风险起重装备智能运维与事故防控云服务平台</h1>
         </div>
+        <button
+          v-if="auth.role !== 'superAdmin'"
+          type="button"
+          class="top-nav-entry"
+          :class="{ 'is-active': route.path.startsWith('/overview') }"
+          @click="router.push(landingLocation())"
+        >设备总览</button>
       </div>
 
       <div class="top-bar-right">
@@ -62,15 +69,15 @@
 
       <!-- Right Content Area -->
       <main class="content-area">
-        <div v-if="showTopHierarchy" class="top-hierarchy-nav">
-          <div class="hierarchy-crumbs">
-            <span class="hierarchy-crumb strong">{{ currentGroup || currentSceneInfo?.name || '设备范围' }}</span>
-            <span v-if="currentAffiliatedUnit" class="hierarchy-sep">/</span>
-            <span v-if="currentAffiliatedUnit" class="hierarchy-crumb">{{ currentAffiliatedUnit }}</span>
-            <span v-if="currentSubsidiary" class="hierarchy-sep">/</span>
-            <span v-if="currentSubsidiary" class="hierarchy-crumb">{{ currentSubsidiary }}</span>
-            <span v-if="currentDevice" class="hierarchy-sep">/</span>
-            <span v-if="currentDevice" class="hierarchy-crumb strong">{{ currentDevice.name }}</span>
+        <div v-if="showTopHierarchy" :class="['top-hierarchy-nav', { 'top-hierarchy-nav--service': showSceneServiceTitle }]">
+          <div v-if="showSceneServiceTitle" class="hierarchy-crumbs hierarchy-crumbs--service">
+            <span class="hierarchy-service-scope">{{ hierarchyScopeLabel }}</span>
+            <span class="hierarchy-count">{{ hierarchyDeviceCount }} 台设备</span>
+            <span class="hierarchy-service-divider"></span>
+            <SceneServiceSwitcher class="top-service-switcher" />
+          </div>
+          <div v-else class="hierarchy-crumbs">
+            <DeviceAreaBar :parts="deviceAreaParts" bare />
             <span v-if="route.name === 'scene'" class="hierarchy-count">{{ hierarchyDeviceCount }} 台设备</span>
           </div>
         </div>
@@ -87,7 +94,10 @@
 import { ref, computed, onMounted, onUnmounted, defineComponent, h } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useSceneStore } from '@/stores/scene'
-import { useAuthStore }  from '@/stores/auth'
+import { landingLocation, useAuthStore } from '@/stores/auth'
+import DeviceAreaBar from '@/components/DeviceAreaBar.vue'
+import SceneServiceSwitcher from '@/components/SceneServiceSwitcher.vue'
+import { flatServices, type ServiceKey } from '@/components/serviceCatalog'
 import { getDeviceById, getDevices, SCENES } from '@/mock'
 import type { SceneId }  from '@/mock'
 
@@ -100,6 +110,11 @@ const searchVal    = ref('')
 const currentTime  = ref('')
 const currentScene = computed(() => store.currentScene)
 const showTopHierarchy = computed(() => route.name === 'scene' || route.name === 'device')
+const activeServiceKey = computed(() => store.activeService as ServiceKey | null)
+const activeServiceMeta = computed(() =>
+  activeServiceKey.value ? flatServices.find(service => service.key === activeServiceKey.value) : null
+)
+const showSceneServiceTitle = computed(() => route.name === 'scene' && !!activeServiceMeta.value)
 const currentSceneInfo = computed(() => SCENES.find(scene => scene.id === currentScene.value))
 const currentDevice = computed(() => {
   const id = route.name === 'device'
@@ -118,6 +133,20 @@ const currentSubsidiary = computed(() => {
 const currentAffiliatedUnit = computed(() => {
   if (currentDevice.value?.affiliatedUnit) return currentDevice.value.affiliatedUnit
   return typeof route.query.affiliatedUnit === 'string' ? route.query.affiliatedUnit : ''
+})
+const deviceAreaParts = computed(() => [
+  currentGroup.value || currentSceneInfo.value?.name || '设备范围',
+  currentAffiliatedUnit.value,
+  currentSubsidiary.value,
+  currentDevice.value?.name || ''
+].filter(Boolean))
+const hierarchyScopeLabel = computed(() => {
+  const parts = [
+    currentGroup.value || currentSceneInfo.value?.name || '设备范围',
+    currentAffiliatedUnit.value,
+    currentSubsidiary.value
+  ].filter(Boolean)
+  return parts.join(' / ')
 })
 const hierarchyDeviceCount = computed(() => {
   const devices = getDevices(currentScene.value, 1, 9999).list

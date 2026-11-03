@@ -49,18 +49,13 @@
 
       <!-- ── 右侧：监测数据 ── -->
       <div class="dmw-right-pane">
-        <nav v-if="!props.sectionOnly" class="remote-section-tabs" aria-label="监测分类">
-          <button
-            v-for="item in navItems"
-            :key="item.id"
-            type="button"
-            :title="item.label"
-            :class="['remote-section-tab', { active: activeSection === item.id }]"
-            @click="activeSection = item.id"
-          >
-            {{ item.tabLabel }}
-          </button>
-        </nav>
+        <RemoteSectionTabs
+          v-if="!props.sectionOnly"
+          :model-value="activeSection"
+          :items="sectionTabItems"
+          aria-label="监测分类"
+          @update:model-value="activeSection = $event"
+        />
 
     <!-- ── 电控系统监控（GB/T 28264-2017 起重机械安全监控管理系统 14 项参数） ── -->
     <div v-if="activeSection === 'electric' && runningStateData" class="dmw-rs-board">
@@ -571,6 +566,7 @@
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import * as echarts from 'echarts'
 import type { TableInstance } from 'element-plus'
+import RemoteSectionTabs from '@/components/RemoteSectionTabs.vue'
 import { getRemoteMonitoringData, getOperationList } from '@/mock'
 import type {
   Device,
@@ -583,6 +579,7 @@ import type {
 
 const props = defineProps<{
   device: Device | null
+  serviceMode?: 'all' | 'safety' | 'health'
   /** 嵌入抽屉时使用：仅显示右侧监测内容，隐藏左侧作业列表和 section tabs */
   sectionOnly?: boolean
   /** sectionOnly 模式下由父组件受控的当前分类 */
@@ -600,7 +597,7 @@ const emit = defineEmits<{
   (e: 'update:modelOpId', val: string): void
 }>()
 
-const _activeSection = ref<RemoteSectionId>('electric')
+const _activeSection = ref<RemoteSectionId>(props.serviceMode === 'health' ? 'stress' : 'electric')
 const activeSection = computed({
   get: () => (props.sectionOnly && props.modelSection) ? props.modelSection : _activeSection.value,
   set: (val: RemoteSectionId) => {
@@ -666,7 +663,7 @@ let gearboxVibrationChart: echarts.ECharts | null = null
 /** 结构应力孪生侧：当前选中的测点 code */
 const selectedTwinKey = ref('')
 
-const navItems: { id: RemoteSectionId; label: string; tabLabel: string }[] = [
+const allNavItems: { id: RemoteSectionId; label: string; tabLabel: string }[] = [
   { id: 'electric',label: '电控系统监控',                          tabLabel: '电控系统监控' },
   { id: 'stress',  label: '结构应力监测（6 测点·应变）',           tabLabel: '结构应力监测' },
   { id: 'damage',  label: '结构损伤监测（6 测点·应变+声发射）',    tabLabel: '结构损伤监测' },
@@ -674,6 +671,31 @@ const navItems: { id: RemoteSectionId; label: string; tabLabel: string }[] = [
   { id: 'brake',   label: '制动器状态监测（占位）',                tabLabel: '制动器状态监测' },
   { id: 'wheel',   label: '行走车轮状态监测（8 测点·温度/声音/振动）', tabLabel: '行走车轮状态监测' }
 ]
+const navItems = computed(() => {
+  if (props.serviceMode === 'safety') return allNavItems.filter(item => item.id === 'electric')
+  if (props.serviceMode === 'health') return allNavItems.filter(item => item.id !== 'electric')
+  return allNavItems
+})
+const sectionSpecialty: Record<string, string> = {
+  electric: '电气系统',
+  stress: '金属结构',
+  damage: '金属结构',
+  gearbox: '起升机构',
+  brake: '起升机构',
+  wheel: '运行机构'
+}
+const sectionTabItems = computed(() => navItems.value.map(item => ({
+  id: item.id,
+  label: item.tabLabel,
+  title: `${sectionSpecialty[item.id] || '金属结构'} · ${item.label}`
+})))
+
+watch(() => props.serviceMode, () => {
+  const allowed = navItems.value
+  if (!allowed.some(item => item.id === activeSection.value)) {
+    activeSection.value = allowed[0]?.id ?? 'electric'
+  }
+}, { immediate: true })
 
 const monitoringData = computed(() => getRemoteMonitoringData(props.device))
 
@@ -2204,49 +2226,6 @@ onUnmounted(() => {
   line-height: 1.55;
   color: var(--color-text-secondary);
   text-align: center;
-}
-
-.remote-section-tabs {
-  flex-shrink: 0;
-  display: flex;
-  align-items: stretch;
-  gap: 4px;
-  padding: 0 16px;
-  background: var(--color-card-bg);
-  border-bottom: 1px solid var(--color-border);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
-  overflow-x: auto;
-}
-
-.remote-section-tabs::-webkit-scrollbar {
-  height: 0;
-}
-
-.remote-section-tab {
-  flex-shrink: 0;
-  padding: 12px 18px;
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--color-text-secondary);
-  background: transparent;
-  border: none;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-  cursor: pointer;
-  transition: color 0.15s, border-color 0.15s, background 0.15s;
-  white-space: nowrap;
-}
-
-.remote-section-tab:hover {
-  color: var(--color-primary);
-  background: rgba(22, 119, 255, 0.04);
-}
-
-.remote-section-tab.active {
-  color: var(--color-primary);
-  font-weight: 600;
-  border-bottom-color: var(--color-primary);
-  background: rgba(22, 119, 255, 0.06);
 }
 
 .remote-workspace {

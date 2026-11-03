@@ -2,39 +2,24 @@
   <!-- Device detail: data tabs at top, content scrollable, service menu in layout -->
   <div class="device-view-root">
 
-    <!-- ─── Layer 1: Device Info Header — above tabs ─── -->
-    <div class="device-info-header device-info-header--compact" v-if="device">
-      <div class="device-info-inline">
-        <span class="device-info-name-compact">
-          <el-icon size="20" color="var(--color-primary)"><Platform /></el-icon>
-          {{ device.name }}
-        </span>
-        <span :class="`badge badge-${device.status}`">
-          <span class="badge-dot"></span>{{ statusLabels[device.status] }}
-        </span>
-        <span class="device-info-meta-sep">·</span>
-        <span class="device-info-meta-item">编号：<strong>{{ device.code }}</strong></span>
-        <span class="device-info-meta-item">类型：<strong>{{ device.type }}</strong></span>
-        <span class="device-info-meta-item">位置：<strong>{{ device.location }}</strong></span>
-        <span class="device-info-meta-item">使用单位：<strong>{{ device.subsidiary || device.group || '—' }}</strong></span>
-        <span class="device-info-meta-item">投用：<strong>{{ device.installDate }}</strong></span>
-      </div>
-      <div style="display:flex;gap:8px;flex-shrink:0">
-        <el-button size="small" @click="router.back()">
-          <el-icon class="el-icon--left"><ArrowLeft /></el-icon>返回
-        </el-button>
-        <el-button size="small" type="primary">
-          <el-icon class="el-icon--left"><Refresh /></el-icon>刷新数据
-        </el-button>
-      </div>
-    </div>
+    <DeviceInfoHeader
+      v-if="device"
+      :name="device.name"
+      :status="device.status"
+      :code="device.code"
+      :type="device.type"
+      :location="device.location"
+      :unit="device.subsidiary || device.group || '—'"
+      :install-date="device.installDate"
+      @back="router.back()"
+    />
 
     <!-- ─── 服务内容区（定位容器：抽屉铺满此区域，位于服务菜单下方，不遮挡菜单） ─── -->
     <div class="device-content-region">
-    <div :class="['content-scrollable', { 'monitor-tab-content': store.activeService === 'remote' }]" style="flex:1">
+    <div :class="['content-scrollable', { 'monitor-tab-content': isMonitoringWorkspaceService }]" style="flex:1">
 
-      <!-- 远程监测：监测数据工作区（左数据 + 右数字孪生） -->
-      <template v-if="store.activeService === 'remote'">
+      <!-- 安全监控 / 健康监测：按服务边界拆分监测工作区 -->
+      <template v-if="isMonitoringWorkspaceService">
         <div class="monitor-workspace-wrapper">
           <div class="monitor-filter-bar">
             <WorkCyclePicker
@@ -47,6 +32,7 @@
           <DeviceMonitoringWorkspace
             v-if="device"
             :device="device"
+            :service-mode="store.activeService === 'healthMonitor' ? 'health' : 'safety'"
             :hide-op-list="true"
             :model-op-id="monitorOpId"
             :model-op-date="monitorOpDate"
@@ -382,6 +368,12 @@
       @close="store.setService(null)"
     />
 
+    <FaultTroubleshootingServicePanel
+      v-if="store.activeService === 'troubleshoot'"
+      :device="device"
+      @close="store.setService(null)"
+    />
+
     <RepairServicePanel
       v-if="store.activeService === 'maintain'"
       :device="device"
@@ -412,6 +404,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useSceneStore } from '@/stores/scene'
 import { Monitor, Warning, Select, Close, InfoFilled, ArrowLeft, Refresh, Platform } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
+import DeviceInfoHeader from '@/components/DeviceInfoHeader.vue'
 import DeviceMonitoringWorkspace from '@/components/DeviceMonitoringWorkspace.vue'
 import HealthAssessmentDrawer from '@/components/HealthAssessmentDrawer.vue'
 import FaultDiagnosisDrawer from '@/components/FaultDiagnosisDrawer.vue'
@@ -420,6 +413,7 @@ import RiskMonitoringDrawer from '@/components/RiskMonitoringDrawer.vue'
 import HazardInspectionDrawer from '@/components/HazardInspectionDrawer.vue'
 import IssueHandlingDrawer from '@/components/IssueHandlingDrawer.vue'
 import SpotCheckServicePanel from '@/components/SpotCheckServicePanel.vue'
+import FaultTroubleshootingServicePanel from '@/components/FaultTroubleshootingServicePanel.vue'
 import RepairServicePanel from '@/components/RepairServicePanel.vue'
 import InspectionServicePanel from '@/components/InspectionServicePanel.vue'
 import SupervisionServicePanel from '@/components/SupervisionServicePanel.vue'
@@ -462,22 +456,25 @@ watch(monitorWorkCycles, (list) => {
   monitorCycleId.value = list.length > 0 ? list[0].id : 'all'
 })
 
-const statusLabels: Record<string,string> = { running:'运行中', standby:'待机', stopped:'停机', maintenance:'维修中' }
 const riskLabels:   Record<string,string> = { normal:'正常', low:'低风险', medium:'中风险', high:'高风险' }
 
 // 12 项服务里需占位面板的「数据智能服务 / 知识库」
 const PLACEHOLDER_SERVICES: Record<string, { label: string; desc: string }> = {
-  kbDetect:  { label: '检测检验知识库', desc: '检测检验领域知识库检索服务，功能开发中，演示版暂不展示' },
+  kbDetect:  { label: '检验检测知识库', desc: '检验检测领域知识库检索服务，功能开发中，演示版暂不展示' },
   kbLaw:     { label: '法律法规知识库', desc: '法律法规标准知识库检索服务，功能开发中，演示版暂不展示' },
+  kbStandard: { label: '常用标准知识库', desc: '常用标准知识库检索服务，功能开发中，演示版暂不展示' }
 }
 const placeholderServiceMeta = computed(() =>
   store.activeService ? (PLACEHOLDER_SERVICES[store.activeService] ?? null) : null
 )
 
 // 以独立面板铺满内容区展示的服务（原「抽屉」，现为内容区面板）
-const DRAWER_SERVICES = ['health', 'fault', 'crack', 'risk', 'hazard', 'issue', 'point', 'maintain', 'inspect', 'basicdata', 'supply']
+const DRAWER_SERVICES = ['health', 'fault', 'crack', 'risk', 'hazard', 'issue', 'point', 'troubleshoot', 'maintain', 'inspect', 'basicdata', 'supply']
 const isDrawerService = computed(() =>
   store.activeService ? DRAWER_SERVICES.includes(store.activeService) : false
+)
+const isMonitoringWorkspaceService = computed(() =>
+  store.activeService === 'remote' || store.activeService === 'healthMonitor'
 )
 
 // ── 远程监测：告警数据模拟与曲线 ──
@@ -532,7 +529,7 @@ const mockAlarms = ref([
     status: 'pending', handler: '', resolveTime: ''
   },
   { id: 'a2', level: 'warning', time: '10:42:15', title: '起重力矩接近限值', desc: '当前起重力矩达到额定力矩的 92%，已经进入预警区间，建议降低载荷并持续观察。',
-    source: '参数监控', parameter: '起重力矩', currentValue: '92 %', limitValue: '90 %', peakValue: '92 %', duration: '6 min', currentState: '持续预警', conclusion: '',
+    source: '参数监控', parameter: '起重力矩', currentValue: '92 %', limitValue: '90 %', peakValue: '92 %', duration: '6 min', currentState: '持续异常', conclusion: '',
     metric: '起重力矩 (%)', limit: 90,
     times: ['10:37', '10:38', '10:39', '10:40', '10:41', '10:42'],
     values: [65, 78, 85, 88, 90, 92],
@@ -552,7 +549,7 @@ const mockAlarms = ref([
     values: [100, 100, 100, 80, 40, 20],
     status: 'resolved', handler: '李工', resolveTime: '昨天 16:50'
   },
-  { id: 'a5', level: 'warning', time: '昨天 14:32', title: '超速保护触发预警', desc: '起升机构速度瞬时接近超速保护阈值，系统记录波动并发出预警。',
+  { id: 'a5', level: 'warning', time: '昨天 14:32', title: '超速保护触发异常', desc: '起升机构速度瞬时接近超速保护阈值，系统记录波动并发出预警。',
     source: '状态监控', parameter: '超速保护', currentValue: '1.16 m/s', limitValue: '1.20 m/s', peakValue: '1.18 m/s', duration: '3 min', currentState: '已恢复', conclusion: '调整变频器输出后速度恢复稳定',
     metric: '起升速度 (m/s)', limit: 1.2,
     times: ['14:27', '14:28', '14:29', '14:30', '14:31', '14:32'],
@@ -908,10 +905,13 @@ watch(() => store.activeService, (newVal) => {
 
 function loadDevice() {
   const id = route.params.id as string
+  const activeService = store.activeService
   device.value = getDeviceById(id)
   if (device.value) {
-    store.setDevice(id)          // setDevice 会清空 activeService
-    store.setService('remote')   // 进入设备详情默认选中「远程监测」并展示监测工作区
+    store.setDevice(id, !!activeService)
+    if (!activeService) {
+      store.setService('remote')   // 直接进入设备详情时默认展示监测工作区
+    }
   }
 }
 
@@ -945,56 +945,6 @@ watch(() => route.params.id, loadDevice)
   padding: 0;
   display: flex;
   flex-direction: column;
-}
-
-/* ── 紧凑单行设备信息头 ── */
-.device-info-header--compact {
-  padding: 8px 16px;
-  margin-bottom: 0;
-  border-radius: 0;
-  border-left: none;
-  border-right: none;
-  border-top: none;
-  border-bottom: 1px solid var(--color-border-light);
-  box-shadow: none;
-  backdrop-filter: none;
-  background: var(--color-card-bg);
-}
-
-.device-info-inline {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  min-width: 0;
-  flex: 1;
-}
-
-.device-info-name-compact {
-  font-size: 20px;
-  font-weight: 800;
-  color: var(--color-primary);
-  letter-spacing: 0.5px;
-  white-space: nowrap;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.device-info-meta-sep {
-  color: var(--color-border);
-  font-size: 14px;
-}
-
-.device-info-meta-item {
-  font-size: 13px;
-  color: var(--color-text-secondary);
-  white-space: nowrap;
-}
-
-.device-info-meta-item strong {
-  color: var(--color-text-primary);
-  font-weight: 600;
 }
 
 /* ── 监测数据筛选栏 ── */

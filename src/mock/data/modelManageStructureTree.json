@@ -1,0 +1,4041 @@
+[
+ {
+  "id": "BR",
+  "name": "冶金桥式起重机",
+  "type": "equipment",
+  "desc": "依据 GB/T 14405-2011、GB/T 3811-2008、GB/T 28264-2012 分级",
+  "children": [
+   {
+    "id": "BR.structure",
+    "name": "结构",
+    "type": "category",
+    "desc": "",
+    "children": [
+     {
+      "id": "BR.structure.bridge",
+      "name": "桥架",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "BR.structure.bridge.main-girder",
+        "name": "单双主梁",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "BR.structure.bridge.main-girder.segment-1",
+          "name": "主梁分段1",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "BR.structure.bridge.main-girder.segment-1.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "BR.structure.bridge.main-girder.segment-2",
+          "name": "主梁分段2",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "BR.structure.bridge.main-girder.segment-2.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "BR.structure.bridge.main-girder.segment-n",
+          "name": "主梁分段n",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "BR.structure.bridge.main-girder.segment-n.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "id": "BR.structure.bridge.end-girder",
+        "name": "端梁",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "BR.structure.bridge.end-girder.parts",
+          "name": "零件与连接件",
+          "type": "part",
+          "desc": "",
+          "children": []
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "BR.structure.hoisting-trolley",
+      "name": "起升小车",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "BR.structure.hoisting-trolley.main-frame",
+        "name": "主起升小车架",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "BR.structure.hoisting-trolley.main-frame.parts",
+          "name": "零件与连接件",
+          "type": "part",
+          "desc": "",
+          "children": []
+         }
+        ]
+       },
+       {
+        "id": "BR.structure.hoisting-trolley.auxiliary-frame",
+        "name": "副起升小车架",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "BR.structure.hoisting-trolley.auxiliary-frame.parts",
+          "name": "零件与连接件",
+          "type": "part",
+          "desc": "",
+          "children": []
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "BR.structure.crane-balance-beam",
+      "name": "大车平衡梁",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "BR.structure.crane-balance-beam.parts",
+        "name": "零件与连接件",
+        "type": "part",
+        "desc": "",
+        "children": []
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "id": "BR.mechanism",
+    "name": "机构",
+    "type": "category",
+    "desc": "",
+    "children": [
+     {
+      "id": "BR.mechanism.main-hoist",
+      "name": "主起升机构",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "BR.mechanism.main-hoist.drive",
+        "name": "驱动装置",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "BR.mechanism.main-hoist.drive.motor",
+          "name": "电机",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "BR.mechanism.main-hoist.drive.transmission-shaft",
+          "name": "传动轴",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "BR.mechanism.main-hoist.drive.coupling",
+          "name": "联轴器",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "BR.mechanism.main-hoist.drive.reducer",
+          "name": "减速器",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "BR.mechanism.main-hoist.drive.reducer.gearbox-parts",
+            "name": "齿轮箱轴承等零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "BR.mechanism.main-hoist.drive.brake",
+          "name": "制动器",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "BR.mechanism.main-hoist.drive.brake.brake-parts",
+            "name": "制动盘等零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "id": "BR.mechanism.main-hoist.rope-winding",
+        "name": "钢丝绳卷绕系统",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "BR.mechanism.main-hoist.rope-winding.wire-rope",
+          "name": "钢丝绳",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "BR.mechanism.main-hoist.rope-winding.wedge-socket",
+          "name": "钢丝绳楔套",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "BR.mechanism.main-hoist.rope-winding.pulley-set",
+          "name": "滑轮组",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "BR.mechanism.main-hoist.rope-winding.pulley-set.pulley-parts",
+            "name": "滑轮销轴轴承等零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "BR.mechanism.main-hoist.rope-winding.drum",
+          "name": "卷筒",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "BR.mechanism.main-hoist.rope-winding.drum.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "id": "BR.mechanism.main-hoist.lifting-device",
+        "name": "取物装置",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "BR.mechanism.main-hoist.lifting-device.hook-set",
+          "name": "吊钩组",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "BR.mechanism.main-hoist.lifting-device.hook-set.parts",
+            "name": "吊钩滑轮组等零部件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "BR.mechanism.main-hoist.lifting-device.lifting-beam",
+          "name": "吊梁",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "BR.mechanism.main-hoist.lifting-device.lifting-beam.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "BR.mechanism.auxiliary-hoist",
+      "name": "副起升机构",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "BR.mechanism.auxiliary-hoist.drive",
+        "name": "驱动装置",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "BR.mechanism.auxiliary-hoist.drive.motor",
+          "name": "电机",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "BR.mechanism.auxiliary-hoist.drive.transmission-shaft",
+          "name": "传动轴",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "BR.mechanism.auxiliary-hoist.drive.coupling",
+          "name": "联轴器",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "BR.mechanism.auxiliary-hoist.drive.reducer",
+          "name": "减速器",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "BR.mechanism.auxiliary-hoist.drive.reducer.gearbox-parts",
+            "name": "齿轮箱轴承等零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "BR.mechanism.auxiliary-hoist.drive.brake",
+          "name": "制动器",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "BR.mechanism.auxiliary-hoist.drive.brake.brake-parts",
+            "name": "制动盘等零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "id": "BR.mechanism.auxiliary-hoist.rope-winding",
+        "name": "钢丝绳卷绕系统",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "BR.mechanism.auxiliary-hoist.rope-winding.wire-rope",
+          "name": "钢丝绳",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "BR.mechanism.auxiliary-hoist.rope-winding.wedge-socket",
+          "name": "钢丝绳楔套",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "BR.mechanism.auxiliary-hoist.rope-winding.pulley-set",
+          "name": "滑轮组",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "BR.mechanism.auxiliary-hoist.rope-winding.pulley-set.pulley-parts",
+            "name": "滑轮销轴轴承等零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "BR.mechanism.auxiliary-hoist.rope-winding.drum",
+          "name": "卷筒",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "BR.mechanism.auxiliary-hoist.rope-winding.drum.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "id": "BR.mechanism.auxiliary-hoist.lifting-device",
+        "name": "取物装置",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "BR.mechanism.auxiliary-hoist.lifting-device.hook-set",
+          "name": "吊钩组",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "BR.mechanism.auxiliary-hoist.lifting-device.hook-set.parts",
+            "name": "吊钩滑轮组等零部件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "BR.mechanism.auxiliary-hoist.lifting-device.lifting-beam",
+          "name": "吊梁",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "BR.mechanism.auxiliary-hoist.lifting-device.lifting-beam.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "BR.mechanism.trolley-travel",
+      "name": "小车运行机构",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "BR.mechanism.trolley-travel.drive",
+        "name": "驱动装置",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "BR.mechanism.trolley-travel.drive.motor",
+          "name": "电机",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "BR.mechanism.trolley-travel.drive.transmission-shaft",
+          "name": "传动轴",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "BR.mechanism.trolley-travel.drive.coupling",
+          "name": "联轴器",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "BR.mechanism.trolley-travel.drive.reducer",
+          "name": "减速器",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "BR.mechanism.trolley-travel.drive.reducer.gearbox-parts",
+            "name": "齿轮箱轴承等零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "BR.mechanism.trolley-travel.drive.brake",
+          "name": "制动器",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "BR.mechanism.trolley-travel.drive.brake.brake-parts",
+            "name": "制动盘等零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "id": "BR.mechanism.trolley-travel.trolley-frame",
+        "name": "台车架系统",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "BR.mechanism.trolley-travel.trolley-frame.structure",
+          "name": "台车架结构",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "BR.mechanism.trolley-travel.trolley-frame.structure.parts",
+            "name": "零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "BR.mechanism.trolley-travel.trolley-frame.bearing-box",
+          "name": "轴承箱",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "BR.mechanism.trolley-travel.trolley-frame.bearing-box.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "BR.mechanism.trolley-travel.trolley-frame.wheel-set",
+          "name": "车轮组",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "BR.mechanism.trolley-travel.trolley-frame.wheel-set.drive-wheel-parts",
+            "name": "主动车轮零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           },
+           {
+            "id": "BR.mechanism.trolley-travel.trolley-frame.wheel-set.driven-wheel-parts",
+            "name": "被动车轮零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "BR.mechanism.crane-travel",
+      "name": "大车运行机构",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "BR.mechanism.crane-travel.drive",
+        "name": "驱动装置",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "BR.mechanism.crane-travel.drive.motor",
+          "name": "电机",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "BR.mechanism.crane-travel.drive.transmission-shaft",
+          "name": "传动轴",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "BR.mechanism.crane-travel.drive.coupling",
+          "name": "联轴器",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "BR.mechanism.crane-travel.drive.reducer",
+          "name": "减速器",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "BR.mechanism.crane-travel.drive.reducer.gearbox-parts",
+            "name": "齿轮箱轴承等零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "BR.mechanism.crane-travel.drive.brake",
+          "name": "制动器",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "BR.mechanism.crane-travel.drive.brake.brake-parts",
+            "name": "制动盘等零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "id": "BR.mechanism.crane-travel.trolley-frame",
+        "name": "台车架系统",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "BR.mechanism.crane-travel.trolley-frame.structure",
+          "name": "台车架结构",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "BR.mechanism.crane-travel.trolley-frame.structure.parts",
+            "name": "零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "BR.mechanism.crane-travel.trolley-frame.bearing-box",
+          "name": "轴承箱",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "BR.mechanism.crane-travel.trolley-frame.bearing-box.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "BR.mechanism.crane-travel.trolley-frame.wheel-set",
+          "name": "车轮组",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "BR.mechanism.crane-travel.trolley-frame.wheel-set.drive-wheel-parts",
+            "name": "主动车轮零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           },
+           {
+            "id": "BR.mechanism.crane-travel.trolley-frame.wheel-set.driven-wheel-parts",
+            "name": "被动车轮零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "id": "BR.electrical",
+    "name": "电气",
+    "type": "category",
+    "desc": "",
+    "children": [
+     {
+      "id": "BR.electrical.power-supply",
+      "name": "供电系统",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "BR.electrical.power-supply.sliding-contact-line",
+        "name": "电源滑触线与防护",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "BR.electrical.power-supply.current-collector",
+        "name": "集电器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "BR.electrical.power-supply.cable-drum",
+        "name": "电缆卷筒",
+        "type": "component",
+        "desc": "",
+        "children": []
+       }
+      ]
+     },
+     {
+      "id": "BR.electrical.control-elements",
+      "name": "控制元件",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "BR.electrical.control-elements.isolating-switch",
+        "name": "隔离开关",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "BR.electrical.control-elements.circuit-breaker",
+        "name": "断路器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "BR.electrical.control-elements.contactor",
+        "name": "接触器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "BR.electrical.control-elements.resistor",
+        "name": "电阻器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "BR.electrical.control-elements.controller",
+        "name": "控制器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "BR.electrical.control-elements.control-panel",
+        "name": "控制屏",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "BR.electrical.control-elements.control-circuit",
+        "name": "控制线路",
+        "type": "component",
+        "desc": "",
+        "children": []
+       }
+      ]
+     },
+     {
+      "id": "BR.electrical.safety-protection",
+      "name": "安全防护装置",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "BR.electrical.safety-protection.load-moment-limiter",
+        "name": "起重量（起重力矩）限制器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "BR.electrical.safety-protection.lifting-height-limit",
+        "name": "起升高度限位器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "BR.electrical.safety-protection.lowering-depth-limit",
+        "name": "下降深度限位器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "BR.electrical.safety-protection.travel-limit",
+        "name": "运行行程限位器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "BR.electrical.safety-protection.interlock-protection",
+        "name": "联锁保护装置",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "BR.electrical.safety-protection.anti-collision",
+        "name": "运行机构防碰撞装置",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "BR.electrical.safety-protection.overspeed-protection",
+        "name": "超速保护装置",
+        "type": "component",
+        "desc": "",
+        "children": []
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "GE",
+  "name": "岸边集装箱起重机",
+  "type": "equipment",
+  "desc": "依据 GB/T 15361-2009、GB/T 3811-2008、GB/T 28264-2012 分级",
+  "children": [
+   {
+    "id": "GE.structure",
+    "name": "结构",
+    "type": "category",
+    "desc": "",
+    "children": [
+     {
+      "id": "GE.structure.main-girder",
+      "name": "主梁",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "GE.structure.main-girder.front-girder",
+        "name": "前大梁",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GE.structure.main-girder.front-girder.parts",
+          "name": "零件与连接件",
+          "type": "part",
+          "desc": "",
+          "children": []
+         }
+        ]
+       },
+       {
+        "id": "GE.structure.main-girder.rear-girder",
+        "name": "后大梁",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GE.structure.main-girder.rear-girder.parts",
+          "name": "零件与连接件",
+          "type": "part",
+          "desc": "",
+          "children": []
+         }
+        ]
+       },
+       {
+        "id": "GE.structure.main-girder.planar-brace",
+        "name": "平面撑杆",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GE.structure.main-girder.planar-brace.parts",
+          "name": "零件与连接件",
+          "type": "part",
+          "desc": "",
+          "children": []
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "GE.structure.tie-rod-system",
+      "name": "拉杆系统",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "GE.structure.tie-rod-system.front-tie-rod",
+        "name": "前拉杆",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GE.structure.tie-rod-system.front-tie-rod.parts",
+          "name": "零件与连接件",
+          "type": "part",
+          "desc": "",
+          "children": []
+         }
+        ]
+       },
+       {
+        "id": "GE.structure.tie-rod-system.intermediate-tie-rod",
+        "name": "之间拉杆",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GE.structure.tie-rod-system.intermediate-tie-rod.parts",
+          "name": "零件与连接件",
+          "type": "part",
+          "desc": "",
+          "children": []
+         }
+        ]
+       },
+       {
+        "id": "GE.structure.tie-rod-system.rear-tie-rod",
+        "name": "后拉杆",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GE.structure.tie-rod-system.rear-tie-rod.parts",
+          "name": "零件与连接件",
+          "type": "part",
+          "desc": "",
+          "children": []
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "GE.structure.portal-frame",
+      "name": "门架",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "GE.structure.portal-frame.trapezoidal-frame-tie-rod",
+        "name": "梯形架与拉杆",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GE.structure.portal-frame.trapezoidal-frame-tie-rod.parts",
+          "name": "零件与连接件",
+          "type": "part",
+          "desc": "",
+          "children": []
+         }
+        ]
+       },
+       {
+        "id": "GE.structure.portal-frame.upper-crossbeam",
+        "name": "门架上横梁",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GE.structure.portal-frame.upper-crossbeam.parts",
+          "name": "零件与连接件",
+          "type": "part",
+          "desc": "",
+          "children": []
+         }
+        ]
+       },
+       {
+        "id": "GE.structure.portal-frame.column",
+        "name": "门架立柱",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GE.structure.portal-frame.column.parts",
+          "name": "零件与连接件",
+          "type": "part",
+          "desc": "",
+          "children": []
+         }
+        ]
+       },
+       {
+        "id": "GE.structure.portal-frame.brace",
+        "name": "门架撑杆",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GE.structure.portal-frame.brace.parts",
+          "name": "零件与连接件",
+          "type": "part",
+          "desc": "",
+          "children": []
+         }
+        ]
+       },
+       {
+        "id": "GE.structure.portal-frame.lower-crossbeam",
+        "name": "门架下横梁",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GE.structure.portal-frame.lower-crossbeam.parts",
+          "name": "零件与连接件",
+          "type": "part",
+          "desc": "",
+          "children": []
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "GE.structure.hoisting-trolley-frame",
+      "name": "起升小车架",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "GE.structure.hoisting-trolley-frame.parts",
+        "name": "零件与连接件",
+        "type": "part",
+        "desc": "",
+        "children": []
+       }
+      ]
+     },
+     {
+      "id": "GE.structure.crane-balance-beam",
+      "name": "大车平衡梁",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "GE.structure.crane-balance-beam.level-1",
+        "name": "一级平衡梁",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GE.structure.crane-balance-beam.level-1.parts",
+          "name": "零件与连接件",
+          "type": "part",
+          "desc": "",
+          "children": []
+         }
+        ]
+       },
+       {
+        "id": "GE.structure.crane-balance-beam.level-2",
+        "name": "二级平衡梁",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GE.structure.crane-balance-beam.level-2.parts",
+          "name": "零件与连接件",
+          "type": "part",
+          "desc": "",
+          "children": []
+         }
+        ]
+       },
+       {
+        "id": "GE.structure.crane-balance-beam.level-3",
+        "name": "三级平衡梁",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GE.structure.crane-balance-beam.level-3.parts",
+          "name": "零件与连接件",
+          "type": "part",
+          "desc": "",
+          "children": []
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "id": "GE.mechanism",
+    "name": "机构",
+    "type": "category",
+    "desc": "",
+    "children": [
+     {
+      "id": "GE.mechanism.trolley-hoist",
+      "name": "小车起升机构",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "GE.mechanism.trolley-hoist.drive",
+        "name": "驱动装置",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GE.mechanism.trolley-hoist.drive.motor",
+          "name": "电机",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "GE.mechanism.trolley-hoist.drive.transmission-shaft",
+          "name": "传动轴",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "GE.mechanism.trolley-hoist.drive.coupling",
+          "name": "联轴器",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "GE.mechanism.trolley-hoist.drive.reducer",
+          "name": "减速器",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GE.mechanism.trolley-hoist.drive.reducer.gearbox-parts",
+            "name": "齿轮箱轴承等零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "GE.mechanism.trolley-hoist.drive.brake",
+          "name": "制动器",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GE.mechanism.trolley-hoist.drive.brake.brake-parts",
+            "name": "制动盘等零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "id": "GE.mechanism.trolley-hoist.rope-winding",
+        "name": "钢丝绳卷绕系统",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GE.mechanism.trolley-hoist.rope-winding.wire-rope",
+          "name": "钢丝绳",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "GE.mechanism.trolley-hoist.rope-winding.wedge-socket",
+          "name": "钢丝绳楔套",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "GE.mechanism.trolley-hoist.rope-winding.pulley-set",
+          "name": "滑轮组",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GE.mechanism.trolley-hoist.rope-winding.pulley-set.pulley-parts",
+            "name": "滑轮销轴轴承等零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "GE.mechanism.trolley-hoist.rope-winding.drum",
+          "name": "卷筒",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GE.mechanism.trolley-hoist.rope-winding.drum.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "id": "GE.mechanism.trolley-hoist.lifting-device",
+        "name": "取物装置",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GE.mechanism.trolley-hoist.lifting-device.grab",
+          "name": "抓斗",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GE.mechanism.trolley-hoist.lifting-device.grab.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "GE.mechanism.trolley-hoist.lifting-device.lifting-beam",
+          "name": "吊梁",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GE.mechanism.trolley-hoist.lifting-device.lifting-beam.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "GE.mechanism.trolley-travel",
+      "name": "小车运行机构",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "GE.mechanism.trolley-travel.drive",
+        "name": "驱动装置",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GE.mechanism.trolley-travel.drive.motor",
+          "name": "电机",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "GE.mechanism.trolley-travel.drive.transmission-shaft",
+          "name": "传动轴",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "GE.mechanism.trolley-travel.drive.coupling",
+          "name": "联轴器",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "GE.mechanism.trolley-travel.drive.reducer",
+          "name": "减速器",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GE.mechanism.trolley-travel.drive.reducer.gearbox-parts",
+            "name": "齿轮箱轴承等零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "GE.mechanism.trolley-travel.drive.brake",
+          "name": "制动器",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GE.mechanism.trolley-travel.drive.brake.brake-parts",
+            "name": "制动盘等零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "id": "GE.mechanism.trolley-travel.trolley-frame",
+        "name": "台车架系统",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GE.mechanism.trolley-travel.trolley-frame.structure",
+          "name": "台车架结构",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GE.mechanism.trolley-travel.trolley-frame.structure.parts",
+            "name": "零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "GE.mechanism.trolley-travel.trolley-frame.bearing-box",
+          "name": "轴承箱",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GE.mechanism.trolley-travel.trolley-frame.bearing-box.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "GE.mechanism.trolley-travel.trolley-frame.wheel-set",
+          "name": "车轮组",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GE.mechanism.trolley-travel.trolley-frame.wheel-set.drive-wheel-parts",
+            "name": "主动车轮零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           },
+           {
+            "id": "GE.mechanism.trolley-travel.trolley-frame.wheel-set.driven-wheel-parts",
+            "name": "被动车轮零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "GE.mechanism.crane-travel",
+      "name": "大车运行机构",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "GE.mechanism.crane-travel.drive",
+        "name": "驱动装置",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GE.mechanism.crane-travel.drive.motor",
+          "name": "电机",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "GE.mechanism.crane-travel.drive.transmission-shaft",
+          "name": "传动轴",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "GE.mechanism.crane-travel.drive.coupling",
+          "name": "联轴器",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "GE.mechanism.crane-travel.drive.reducer",
+          "name": "减速器",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GE.mechanism.crane-travel.drive.reducer.gearbox-parts",
+            "name": "齿轮箱轴承等零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "GE.mechanism.crane-travel.drive.brake",
+          "name": "制动器",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GE.mechanism.crane-travel.drive.brake.brake-parts",
+            "name": "制动盘等零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "id": "GE.mechanism.crane-travel.trolley-frame",
+        "name": "台车架系统",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GE.mechanism.crane-travel.trolley-frame.structure",
+          "name": "台车架结构",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GE.mechanism.crane-travel.trolley-frame.structure.parts",
+            "name": "零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "GE.mechanism.crane-travel.trolley-frame.bearing-box",
+          "name": "轴承箱",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GE.mechanism.crane-travel.trolley-frame.bearing-box.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "GE.mechanism.crane-travel.trolley-frame.wheel-set",
+          "name": "车轮组",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GE.mechanism.crane-travel.trolley-frame.wheel-set.drive-wheel-parts",
+            "name": "主动车轮零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           },
+           {
+            "id": "GE.mechanism.crane-travel.trolley-frame.wheel-set.driven-wheel-parts",
+            "name": "被动车轮零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "id": "GE.electrical",
+    "name": "电气",
+    "type": "category",
+    "desc": "",
+    "children": [
+     {
+      "id": "GE.electrical.power-supply",
+      "name": "供电系统",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "GE.electrical.power-supply.sliding-contact-line",
+        "name": "电源滑触线与防护",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "GE.electrical.power-supply.current-collector",
+        "name": "集电器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "GE.electrical.power-supply.cable-drum",
+        "name": "电缆卷筒",
+        "type": "component",
+        "desc": "",
+        "children": []
+       }
+      ]
+     },
+     {
+      "id": "GE.electrical.control-elements",
+      "name": "控制元件",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "GE.electrical.control-elements.isolating-switch",
+        "name": "隔离开关",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "GE.electrical.control-elements.circuit-breaker",
+        "name": "断路器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "GE.electrical.control-elements.contactor",
+        "name": "接触器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "GE.electrical.control-elements.resistor",
+        "name": "电阻器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "GE.electrical.control-elements.controller",
+        "name": "控制器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "GE.electrical.control-elements.control-panel",
+        "name": "控制屏",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "GE.electrical.control-elements.control-circuit",
+        "name": "控制线路",
+        "type": "component",
+        "desc": "",
+        "children": []
+       }
+      ]
+     },
+     {
+      "id": "GE.electrical.safety-protection",
+      "name": "安全防护装置",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "GE.electrical.safety-protection.load-moment-limiter",
+        "name": "起重量（起重力矩）限制器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "GE.electrical.safety-protection.lifting-height-limit",
+        "name": "起升高度限位器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "GE.electrical.safety-protection.lowering-depth-limit",
+        "name": "下降深度限位器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "GE.electrical.safety-protection.travel-limit",
+        "name": "运行行程限位器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "GE.electrical.safety-protection.skew-indicator",
+        "name": "大车运行偏斜指示器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "GE.electrical.safety-protection.interlock-protection",
+        "name": "联锁保护装置",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "GE.electrical.safety-protection.wind-skid-protection",
+        "name": "抗风防滑装置",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "GE.electrical.safety-protection.anemometer",
+        "name": "风速仪装置",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "GE.electrical.safety-protection.anti-collision",
+        "name": "运行机构防碰撞装置",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "GE.electrical.safety-protection.overspeed-protection",
+        "name": "超速保护装置",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "GE.electrical.safety-protection.cable-drum-safety-limit",
+        "name": "供电电缆卷筒安全限位",
+        "type": "component",
+        "desc": "",
+        "children": []
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "GA",
+  "name": "造船门式起重机",
+  "type": "equipment",
+  "desc": "依据 GB/T 27997-2011、GB/T 3811-2008、GB/T 28264-2012 分级",
+  "children": [
+   {
+    "id": "GA.structure",
+    "name": "结构",
+    "type": "category",
+    "desc": "",
+    "children": [
+     {
+      "id": "GA.structure.bridge",
+      "name": "桥架",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "GA.structure.bridge.main-girder",
+        "name": "单双主梁",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GA.structure.bridge.main-girder.segment-1",
+          "name": "主梁分段1",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GA.structure.bridge.main-girder.segment-1.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "GA.structure.bridge.main-girder.segment-2",
+          "name": "主梁分段2",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GA.structure.bridge.main-girder.segment-2.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "GA.structure.bridge.main-girder.segment-n",
+          "name": "主梁分段n",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GA.structure.bridge.main-girder.segment-n.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "id": "GA.structure.bridge.end-girder",
+        "name": "端梁",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GA.structure.bridge.end-girder.parts",
+          "name": "零件与连接件",
+          "type": "part",
+          "desc": "",
+          "children": []
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "GA.structure.leg",
+      "name": "支腿",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "GA.structure.leg.rigid",
+        "name": "刚性腿",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GA.structure.leg.rigid.segment-1",
+          "name": "刚性腿分段1",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GA.structure.leg.rigid.segment-1.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "GA.structure.leg.rigid.segment-2",
+          "name": "刚性腿分段2",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GA.structure.leg.rigid.segment-2.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "GA.structure.leg.rigid.segment-n",
+          "name": "刚性腿分段n",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GA.structure.leg.rigid.segment-n.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "GA.structure.leg.rigid.lower-crossbeam",
+          "name": "下横梁",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GA.structure.leg.rigid.lower-crossbeam.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "id": "GA.structure.leg.flexible",
+        "name": "柔性腿",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GA.structure.leg.flexible.segment-1",
+          "name": "柔性腿分段1",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GA.structure.leg.flexible.segment-1.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "GA.structure.leg.flexible.segment-2",
+          "name": "柔性腿分段2",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GA.structure.leg.flexible.segment-2.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "GA.structure.leg.flexible.segment-n",
+          "name": "柔性腿分段n",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GA.structure.leg.flexible.segment-n.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "GA.structure.leg.flexible.lower-crossbeam",
+          "name": "下横梁",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GA.structure.leg.flexible.lower-crossbeam.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "GA.structure.hoisting-trolley",
+      "name": "起升小车",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "GA.structure.hoisting-trolley.upper-frame",
+        "name": "上小车架",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GA.structure.hoisting-trolley.upper-frame.parts",
+          "name": "零件与连接件",
+          "type": "part",
+          "desc": "",
+          "children": []
+         }
+        ]
+       },
+       {
+        "id": "GA.structure.hoisting-trolley.lower-frame",
+        "name": "下小车架",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GA.structure.hoisting-trolley.lower-frame.parts",
+          "name": "零件与连接件",
+          "type": "part",
+          "desc": "",
+          "children": []
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "GA.structure.crane-balance-beam",
+      "name": "大车平衡梁",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "GA.structure.crane-balance-beam.level-1",
+        "name": "一级平衡梁",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GA.structure.crane-balance-beam.level-1.parts",
+          "name": "零件与连接件",
+          "type": "part",
+          "desc": "",
+          "children": []
+         }
+        ]
+       },
+       {
+        "id": "GA.structure.crane-balance-beam.level-2",
+        "name": "二级平衡梁",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GA.structure.crane-balance-beam.level-2.parts",
+          "name": "零件与连接件",
+          "type": "part",
+          "desc": "",
+          "children": []
+         }
+        ]
+       },
+       {
+        "id": "GA.structure.crane-balance-beam.level-3",
+        "name": "三级平衡梁",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GA.structure.crane-balance-beam.level-3.parts",
+          "name": "零件与连接件",
+          "type": "part",
+          "desc": "",
+          "children": []
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "id": "GA.mechanism",
+    "name": "机构",
+    "type": "category",
+    "desc": "",
+    "children": [
+     {
+      "id": "GA.mechanism.upper-trolley-hoist",
+      "name": "上小车起升机构",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "GA.mechanism.upper-trolley-hoist.drive",
+        "name": "驱动装置",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GA.mechanism.upper-trolley-hoist.drive.motor",
+          "name": "电机",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "GA.mechanism.upper-trolley-hoist.drive.transmission-shaft",
+          "name": "传动轴",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "GA.mechanism.upper-trolley-hoist.drive.coupling",
+          "name": "联轴器",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "GA.mechanism.upper-trolley-hoist.drive.reducer",
+          "name": "减速器",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GA.mechanism.upper-trolley-hoist.drive.reducer.gearbox-parts",
+            "name": "齿轮箱轴承等零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "GA.mechanism.upper-trolley-hoist.drive.brake",
+          "name": "制动器",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GA.mechanism.upper-trolley-hoist.drive.brake.brake-parts",
+            "name": "制动盘等零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "id": "GA.mechanism.upper-trolley-hoist.rope-winding",
+        "name": "钢丝绳卷绕系统",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GA.mechanism.upper-trolley-hoist.rope-winding.wire-rope",
+          "name": "钢丝绳",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "GA.mechanism.upper-trolley-hoist.rope-winding.wedge-socket",
+          "name": "钢丝绳楔套",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "GA.mechanism.upper-trolley-hoist.rope-winding.pulley-set",
+          "name": "滑轮组",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GA.mechanism.upper-trolley-hoist.rope-winding.pulley-set.pulley-parts",
+            "name": "滑轮销轴轴承等零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "GA.mechanism.upper-trolley-hoist.rope-winding.drum",
+          "name": "卷筒",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GA.mechanism.upper-trolley-hoist.rope-winding.drum.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "id": "GA.mechanism.upper-trolley-hoist.lifting-device",
+        "name": "取物装置",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GA.mechanism.upper-trolley-hoist.lifting-device.hook-set",
+          "name": "吊钩组",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GA.mechanism.upper-trolley-hoist.lifting-device.hook-set.parts",
+            "name": "吊钩滑轮组等零部件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "GA.mechanism.upper-trolley-hoist.lifting-device.lifting-beam",
+          "name": "吊梁",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GA.mechanism.upper-trolley-hoist.lifting-device.lifting-beam.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "GA.mechanism.lower-trolley-hoist",
+      "name": "下小车起升机构",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "GA.mechanism.lower-trolley-hoist.drive",
+        "name": "驱动装置",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GA.mechanism.lower-trolley-hoist.drive.motor",
+          "name": "电机",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "GA.mechanism.lower-trolley-hoist.drive.transmission-shaft",
+          "name": "传动轴",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "GA.mechanism.lower-trolley-hoist.drive.coupling",
+          "name": "联轴器",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "GA.mechanism.lower-trolley-hoist.drive.reducer",
+          "name": "减速器",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GA.mechanism.lower-trolley-hoist.drive.reducer.gearbox-parts",
+            "name": "齿轮箱轴承等零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "GA.mechanism.lower-trolley-hoist.drive.brake",
+          "name": "制动器",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GA.mechanism.lower-trolley-hoist.drive.brake.brake-parts",
+            "name": "制动盘等零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "id": "GA.mechanism.lower-trolley-hoist.rope-winding",
+        "name": "钢丝绳卷绕系统",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GA.mechanism.lower-trolley-hoist.rope-winding.wire-rope",
+          "name": "钢丝绳",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "GA.mechanism.lower-trolley-hoist.rope-winding.wedge-socket",
+          "name": "钢丝绳楔套",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "GA.mechanism.lower-trolley-hoist.rope-winding.pulley-set",
+          "name": "滑轮组",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GA.mechanism.lower-trolley-hoist.rope-winding.pulley-set.pulley-parts",
+            "name": "滑轮销轴轴承等零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "GA.mechanism.lower-trolley-hoist.rope-winding.drum",
+          "name": "卷筒",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GA.mechanism.lower-trolley-hoist.rope-winding.drum.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "id": "GA.mechanism.lower-trolley-hoist.lifting-device",
+        "name": "取物装置",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GA.mechanism.lower-trolley-hoist.lifting-device.hook-set",
+          "name": "吊钩组",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GA.mechanism.lower-trolley-hoist.lifting-device.hook-set.parts",
+            "name": "吊钩滑轮组等零部件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "GA.mechanism.lower-trolley-hoist.lifting-device.lifting-beam",
+          "name": "吊梁",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GA.mechanism.lower-trolley-hoist.lifting-device.lifting-beam.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "GA.mechanism.upper-trolley-travel",
+      "name": "上小车运行机构",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "GA.mechanism.upper-trolley-travel.drive",
+        "name": "驱动装置",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GA.mechanism.upper-trolley-travel.drive.motor",
+          "name": "电机",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "GA.mechanism.upper-trolley-travel.drive.transmission-shaft",
+          "name": "传动轴",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "GA.mechanism.upper-trolley-travel.drive.coupling",
+          "name": "联轴器",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "GA.mechanism.upper-trolley-travel.drive.reducer",
+          "name": "减速器",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GA.mechanism.upper-trolley-travel.drive.reducer.gearbox-parts",
+            "name": "齿轮箱轴承等零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "GA.mechanism.upper-trolley-travel.drive.brake",
+          "name": "制动器",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GA.mechanism.upper-trolley-travel.drive.brake.brake-parts",
+            "name": "制动盘等零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "id": "GA.mechanism.upper-trolley-travel.trolley-frame",
+        "name": "台车架系统",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GA.mechanism.upper-trolley-travel.trolley-frame.structure",
+          "name": "台车架结构",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GA.mechanism.upper-trolley-travel.trolley-frame.structure.parts",
+            "name": "零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "GA.mechanism.upper-trolley-travel.trolley-frame.bearing-box",
+          "name": "轴承箱",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GA.mechanism.upper-trolley-travel.trolley-frame.bearing-box.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "GA.mechanism.upper-trolley-travel.trolley-frame.wheel-set",
+          "name": "车轮组",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GA.mechanism.upper-trolley-travel.trolley-frame.wheel-set.drive-wheel-parts",
+            "name": "主动车轮零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           },
+           {
+            "id": "GA.mechanism.upper-trolley-travel.trolley-frame.wheel-set.driven-wheel-parts",
+            "name": "被动车轮零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "GA.mechanism.lower-trolley-travel",
+      "name": "下小车运行机构",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "GA.mechanism.lower-trolley-travel.drive",
+        "name": "驱动装置",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GA.mechanism.lower-trolley-travel.drive.motor",
+          "name": "电机",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "GA.mechanism.lower-trolley-travel.drive.transmission-shaft",
+          "name": "传动轴",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "GA.mechanism.lower-trolley-travel.drive.coupling",
+          "name": "联轴器",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "GA.mechanism.lower-trolley-travel.drive.reducer",
+          "name": "减速器",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GA.mechanism.lower-trolley-travel.drive.reducer.gearbox-parts",
+            "name": "齿轮箱轴承等零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "GA.mechanism.lower-trolley-travel.drive.brake",
+          "name": "制动器",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GA.mechanism.lower-trolley-travel.drive.brake.brake-parts",
+            "name": "制动盘等零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "id": "GA.mechanism.lower-trolley-travel.trolley-frame",
+        "name": "台车架系统",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GA.mechanism.lower-trolley-travel.trolley-frame.structure",
+          "name": "台车架结构",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GA.mechanism.lower-trolley-travel.trolley-frame.structure.parts",
+            "name": "零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "GA.mechanism.lower-trolley-travel.trolley-frame.bearing-box",
+          "name": "轴承箱",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GA.mechanism.lower-trolley-travel.trolley-frame.bearing-box.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "GA.mechanism.lower-trolley-travel.trolley-frame.wheel-set",
+          "name": "车轮组",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GA.mechanism.lower-trolley-travel.trolley-frame.wheel-set.drive-wheel-parts",
+            "name": "主动车轮零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           },
+           {
+            "id": "GA.mechanism.lower-trolley-travel.trolley-frame.wheel-set.driven-wheel-parts",
+            "name": "被动车轮零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "GA.mechanism.crane-travel",
+      "name": "大车运行机构",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "GA.mechanism.crane-travel.drive",
+        "name": "驱动装置",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GA.mechanism.crane-travel.drive.motor",
+          "name": "电机",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "GA.mechanism.crane-travel.drive.transmission-shaft",
+          "name": "传动轴",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "GA.mechanism.crane-travel.drive.coupling",
+          "name": "联轴器",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "GA.mechanism.crane-travel.drive.reducer",
+          "name": "减速器",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GA.mechanism.crane-travel.drive.reducer.gearbox-parts",
+            "name": "齿轮箱轴承等零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "GA.mechanism.crane-travel.drive.brake",
+          "name": "制动器",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GA.mechanism.crane-travel.drive.brake.brake-parts",
+            "name": "制动盘等零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "id": "GA.mechanism.crane-travel.trolley-frame",
+        "name": "台车架系统",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "GA.mechanism.crane-travel.trolley-frame.structure",
+          "name": "台车架结构",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GA.mechanism.crane-travel.trolley-frame.structure.parts",
+            "name": "零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "GA.mechanism.crane-travel.trolley-frame.bearing-box",
+          "name": "轴承箱",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GA.mechanism.crane-travel.trolley-frame.bearing-box.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "GA.mechanism.crane-travel.trolley-frame.wheel-set",
+          "name": "车轮组",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "GA.mechanism.crane-travel.trolley-frame.wheel-set.drive-wheel-parts",
+            "name": "主动车轮零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           },
+           {
+            "id": "GA.mechanism.crane-travel.trolley-frame.wheel-set.driven-wheel-parts",
+            "name": "被动车轮零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "id": "GA.electrical",
+    "name": "电气",
+    "type": "category",
+    "desc": "",
+    "children": [
+     {
+      "id": "GA.electrical.power-supply",
+      "name": "供电系统",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "GA.electrical.power-supply.sliding-contact-line",
+        "name": "电源滑触线与防护",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "GA.electrical.power-supply.current-collector",
+        "name": "集电器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "GA.electrical.power-supply.cable-drum",
+        "name": "电缆卷筒",
+        "type": "component",
+        "desc": "",
+        "children": []
+       }
+      ]
+     },
+     {
+      "id": "GA.electrical.control-elements",
+      "name": "控制元件",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "GA.electrical.control-elements.isolating-switch",
+        "name": "隔离开关",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "GA.electrical.control-elements.circuit-breaker",
+        "name": "断路器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "GA.electrical.control-elements.contactor",
+        "name": "接触器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "GA.electrical.control-elements.resistor",
+        "name": "电阻器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "GA.electrical.control-elements.controller",
+        "name": "控制器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "GA.electrical.control-elements.control-panel",
+        "name": "控制屏",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "GA.electrical.control-elements.control-circuit",
+        "name": "控制线路",
+        "type": "component",
+        "desc": "",
+        "children": []
+       }
+      ]
+     },
+     {
+      "id": "GA.electrical.safety-protection",
+      "name": "安全防护装置",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "GA.electrical.safety-protection.load-moment-limiter",
+        "name": "起重量（起重力矩）限制器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "GA.electrical.safety-protection.lifting-height-limit",
+        "name": "起升高度限位器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "GA.electrical.safety-protection.lowering-depth-limit",
+        "name": "下降深度限位器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "GA.electrical.safety-protection.travel-limit",
+        "name": "运行行程限位器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "GA.electrical.safety-protection.skew-indicator",
+        "name": "大车运行偏斜指示器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "GA.electrical.safety-protection.interlock-protection",
+        "name": "联锁保护装置",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "GA.electrical.safety-protection.wind-skid-protection",
+        "name": "抗风防滑装置",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "GA.electrical.safety-protection.anemometer",
+        "name": "风速仪装置",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "GA.electrical.safety-protection.anti-collision",
+        "name": "运行机构防碰撞装置",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "GA.electrical.safety-protection.overspeed-protection",
+        "name": "超速保护装置",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "GA.electrical.safety-protection.cable-drum-safety-limit",
+        "name": "供电电缆卷筒安全限位",
+        "type": "component",
+        "desc": "",
+        "children": []
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "PT",
+  "name": "门座起重机",
+  "type": "equipment",
+  "desc": "依据 GB/T 29560-2013、GB/T 3811-2008、GB/T 28264-2012 分级",
+  "children": [
+   {
+    "id": "PT.structure",
+    "name": "结构",
+    "type": "category",
+    "desc": "",
+    "children": [
+     {
+      "id": "PT.structure.boom-system",
+      "name": "臂架系统",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "PT.structure.boom-system.boom",
+        "name": "臂架结构",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "PT.structure.boom-system.boom.parts",
+          "name": "零件与连接件",
+          "type": "part",
+          "desc": "",
+          "children": []
+         }
+        ]
+       },
+       {
+        "id": "PT.structure.boom-system.tie-rod",
+        "name": "拉杆结构",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "PT.structure.boom-system.tie-rod.parts",
+          "name": "零件与连接件",
+          "type": "part",
+          "desc": "",
+          "children": []
+         }
+        ]
+       },
+       {
+        "id": "PT.structure.boom-system.elephant-nose",
+        "name": "象鼻架结构",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "PT.structure.boom-system.elephant-nose.parts",
+          "name": "零件与连接件",
+          "type": "part",
+          "desc": "",
+          "children": []
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "PT.structure.a-frame",
+      "name": "人字架结构",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "PT.structure.a-frame.front-strut",
+        "name": "前撑杆结构",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "PT.structure.a-frame.front-strut.parts",
+          "name": "零件与连接件",
+          "type": "part",
+          "desc": "",
+          "children": []
+         }
+        ]
+       },
+       {
+        "id": "PT.structure.a-frame.rear-tie-rod",
+        "name": "后拉杆结构",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "PT.structure.a-frame.rear-tie-rod.parts",
+          "name": "零件与连接件",
+          "type": "part",
+          "desc": "",
+          "children": []
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "PT.structure.rotating-column",
+      "name": "转柱结构",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "PT.structure.rotating-column.parts",
+        "name": "零件与连接件",
+        "type": "part",
+        "desc": "",
+        "children": []
+       }
+      ]
+     },
+     {
+      "id": "PT.structure.centering-counterweight",
+      "name": "对中平衡重结构",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "PT.structure.centering-counterweight.parts",
+        "name": "零件与连接件",
+        "type": "part",
+        "desc": "",
+        "children": []
+       }
+      ]
+     },
+     {
+      "id": "PT.structure.turntable",
+      "name": "转台结构",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "PT.structure.turntable.parts",
+        "name": "零件与连接件",
+        "type": "part",
+        "desc": "",
+        "children": []
+       }
+      ]
+     },
+     {
+      "id": "PT.structure.portal",
+      "name": "门座结构",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "PT.structure.portal.cylinder",
+        "name": "筒体结构",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "PT.structure.portal.cylinder.parts",
+          "name": "零件与连接件",
+          "type": "part",
+          "desc": "",
+          "children": []
+         }
+        ]
+       },
+       {
+        "id": "PT.structure.portal.portal-frame",
+        "name": "门架结构",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "PT.structure.portal.portal-frame.parts",
+          "name": "零件与连接件",
+          "type": "part",
+          "desc": "",
+          "children": []
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "PT.structure.crane-balance-beam",
+      "name": "大车平衡梁",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "PT.structure.crane-balance-beam.level-1",
+        "name": "一级平衡梁",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "PT.structure.crane-balance-beam.level-1.parts",
+          "name": "零件与连接件",
+          "type": "part",
+          "desc": "",
+          "children": []
+         }
+        ]
+       },
+       {
+        "id": "PT.structure.crane-balance-beam.level-2",
+        "name": "二级平衡梁",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "PT.structure.crane-balance-beam.level-2.parts",
+          "name": "零件与连接件",
+          "type": "part",
+          "desc": "",
+          "children": []
+         }
+        ]
+       },
+       {
+        "id": "PT.structure.crane-balance-beam.level-3",
+        "name": "三级平衡梁",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "PT.structure.crane-balance-beam.level-3.parts",
+          "name": "零件与连接件",
+          "type": "part",
+          "desc": "",
+          "children": []
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "id": "PT.mechanism",
+    "name": "机构",
+    "type": "category",
+    "desc": "",
+    "children": [
+     {
+      "id": "PT.mechanism.main-hoist",
+      "name": "主起升机构",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "PT.mechanism.main-hoist.drive",
+        "name": "驱动装置",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "PT.mechanism.main-hoist.drive.motor",
+          "name": "电机",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "PT.mechanism.main-hoist.drive.transmission-shaft",
+          "name": "传动轴",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "PT.mechanism.main-hoist.drive.coupling",
+          "name": "联轴器",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "PT.mechanism.main-hoist.drive.reducer",
+          "name": "减速器",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "PT.mechanism.main-hoist.drive.reducer.gearbox-parts",
+            "name": "齿轮箱轴承等零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "PT.mechanism.main-hoist.drive.brake",
+          "name": "制动器",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "PT.mechanism.main-hoist.drive.brake.brake-parts",
+            "name": "制动盘等零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "id": "PT.mechanism.main-hoist.rope-winding",
+        "name": "钢丝绳卷绕系统",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "PT.mechanism.main-hoist.rope-winding.wire-rope",
+          "name": "钢丝绳",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "PT.mechanism.main-hoist.rope-winding.wedge-socket",
+          "name": "钢丝绳楔套",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "PT.mechanism.main-hoist.rope-winding.pulley-set",
+          "name": "滑轮组",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "PT.mechanism.main-hoist.rope-winding.pulley-set.pulley-parts",
+            "name": "滑轮销轴轴承等零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "PT.mechanism.main-hoist.rope-winding.drum",
+          "name": "卷筒",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "PT.mechanism.main-hoist.rope-winding.drum.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "id": "PT.mechanism.main-hoist.lifting-device",
+        "name": "取物装置",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "PT.mechanism.main-hoist.lifting-device.suction-cup",
+          "name": "吸盘",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "PT.mechanism.main-hoist.lifting-device.suction-cup.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "PT.mechanism.main-hoist.lifting-device.hook-set",
+          "name": "吊钩组",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "PT.mechanism.main-hoist.lifting-device.hook-set.parts",
+            "name": "吊钩滑轮组等零部件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "PT.mechanism.main-hoist.lifting-device.grab",
+          "name": "抓斗",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "PT.mechanism.main-hoist.lifting-device.grab.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "PT.mechanism.main-hoist.lifting-device.lifting-beam",
+          "name": "吊梁",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "PT.mechanism.main-hoist.lifting-device.lifting-beam.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "PT.mechanism.auxiliary-hoist",
+      "name": "副起升机构",
+      "type": "system",
+      "desc": "",
+      "children": []
+     },
+     {
+      "id": "PT.mechanism.luffing",
+      "name": "变幅机构",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "PT.mechanism.luffing.flexible",
+        "name": "柔性变幅机构",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "PT.mechanism.luffing.flexible.drive",
+          "name": "驱动装置",
+          "type": "assembly",
+          "desc": "",
+          "children": [
+           {
+            "id": "PT.mechanism.luffing.flexible.drive.motor",
+            "name": "电机",
+            "type": "component",
+            "desc": "",
+            "children": []
+           },
+           {
+            "id": "PT.mechanism.luffing.flexible.drive.transmission-shaft",
+            "name": "传动轴",
+            "type": "component",
+            "desc": "",
+            "children": []
+           },
+           {
+            "id": "PT.mechanism.luffing.flexible.drive.coupling",
+            "name": "联轴器",
+            "type": "component",
+            "desc": "",
+            "children": []
+           },
+           {
+            "id": "PT.mechanism.luffing.flexible.drive.reducer",
+            "name": "减速器",
+            "type": "component",
+            "desc": "",
+            "children": [
+             {
+              "id": "PT.mechanism.luffing.flexible.drive.reducer.gearbox-parts",
+              "name": "齿轮箱轴承等零件",
+              "type": "part",
+              "desc": "",
+              "children": []
+             }
+            ]
+           },
+           {
+            "id": "PT.mechanism.luffing.flexible.drive.brake",
+            "name": "制动器",
+            "type": "component",
+            "desc": "",
+            "children": [
+             {
+              "id": "PT.mechanism.luffing.flexible.drive.brake.brake-parts",
+              "name": "制动盘等零件与连接件",
+              "type": "part",
+              "desc": "",
+              "children": []
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "id": "PT.mechanism.luffing.flexible.rope-winding",
+          "name": "钢丝绳卷绕系统",
+          "type": "assembly",
+          "desc": "",
+          "children": [
+           {
+            "id": "PT.mechanism.luffing.flexible.rope-winding.wire-rope",
+            "name": "钢丝绳",
+            "type": "component",
+            "desc": "",
+            "children": []
+           },
+           {
+            "id": "PT.mechanism.luffing.flexible.rope-winding.wedge-socket",
+            "name": "钢丝绳楔套",
+            "type": "component",
+            "desc": "",
+            "children": []
+           },
+           {
+            "id": "PT.mechanism.luffing.flexible.rope-winding.pulley-set",
+            "name": "滑轮组",
+            "type": "component",
+            "desc": "",
+            "children": [
+             {
+              "id": "PT.mechanism.luffing.flexible.rope-winding.pulley-set.pulley-parts",
+              "name": "滑轮销轴轴承等零件",
+              "type": "part",
+              "desc": "",
+              "children": []
+             }
+            ]
+           },
+           {
+            "id": "PT.mechanism.luffing.flexible.rope-winding.drum",
+            "name": "卷筒",
+            "type": "component",
+            "desc": "",
+            "children": [
+             {
+              "id": "PT.mechanism.luffing.flexible.rope-winding.drum.parts",
+              "name": "零件与连接件",
+              "type": "part",
+              "desc": "",
+              "children": []
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "id": "PT.mechanism.luffing.flexible.anti-backward-tilt",
+          "name": "防后倾装置",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "PT.mechanism.luffing.flexible.anti-backward-tilt.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "id": "PT.mechanism.luffing.rigid",
+        "name": "刚性变幅机构",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "PT.mechanism.luffing.rigid.drive",
+          "name": "驱动装置",
+          "type": "assembly",
+          "desc": "",
+          "children": [
+           {
+            "id": "PT.mechanism.luffing.rigid.drive.motor",
+            "name": "电机",
+            "type": "component",
+            "desc": "",
+            "children": []
+           },
+           {
+            "id": "PT.mechanism.luffing.rigid.drive.transmission-shaft",
+            "name": "传动轴",
+            "type": "component",
+            "desc": "",
+            "children": []
+           },
+           {
+            "id": "PT.mechanism.luffing.rigid.drive.coupling",
+            "name": "联轴器",
+            "type": "component",
+            "desc": "",
+            "children": []
+           },
+           {
+            "id": "PT.mechanism.luffing.rigid.drive.reducer",
+            "name": "减速器",
+            "type": "component",
+            "desc": "",
+            "children": [
+             {
+              "id": "PT.mechanism.luffing.rigid.drive.reducer.gearbox-parts",
+              "name": "齿轮箱轴承等零件",
+              "type": "part",
+              "desc": "",
+              "children": []
+             }
+            ]
+           },
+           {
+            "id": "PT.mechanism.luffing.rigid.drive.brake",
+            "name": "制动器",
+            "type": "component",
+            "desc": "",
+            "children": [
+             {
+              "id": "PT.mechanism.luffing.rigid.drive.brake.brake-parts",
+              "name": "制动盘等零件与连接件",
+              "type": "part",
+              "desc": "",
+              "children": []
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "id": "PT.mechanism.luffing.rigid.screw-system",
+          "name": "螺杆系统",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "PT.mechanism.luffing.rigid.screw-system.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "PT.mechanism.slewing",
+      "name": "回转机构",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "PT.mechanism.slewing.drive",
+        "name": "驱动装置",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "PT.mechanism.slewing.drive.motor",
+          "name": "电机",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "PT.mechanism.slewing.drive.transmission-shaft",
+          "name": "传动轴",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "PT.mechanism.slewing.drive.coupling",
+          "name": "联轴器",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "PT.mechanism.slewing.drive.reducer",
+          "name": "减速器",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "PT.mechanism.slewing.drive.reducer.gearbox-parts",
+            "name": "齿轮箱轴承等零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "PT.mechanism.slewing.drive.brake",
+          "name": "制动器",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "PT.mechanism.slewing.drive.brake.brake-parts",
+            "name": "制动盘等零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "id": "PT.mechanism.slewing.slewing-device",
+        "name": "回转装置",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "PT.mechanism.slewing.slewing-device.pinion",
+          "name": "回转小齿轮",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "PT.mechanism.slewing.slewing-device.pinion.parts",
+            "name": "零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "PT.mechanism.slewing.slewing-device.bearing",
+          "name": "回转支承",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "PT.mechanism.slewing.slewing-device.bearing.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "PT.mechanism.travel",
+      "name": "行走机构",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "PT.mechanism.travel.drive",
+        "name": "驱动装置",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "PT.mechanism.travel.drive.motor",
+          "name": "电机",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "PT.mechanism.travel.drive.transmission-shaft",
+          "name": "传动轴",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "PT.mechanism.travel.drive.coupling",
+          "name": "联轴器",
+          "type": "component",
+          "desc": "",
+          "children": []
+         },
+         {
+          "id": "PT.mechanism.travel.drive.reducer",
+          "name": "减速器",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "PT.mechanism.travel.drive.reducer.gearbox-parts",
+            "name": "齿轮箱轴承等零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "PT.mechanism.travel.drive.brake",
+          "name": "制动器",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "PT.mechanism.travel.drive.brake.brake-parts",
+            "name": "制动盘等零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "id": "PT.mechanism.travel.trolley-frame",
+        "name": "台车架系统",
+        "type": "assembly",
+        "desc": "",
+        "children": [
+         {
+          "id": "PT.mechanism.travel.trolley-frame.structure",
+          "name": "台车架结构",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "PT.mechanism.travel.trolley-frame.structure.parts",
+            "name": "零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "PT.mechanism.travel.trolley-frame.bearing-box",
+          "name": "轴承箱",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "PT.mechanism.travel.trolley-frame.bearing-box.parts",
+            "name": "零件与连接件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": "PT.mechanism.travel.trolley-frame.wheel-set",
+          "name": "车轮组",
+          "type": "component",
+          "desc": "",
+          "children": [
+           {
+            "id": "PT.mechanism.travel.trolley-frame.wheel-set.drive-wheel-parts",
+            "name": "主动车轮零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           },
+           {
+            "id": "PT.mechanism.travel.trolley-frame.wheel-set.driven-wheel-parts",
+            "name": "被动车轮零件",
+            "type": "part",
+            "desc": "",
+            "children": []
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "id": "PT.electrical",
+    "name": "电气",
+    "type": "category",
+    "desc": "",
+    "children": [
+     {
+      "id": "PT.electrical.power-supply",
+      "name": "供电系统",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "PT.electrical.power-supply.sliding-contact-line",
+        "name": "电源滑触线与防护",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "PT.electrical.power-supply.current-collector",
+        "name": "集电器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "PT.electrical.power-supply.cable-drum",
+        "name": "电缆卷筒",
+        "type": "component",
+        "desc": "",
+        "children": []
+       }
+      ]
+     },
+     {
+      "id": "PT.electrical.control-elements",
+      "name": "控制元件",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "PT.electrical.control-elements.isolating-switch",
+        "name": "隔离开关",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "PT.electrical.control-elements.circuit-breaker",
+        "name": "断路器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "PT.electrical.control-elements.contactor",
+        "name": "接触器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "PT.electrical.control-elements.resistor",
+        "name": "电阻器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "PT.electrical.control-elements.controller",
+        "name": "控制器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "PT.electrical.control-elements.control-panel",
+        "name": "控制屏",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "PT.electrical.control-elements.control-circuit",
+        "name": "控制线路",
+        "type": "component",
+        "desc": "",
+        "children": []
+       }
+      ]
+     },
+     {
+      "id": "PT.electrical.safety-protection",
+      "name": "安全防护装置",
+      "type": "system",
+      "desc": "",
+      "children": [
+       {
+        "id": "PT.electrical.safety-protection.load-moment-limiter",
+        "name": "起重量（起重力矩）限制器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "PT.electrical.safety-protection.lifting-height-limit",
+        "name": "起升高度限位器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "PT.electrical.safety-protection.lowering-depth-limit",
+        "name": "下降深度限位器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "PT.electrical.safety-protection.travel-limit",
+        "name": "运行行程限位器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "PT.electrical.safety-protection.amplitude-limit",
+        "name": "幅度限位器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "PT.electrical.safety-protection.interlock-protection",
+        "name": "联锁保护装置",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "PT.electrical.safety-protection.wind-skid-protection",
+        "name": "抗风防滑装置",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "PT.electrical.safety-protection.anemometer",
+        "name": "风速仪装置",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "PT.electrical.safety-protection.slewing-limit",
+        "name": "回转限制器",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "PT.electrical.safety-protection.anti-collision",
+        "name": "运行机构防碰撞装置",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "PT.electrical.safety-protection.overspeed-protection",
+        "name": "超速保护装置",
+        "type": "component",
+        "desc": "",
+        "children": []
+       },
+       {
+        "id": "PT.electrical.safety-protection.cable-drum-safety-limit",
+        "name": "供电电缆卷筒安全限位",
+        "type": "component",
+        "desc": "",
+        "children": []
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ }
+]
