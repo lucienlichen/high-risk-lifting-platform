@@ -2,7 +2,7 @@
  * Paint the part template with this device's overview alarms.
  * Parent status is the worst child. Nodes in the grey list stay 未接入 unless an alarm lands on them.
  */
-import { extraCount, templateForDeviceType, type PartTemplateNode } from '@/config/partTemplates'
+import { templateForDeviceType, type PartTemplateNode } from '@/config/partTemplates'
 import { specialtyLabel, type SpecialtyId } from '@/config/specialtyDict'
 import type { OverviewCard } from '@/mock/overviewDemo'
 import type { LampLevel, OverviewAlarm, OverviewServiceKey } from '@/mock/overviewStatus'
@@ -16,8 +16,6 @@ export interface PartGraphNode {
   red: number
   yellow: number
   services: string[]
-  extra?: string
-  extraCount?: string
   alarmId?: string
   children?: PartGraphNode[]
 }
@@ -75,22 +73,6 @@ const KEYWORDS: { test: RegExp; names: string[] }[] = [
   { test: /控制|接触器|断路/, names: ['控制器', '接触器', '断路器'] }
 ]
 
-function hasAuxiliaryHoist(capacity: string): boolean | null {
-  const text = capacity.trim()
-  if (!text || text === '—') return null
-  return text.includes('/')
-}
-
-function prune(nodes: PartTemplateNode[], keepAux: boolean): PartTemplateNode[] {
-  return nodes
-    .filter(node => keepAux || !node.name.includes('副起升'))
-    .map(node => ({
-      ...node,
-      children: node.children ? prune(node.children, keepAux) : undefined
-    }))
-    .filter(node => !node.children || node.children.length > 0)
-}
-
 function grow(node: PartTemplateNode, path: string[], leaves: PartGraphNode[]): PartGraphNode {
   const next = [...path, node.name]
   if (!node.children?.length) {
@@ -100,9 +82,7 @@ function grow(node: PartTemplateNode, path: string[], leaves: PartGraphNode[]): 
       status: GREY.has(node.name) ? 'off' : 'green',
       red: 0,
       yellow: 0,
-      services: [],
-      extra: node.extra,
-      extraCount: node.extra ? extraCount(node.extra) : undefined
+      services: []
     }
     leaves.push(live)
     return live
@@ -114,8 +94,6 @@ function grow(node: PartTemplateNode, path: string[], leaves: PartGraphNode[]): 
     red: 0,
     yellow: 0,
     services: [],
-    extra: node.extra,
-    extraCount: node.extra ? extraCount(node.extra) : undefined,
     children: node.children.map(child => grow(child, next, leaves))
   }
 }
@@ -196,12 +174,10 @@ function forceLamp(leaves: PartGraphNode[], lamp: LampLevel, alarms: OverviewAla
 
 export function buildPartGraph(card: Pick<OverviewCard, 'type' | 'capacityText' | 'lamp' | 'overview'>): PartGraphSpec[] {
   const template = templateForDeviceType(card.type)
-  const aux = hasAuxiliaryHoist(card.capacityText || '')
-  const keepAux = aux !== false
   const alarms = card.overview.alarms.filter(alarm => alarm.level !== 'normal')
   return template.specs.map(spec => {
     const leaves: PartGraphNode[] = []
-    const nodes = prune(spec.nodes, keepAux).map(node => grow(node, [], leaves))
+    const nodes = spec.nodes.map(node => grow(node, [], leaves))
     if (card.lamp !== 'normal') {
       alarms.forEach(alarm => {
         const text = normalize(`${alarm.text} ${alarm.serviceLabel}`)

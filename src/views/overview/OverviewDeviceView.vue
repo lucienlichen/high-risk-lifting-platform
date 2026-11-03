@@ -480,13 +480,15 @@ function queryText(value: unknown): string {
   return String(value || '')
 }
 function back() {
-  const query: Record<string, string> = { spec: specialty.value }
+  const query: Record<string, string> = {}
   const enterprise = queryText(route.query.enterprise)
   const unit = queryText(route.query.unit)
   const node = queryText(route.query.node)
+  const parts = queryText(route.query.parts)
   if (enterprise) query.enterprise = enterprise
   if (unit) query.unit = unit
   if (node) query.node = node
+  if (parts && parts !== 'all') query.spec = parts
   router.push({ name: 'overviewParts', params: { id: String(route.params.id || '') }, query })
 }
 function openModule(key: OverviewServiceKey) {
