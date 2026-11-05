@@ -22,3 +22,9 @@ defineProps<{
   bare?: boolean
 }>()
 </script>
+
+<style scoped>
+.top-hierarchy-nav { min-height: 0; padding: 3px 20px; background: var(--color-content-bg); border: 0; box-shadow: none; }
+.hierarchy-crumbs { font-size: 11px; color: var(--color-text-muted); }
+.hierarchy-crumb.strong { color: var(--color-text-secondary); font-weight: 400; }
+</style>

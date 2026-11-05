@@ -5,6 +5,7 @@
     <DeviceInfoHeader
       v-if="device"
       :name="device.name"
+      :severity="getOverviewCard(device.id)?.lamp"
       :status="device.status"
       :code="device.code"
       :type="device.type"
@@ -404,6 +405,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useSceneStore } from '@/stores/scene'
 import { Monitor, Warning, Select, Close, InfoFilled, ArrowLeft, Refresh, Platform } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
+import { getOverviewCard } from '@/mock/overviewDemo'
 import DeviceInfoHeader from '@/components/DeviceInfoHeader.vue'
 import DeviceMonitoringWorkspace from '@/components/DeviceMonitoringWorkspace.vue'
 import HealthAssessmentDrawer from '@/components/HealthAssessmentDrawer.vue'

@@ -4,6 +4,7 @@
     <DeviceInfoHeader
       v-if="card"
       :name="card.name"
+      :severity="card.lamp"
       :status="headerStatus"
       :code="card.code"
       :type="card.type || '—'"
