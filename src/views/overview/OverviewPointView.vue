@@ -139,13 +139,13 @@ const services = computed(() => {
 })
 const activeTab = ref('health')
 const tabs = [
-  { key: 'health', label: '健康监测', series: true },
-  { key: 'safety', label: '安全监控', series: true },
   { key: 'patrol', label: '日常点巡检数据', series: false },
   { key: 'repair', label: '损伤/故障维修数据', series: false },
   { key: 'inspect', label: '检验检测数据', series: false },
   { key: 'supervise', label: '设备监管基础数据', series: false },
   { key: 'supply', label: '设备制造供给数据', series: false },
+  { key: 'safety', label: '安全监控数据', series: true },
+  { key: 'health', label: '健康监测数据', series: true },
   { key: 'risk', label: '风险定量监测数据', series: false }
 ]
 const seriesTab = computed(() => tabs.find(tab => tab.key === activeTab.value)?.series === true)
