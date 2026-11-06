@@ -42,7 +42,7 @@
       <section class="ov-section-head">
         <div class="ov-scope">
           <nav aria-label="位置">{{ crumb }}</nav>
-          <h1>{{ scopeName }} <span>{{ scopeCards.length }} 台设备</span></h1>
+          <h1>{{ scopeName }}</h1>
         </div>
         <div class="ov-tools">
           <label class="ov-search">
@@ -55,10 +55,9 @@
           </div>
         </div>
       </section>
-      <p class="ov-monitor-line">监控设备 共 <b>{{ scopeCards.length }}</b> 台</p>
       <section class="ov-chips" role="group" aria-label="按状态筛选">
         <button v-for="chip in chips" :key="chip.id" type="button" class="ov-chip" :class="[`is-${chip.id === 'all' ? 'all' : chip.id}`, { ['active-' + chip.id]: hue === chip.id }]" @click="hue = chip.id; limit = 40">
-          <span class="dot"></span>{{ chip.label }}<b>{{ chip.n }}</b>
+          <span class="dot"></span>{{ chip.label }}
         </button>
         <span class="ov-chip-note">停机只筛停机，不含离线。卡片保持最近一次灯色，不另标离线。</span>
       </section>
@@ -197,24 +196,13 @@ const searched = computed(() => {
   if (!keyword) return scopeCards.value
   return scopeCards.value.filter(card => card.code.includes(keyword) || card.location.includes(keyword) || card.unit.includes(keyword) || card.name.includes(keyword))
 })
-const counts = computed(() => {
-  const base = { all: searched.value.length, red: 0, yellow: 0, green: 0, stopped: 0 }
-  searched.value.forEach(card => {
-    if (card.lamp === 'red') base.red += 1
-    else if (card.lamp === 'yellow') base.yellow += 1
-    else base.green += 1
-    // 停机不含离线。离线时 run 为 null，卡片仍按 lamp 计入报警/异常/正常。
-    if (card.run === 'stopped') base.stopped += 1
-  })
-  return base
-})
-const chips = computed(() => [
-  { id: 'all' as const, label: '全部', n: counts.value.all },
-  { id: 'red' as const, label: SEVERITY_DICT.red.label, n: counts.value.red },
-  { id: 'yellow' as const, label: SEVERITY_DICT.yellow.label, n: counts.value.yellow },
-  { id: 'green' as const, label: SEVERITY_DICT.green.label, n: counts.value.green },
-  { id: 'stopped' as const, label: '停机', n: counts.value.stopped }
-])
+const chips = [
+  { id: 'all' as const, label: '全部' },
+  { id: 'red' as const, label: SEVERITY_DICT.red.label },
+  { id: 'yellow' as const, label: SEVERITY_DICT.yellow.label },
+  { id: 'green' as const, label: SEVERITY_DICT.green.label },
+  { id: 'stopped' as const, label: '停机' }
+]
 function colorRank(card: OverviewCard) {
   if (card.lamp === 'red') return 0
   if (card.lamp === 'yellow') return 1

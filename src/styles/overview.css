@@ -380,8 +380,6 @@
 .ov-chip.active-stopped { background: #64748b; color: #fff; border-color: #64748b; }
 .ov-chip-split { width: 1px; align-self: stretch; background: #cbd5e1; margin: 4px 2px; }
 .ov-chip-note { margin-left: auto; font-size: 12px; color: #64748b; }
-.ov-monitor-line { margin: 0 0 8px; font-size: 14px; color: #334155; }
-.ov-monitor-line b { font-size: 18px; font-weight: 700; color: #0f172a; margin: 0 2px; }
 
 .ov-grid {
   display: grid;
