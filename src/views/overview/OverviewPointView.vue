@@ -43,25 +43,33 @@
         <aside class="panel panel-svc">
           <div class="panel-h"><h3>智能服务</h3><span class="muted">{{ aggregate ? '推送组内任一报警置顶' : '推送本结构报警置顶' }}</span></div>
           <div class="svc-list">
-            <div v-for="service in services" :key="service.name" class="svc-card" :class="{ 'is-hot': service.hot, 'is-open': openServices.includes(service.name) }">
-              <button type="button" class="svc-head" :aria-expanded="openServices.includes(service.name)" @click="toggleService(service.name)"><i class="sdot"></i><span>{{ service.name }}</span><span class="svc-tag">{{ service.hot ? aggregate ? '组内报警' : '推送报警' : '正常' }}</span><span class="chev">›</span></button>
-              <div class="svc-body">{{ service.conclusion }}</div>
-            </div>
+            <button v-for="service in services" :key="service.name" type="button" class="svc-card" :class="{ 'is-hot': service.hot }" :aria-label="`打开${service.name}`" @click="openService(service.name)">
+              <span class="svc-head"><i class="sdot"></i><span>{{ service.name }}</span><span class="svc-tag">{{ service.hot ? aggregate ? '组内报警' : '推送报警' : '正常' }}</span><span class="chev">进入</span></span>
+              <span class="svc-body">{{ service.conclusion }}</span>
+            </button>
           </div>
         </aside>
       </div>
       <section class="panel panel-base">
         <div class="tabs" role="tablist" aria-label="部件数据"><button v-for="tab in tabs" :id="`tab-${tab.key}`" :key="tab.key" type="button" class="tab" :class="{ 'is-on': activeTab === tab.key }" role="tab" :aria-selected="activeTab === tab.key" :aria-controls="`pane-${tab.key}`" @click="activeTab = tab.key">{{ tab.label }}</button></div>
         <div v-if="activeTab === 'ts'" id="pane-ts" class="tab-pane" role="tabpanel" aria-labelledby="tab-ts">
-          <div class="chart-fake">
-            <svg viewBox="0 0 800 110" preserveAspectRatio="none" role="img" :aria-label="`${selectedPoint?.name}近24小时模拟曲线`">
-              <line x1="20" y1="90" x2="780" y2="90" class="chart-axis"/><line x1="20" y1="50" x2="780" y2="50" class="chart-threshold"/>
-              <polyline fill="none" :stroke="pointColor(selectedPoint?.status || 'ok')" stroke-width="2.5" :points="chartPoints"/>
-              <text x="28" y="18" class="chart-caption" font-size="12">{{ aggregate ? '组内测点 · ' : '' }}{{ selectedPoint?.id }} {{ selectedPoint?.name }} · 近 24h 示意曲线</text>
-              <text x="760" y="48" text-anchor="end" class="chart-caption" font-size="11">阈值</text>
-            </svg>
-          </div>
-          <table class="data-table"><thead><tr><th>测点</th><th>当前值</th><th>报警阈值</th><th>异常阈值</th><th>状态</th><th>采集时间</th></tr></thead><tbody><tr v-for="point in sortedPoints" :key="point.id"><td>{{ aggregate ? point.group + ' / ' : '' }}{{ point.id }} {{ point.name }}</td><td><b>{{ point.value }}</b></td><td>{{ point.status === 'alarm' ? '280' : '—' }}</td><td>{{ point.status === 'warn' ? '160' : '—' }}</td><td><span class="tag" :class="point.status">{{ statusLabels[point.status] }}</span></td><td>{{ collectedAt }}</td></tr></tbody></table>
+          <template v-if="selectedPoint && trend">
+            <div class="point-chart" role="img" :aria-label="`${selectedPoint.id} ${selectedPoint.name}近24小时模拟曲线`">
+              <ServiceEChart :key="selectedPoint.id" :option="chartOption" />
+            </div>
+            <div class="point-summary">
+              <div class="point-kv"><span class="k">测点编号</span><span class="v">{{ selectedPoint.id }}</span></div>
+              <div class="point-kv"><span class="k">测点名称</span><span class="v">{{ selectedPoint.name }}</span></div>
+              <div v-if="aggregate" class="point-kv"><span class="k">分组</span><span class="v">{{ selectedPoint.group || '—' }}</span></div>
+              <div class="point-kv"><span class="k">当前值</span><span class="v">{{ selectedPoint.value }}</span></div>
+              <div class="point-kv"><span class="k">单位</span><span class="v">{{ selectedPoint.unit }}</span></div>
+              <div class="point-kv"><span class="k">状态</span><span class="v"><span class="tag" :class="selectedPoint.status">{{ statusLabels[selectedPoint.status] }}</span></span></div>
+              <div class="point-kv"><span class="k">报警阈值</span><span class="v">{{ thresholdText(trend.alarm) }}</span></div>
+              <div class="point-kv"><span class="k">异常阈值</span><span class="v">{{ thresholdText(trend.warn) }}</span></div>
+              <div class="point-kv"><span class="k">采集时间</span><span class="v">{{ collectedAt }}</span></div>
+            </div>
+          </template>
+          <p v-else class="muted">请选择测点</p>
         </div>
         <div v-else :id="`pane-${activeTab}`" class="tab-pane" role="tabpanel" :aria-labelledby="`tab-${activeTab}`">
           <table v-if="activeTab === 'fix'" class="data-table"><thead><tr><th>日期</th><th>类型</th><th>描述</th><th>处置</th></tr></thead><tbody><tr><td>2026-10-28</td><td>例行维护</td><td>{{ title }}连接检查与紧固（示意）</td><td>已完成</td></tr><tr><td>2026-10-12</td><td>故障复核</td><td>监测通道巡检及传感器校准（示意）</td><td>已闭环</td></tr></tbody></table>
@@ -74,10 +82,23 @@
 </template>
 <script setup lang="ts">
 import { computed, ref, watch, type ComponentPublicInstance } from 'vue'
+import type { EChartsOption } from 'echarts'
 import DeviceStrip from '@/components/DeviceStrip.vue'
+import ServiceEChart from '@/components/ServiceEChart.vue'
+import type { ServiceKey } from '@/components/serviceCatalog'
 import { usePartsDevice } from '@/composables/usePartsDevice'
 import { structureData, statusLabels, worstStatus, type PointStatus, type SmartService } from '@/mock/partsPoint'
+import { buildPointTrend, formatTrendNumber, readingSuffix } from '@/mock/pointTrend'
+import { useSceneStore } from '@/stores/scene'
 const { card, columns, query, tone, router, route } = usePartsDevice()
+const sceneStore = useSceneStore()
+const SERVICE_BY_NAME: Record<string, ServiceKey> = {
+  健康监测: 'healthMonitor',
+  远程监测: 'remote',
+  裂纹预测: 'crack',
+  故障诊断: 'fault',
+  安全评估: 'risk'
+}
 const aggregate = computed(() => route.query.mode === 'aggregate')
 const title = computed(() => String(route.query.part || ''))
 const column = computed(() => columns.value.find(c => c.name === route.query.specialty))
@@ -98,19 +119,98 @@ const services = computed(() => {
   }))
   return [...merged.values()].sort((a, b) => Number(b.hot) - Number(a.hot))
 })
-const openServices = ref<string[]>([])
 const activeTab = ref('ts')
 const tabs = [{ key: 'ts', label: '测点时序' }, { key: 'fix', label: '故障与维修' }, { key: 'insp', label: '检验记录' }]
 const rank = (s: PointStatus) => s === 'alarm' ? 0 : s === 'warn' ? 1 : 2
 const sortedPoints = computed(() => aggregate.value ? [...points.value].sort((a, b) => rank(a.status) - rank(b.status)) : points.value)
-const collectedAt = new Date().toLocaleString('sv-SE').slice(0, 16)
-const chartPoints = computed(() => Array.from({ length: 25 }, (_, i) => `${20 + i * 760 / 24},${70 - Math.sin(i / 3) * 18 - (i > 16 ? (i - 16) * 4 : 0)}`).join(' '))
-watch(groups, () => { selectedId.value = sortedPoints.value[0]?.id || ''; openServices.value = services.value[0]?.hot ? [services.value[0].name] : []; activeTab.value = 'ts' }, { immediate: true })
+const collectedDate = new Date()
+const collectedAt = collectedDate.toLocaleString('sv-SE').slice(0, 16)
+const trend = computed(() => selectedPoint.value ? buildPointTrend(selectedPoint.value, collectedDate) : null)
+const chartOption = computed<EChartsOption>(() => {
+  const point = selectedPoint.value
+  const series = trend.value
+  if (!point || !series) return { series: [] }
+  const stroke = token(STATUS_TOKEN[point.status], STATUS_FALLBACK[point.status])
+  const suffix = readingSuffix(point.value)
+  return {
+    animationDuration: 420,
+    title: {
+      text: `${point.id} ${point.name} · 近 24h 模拟曲线`,
+      left: 8,
+      top: 4,
+      textStyle: { fontSize: 12, fontWeight: 600, color: token('--color-text-secondary', '#475569') }
+    },
+    tooltip: {
+      trigger: 'axis',
+      valueFormatter: value => `${formatTrendNumber(Number(value))}${suffix ? ' ' + suffix : ''}`
+    },
+    grid: { left: 48, right: 16, top: 32, bottom: 24 },
+    xAxis: {
+      type: 'category',
+      data: series.labels,
+      boundaryGap: false,
+      axisLabel: { fontSize: 10, color: token('--color-text-muted', '#94a3b8'), interval: 7 },
+      axisLine: { lineStyle: { color: token('--color-border', '#e8edf3') } }
+    },
+    yAxis: {
+      type: 'value',
+      min: series.yMin,
+      max: series.yMax,
+      axisLabel: { fontSize: 10, color: token('--color-text-muted', '#94a3b8') },
+      splitLine: { lineStyle: { color: '#e8eef5' } }
+    },
+    series: [{
+      name: point.name,
+      type: 'line',
+      smooth: 0.25,
+      symbol: 'none',
+      data: series.values,
+      lineStyle: { width: 2, color: stroke },
+      areaStyle: { color: withAlpha(stroke, 0.16) },
+      markLine: {
+        symbol: 'none',
+        silent: true,
+        data: [
+          { yAxis: series.warn, lineStyle: { type: 'dashed', color: token('--color-warning', '#fa8c16') }, label: { formatter: '异常阈值', position: 'insideStartTop', color: '#d46b08', fontSize: 10 } },
+          { yAxis: series.alarm, lineStyle: { type: 'dashed', color: token('--color-danger', '#f5222d') }, label: { formatter: '报警阈值', position: 'insideEndTop', color: '#cf1322', fontSize: 10 } }
+        ]
+      }
+    }]
+  }
+})
+watch(groups, () => { selectedId.value = sortedPoints.value[0]?.id || ''; activeTab.value = 'ts' }, { immediate: true })
 const rows = new Map<string, Element>()
 function rememberRow(id: string, el: Element | ComponentPublicInstance | null) { if (el instanceof Element) rows.set(id, el); else rows.delete(id) }
 function selectPoint(id: string, scroll = false) { selectedId.value = id; if (scroll) rows.get(id)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }) }
-function toggleService(name: string) { openServices.value = openServices.value.includes(name) ? openServices.value.filter(s => s !== name) : [...openServices.value, name] }
+function openService(name: string) {
+  const key = SERVICE_BY_NAME[name]
+  const id = String(route.params.id || '')
+  if (!key || !id) return
+  sceneStore.setService(key)
+  sceneStore.setDevice(id, true)
+  router.push({ path: `/device/${id}` })
+}
+function thresholdText(n: number) {
+  const suffix = readingSuffix(selectedPoint.value?.value || '')
+  const text = formatTrendNumber(n)
+  return suffix ? `${text} ${suffix}` : text
+}
 function back() { router.push({ name: 'overviewParts', params: { id: route.params.id }, query: query.value }) }
+const STATUS_TOKEN: Record<PointStatus, string> = { alarm: '--color-danger', warn: '--color-warning', ok: '--color-success', twin: '--color-primary', off: '--color-text-muted' }
+const STATUS_FALLBACK: Record<PointStatus, string> = { alarm: '#f5222d', warn: '#fa8c16', ok: '#52c41a', twin: '#1677ff', off: '#94a3b8' }
+function token(name: string, fallback: string) {
+  if (typeof window === 'undefined') return fallback
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback
+}
+function withAlpha(hex: string, alpha: number) {
+  const h = hex.replace('#', '')
+  if (h.length !== 6) return hex
+  const r = parseInt(h.slice(0, 2), 16)
+  const g = parseInt(h.slice(2, 4), 16)
+  const b = parseInt(h.slice(4, 6), 16)
+  if ([r, g, b].some(n => Number.isNaN(n))) return hex
+  return `rgba(${r},${g},${b},${alpha})`
+}
 function pointColor(status: PointStatus) { return `var(--color-${({ alarm: 'danger', warn: 'warning', ok: 'success', twin: 'primary', off: 'text-muted' })[status]})` }
 const highlightRegions = computed(() => {
   if (aggregate.value) return [{ x: 60, y: 105, w: 520, h: 150, tone: 'primary' }, ...groups.value.flatMap(g => g.highlight === 'endbeam' ? [regionFor(g.highlight, worstStatus(g.points)), { ...regionFor(g.highlight, worstStatus(g.points)), x: 536 }] : [regionFor(g.highlight, worstStatus(g.points))])]
@@ -136,7 +236,5 @@ function regionFor(mode: string, status: PointStatus) {
 .highlight-region { fill: currentColor; fill-opacity: .2; stroke: currentColor; stroke-width: 2; }
 .highlight-aggregate { stroke-dasharray: 6 4; }
 .point-circle { stroke: var(--color-text-white); stroke-width: 2; }
-.chart-axis { stroke: var(--color-border); }
-.chart-threshold { stroke: var(--color-warning); stroke-opacity: .5; stroke-dasharray: 4 4; }
-.chart-caption { fill: var(--color-text-secondary); }
+.point-chart :deep(.svc-echart) { min-height: 0; height: 156px; }
 </style>

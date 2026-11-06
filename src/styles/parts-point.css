@@ -310,7 +310,7 @@
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr) 260px;
   gap: 12px;
-  min-height: 340px;
+  min-height: 440px;
 }
 .panel {
   background: var(--parts-color-6);
@@ -400,7 +400,7 @@
   display: flex; align-items: center; justify-content: center;
   position: relative;
 }
-.twin-svg { width: 100%; height: 100%; max-height: 320px; }
+.twin-svg { width: 100%; height: 100%; max-height: 100%; }
 
 
 .svc-list {
@@ -408,9 +408,15 @@
   display: flex; flex-direction: column; gap: 8px;
 }
 .svc-card {
+  width: 100%;
+  padding: 0;
   border: 1px solid var(--parts-color-22); border-radius: 8px;
   background: var(--parts-color-6); overflow: hidden;
+  font: inherit; color: inherit; text-align: left;
 }
+.svc-card:hover { border-color: var(--color-primary); }
+.svc-card.is-hot:hover { border-color: var(--parts-color-3); }
+.svc-card:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 1px; }
 .svc-card.is-hot {
   border-color: var(--parts-color-3);
   background: var(--color-danger-bg);
@@ -426,14 +432,15 @@
   background: var(--color-success);
 }
 .svc-card.is-hot .sdot { background: var(--color-danger); animation: breath 1.8s ease-in-out infinite; }
-.svc-head .chev { margin-left: auto; color: var(--color-text-muted); font-size: 12px; }
+.svc-head .chev { margin-left: auto; color: var(--color-primary); font-size: 12px; font-weight: 700; }
 .svc-body {
-  display: none; padding: 0 12px 10px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  padding: 0 12px 10px;
   font-size: 12px; color: var(--color-text-secondary); line-height: 1.55;
-  border-top: 1px dashed var(--parts-color-39);
 }
-.svc-card.is-open .svc-body { display: block; padding-top: 8px; }
-.svc-card.is-open .chev { transform: rotate(90deg); }
 .svc-tag {
   font-size: 11px; padding: 1px 6px; border-radius: 4px;
   background: var(--parts-color-21); color: var(--parts-color-40); font-weight: 600;
@@ -462,6 +469,42 @@
 }
 .chart-fake svg { width: 100%; height: 100%; display: block; }
 
+.point-chart {
+  height: 156px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  background: var(--parts-color-31);
+  border: 1px solid var(--parts-color-22);
+  overflow: hidden;
+}
+.point-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.point-kv {
+  min-width: 0;
+  padding: 7px 10px;
+  border-radius: 6px;
+  background: var(--parts-color-31);
+  border: 1px solid var(--parts-color-22);
+}
+.point-kv .k {
+  display: block;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-bottom: 2px;
+}
+.point-kv .v {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .data-table {
   width: 100%; border-collapse: collapse; font-size: 13px;
 }
@@ -487,6 +530,7 @@
 
 @media (max-width: 1100px) {
   .point-tri { grid-template-columns: 1fr; }
+  .point-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .specialty { font-size: 14px; height: 42px; }
 }
 
@@ -523,7 +567,7 @@
 .parts-workspace { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
 .parts-workspace button { font-family: inherit; cursor: pointer; }
 .parts-workspace .parts-scroll { padding-bottom: 16px; }
-.parts-workspace .point-tri { height: 340px; flex-shrink: 0; }
+.parts-workspace .point-tri { height: 440px; flex-shrink: 0; }
 .parts-workspace .point-tri > .panel { min-height: 0; }
 .parts-workspace .panel-h h3 { margin: 0; }
 .parts-workspace .col-head { font-size: 16px; font-weight: 800; }
@@ -540,7 +584,7 @@
 .parts-workspace .twin-pt:focus circle { stroke: var(--color-primary); stroke-width: 4; }
 @media (max-width: 1100px) {
  .parts-workspace .point-tri { height: auto; grid-template-columns: 260px minmax(320px, 1fr); }
- .parts-workspace .panel-points, .parts-workspace .panel-twin { height: 340px; }
+ .parts-workspace .panel-points, .parts-workspace .panel-twin { height: 440px; }
  .parts-workspace .panel-svc { grid-column: 1 / -1; }
 }
 @media (prefers-reduced-motion: reduce) { .parts-workspace * { animation: none !important; scroll-behavior: auto !important; } }
