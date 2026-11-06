@@ -52,28 +52,40 @@
       </div>
       <section class="panel panel-base">
         <div class="tabs" role="tablist" aria-label="部件数据"><button v-for="tab in tabs" :id="`tab-${tab.key}`" :key="tab.key" type="button" class="tab" :class="{ 'is-on': activeTab === tab.key }" role="tab" :aria-selected="activeTab === tab.key" :aria-controls="`pane-${tab.key}`" @click="activeTab = tab.key">{{ tab.label }}</button></div>
-        <div v-if="activeTab === 'ts'" id="pane-ts" class="tab-pane" role="tabpanel" aria-labelledby="tab-ts">
+        <div v-if="seriesTab" :id="`pane-${activeTab}`" class="tab-pane" role="tabpanel" :aria-labelledby="`tab-${activeTab}`">
           <template v-if="selectedPoint && trend">
-            <div class="point-chart" role="img" :aria-label="`${selectedPoint.id} ${selectedPoint.name}近24小时模拟曲线`">
-              <ServiceEChart :key="selectedPoint.id" :option="chartOption" />
+            <div class="point-chart" role="img" :aria-label="`${selectedPoint.id} ${selectedPoint.name}${activeTabLabel}近24小时模拟曲线`">
+              <ServiceEChart :key="`${activeTab}-${selectedPoint.id}`" :option="chartOption" />
             </div>
-            <div class="point-summary">
-              <div class="point-kv"><span class="k">测点编号</span><span class="v">{{ selectedPoint.id }}</span></div>
-              <div class="point-kv"><span class="k">测点名称</span><span class="v">{{ selectedPoint.name }}</span></div>
-              <div v-if="aggregate" class="point-kv"><span class="k">分组</span><span class="v">{{ selectedPoint.group || '—' }}</span></div>
-              <div class="point-kv"><span class="k">当前值</span><span class="v">{{ selectedPoint.value }}</span></div>
-              <div class="point-kv"><span class="k">单位</span><span class="v">{{ selectedPoint.unit }}</span></div>
-              <div class="point-kv"><span class="k">状态</span><span class="v"><span class="tag" :class="selectedPoint.status">{{ statusLabels[selectedPoint.status] }}</span></span></div>
-              <div class="point-kv"><span class="k">报警阈值</span><span class="v">{{ thresholdText(trend.alarm) }}</span></div>
-              <div class="point-kv"><span class="k">异常阈值</span><span class="v">{{ thresholdText(trend.warn) }}</span></div>
-              <div class="point-kv"><span class="k">采集时间</span><span class="v">{{ collectedAt }}</span></div>
+            <div class="point-readings">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>采集时间</th>
+                    <th>测点编号</th>
+                    <th>测点名称</th>
+                    <th>数值</th>
+                    <th>单位</th>
+                    <th>状态</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="row in readingRows" :key="`${activeTab}-${row.time}`">
+                    <td>{{ row.time }}</td>
+                    <td>{{ selectedPoint.id }}</td>
+                    <td>{{ selectedPoint.name }}</td>
+                    <td>{{ row.value }}</td>
+                    <td>{{ row.unit }}</td>
+                    <td><span class="tag" :class="row.status">{{ statusLabels[row.status] }}</span></td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </template>
-          <p v-else class="muted">请选择测点</p>
+          <p v-else class="muted point-pick">请选择测点</p>
         </div>
         <div v-else :id="`pane-${activeTab}`" class="tab-pane" role="tabpanel" :aria-labelledby="`tab-${activeTab}`">
-          <table v-if="activeTab === 'fix'" class="data-table"><thead><tr><th>日期</th><th>类型</th><th>描述</th><th>处置</th></tr></thead><tbody><tr><td>2026-10-28</td><td>例行维护</td><td>{{ title }}连接检查与紧固（示意）</td><td>已完成</td></tr><tr><td>2026-10-12</td><td>故障复核</td><td>监测通道巡检及传感器校准（示意）</td><td>已闭环</td></tr></tbody></table>
-          <table v-else class="data-table"><thead><tr><th>检验日期</th><th>项目</th><th>结论</th><th>下次检验</th></tr></thead><tbody><tr><td>2026-09-18</td><td>{{ title }}定期检验（示意）</td><td>合格</td><td>2027-09-18</td></tr></tbody></table>
+          <el-empty class="point-empty" description="暂无数据" :image-size="72" />
         </div>
       </section>
     </div>
@@ -88,7 +100,7 @@ import ServiceEChart from '@/components/ServiceEChart.vue'
 import type { ServiceKey } from '@/components/serviceCatalog'
 import { usePartsDevice } from '@/composables/usePartsDevice'
 import { structureData, statusLabels, worstStatus, type PointStatus, type SmartService } from '@/mock/partsPoint'
-import { buildPointTrend, formatTrendNumber, readingSuffix } from '@/mock/pointTrend'
+import { buildPointTrend, formatTrendNumber, latestTrendRows, readingSuffix } from '@/mock/pointTrend'
 import { useSceneStore } from '@/stores/scene'
 const { card, columns, query, tone, router, route } = usePartsDevice()
 const sceneStore = useSceneStore()
@@ -119,13 +131,35 @@ const services = computed(() => {
   }))
   return [...merged.values()].sort((a, b) => Number(b.hot) - Number(a.hot))
 })
-const activeTab = ref('ts')
-const tabs = [{ key: 'ts', label: '测点时序' }, { key: 'fix', label: '故障与维修' }, { key: 'insp', label: '检验记录' }]
+const activeTab = ref('health')
+const tabs = [
+  { key: 'health', label: '健康监测', series: true },
+  { key: 'safety', label: '安全监控', series: true },
+  { key: 'patrol', label: '日常点巡检数据', series: false },
+  { key: 'repair', label: '损伤/故障维修数据', series: false },
+  { key: 'inspect', label: '检验检测数据', series: false },
+  { key: 'supervise', label: '设备监管基础数据', series: false },
+  { key: 'supply', label: '设备制造供给数据', series: false },
+  { key: 'risk', label: '风险定量监测数据', series: false }
+]
+const seriesTab = computed(() => tabs.find(tab => tab.key === activeTab.value)?.series === true)
+const activeTabLabel = computed(() => tabs.find(tab => tab.key === activeTab.value)?.label || '')
 const rank = (s: PointStatus) => s === 'alarm' ? 0 : s === 'warn' ? 1 : 2
 const sortedPoints = computed(() => aggregate.value ? [...points.value].sort((a, b) => rank(a.status) - rank(b.status)) : points.value)
 const collectedDate = new Date()
-const collectedAt = collectedDate.toLocaleString('sv-SE').slice(0, 16)
-const trend = computed(() => selectedPoint.value ? buildPointTrend(selectedPoint.value, collectedDate) : null)
+const trend = computed(() => selectedPoint.value && seriesTab.value ? buildPointTrend(selectedPoint.value, collectedDate, activeTab.value) : null)
+const readingRows = computed(() => {
+  const point = selectedPoint.value
+  const series = trend.value
+  if (!point || !series) return []
+  const unit = readingSuffix(point.value) || point.unit
+  return latestTrendRows(series, collectedDate, point.status).map(row => ({
+    time: row.at.toLocaleString('sv-SE').slice(0, 16),
+    value: formatTrendNumber(row.value),
+    unit,
+    status: row.status
+  }))
+})
 const chartOption = computed<EChartsOption>(() => {
   const point = selectedPoint.value
   const series = trend.value
@@ -178,7 +212,7 @@ const chartOption = computed<EChartsOption>(() => {
     }]
   }
 })
-watch(groups, () => { selectedId.value = sortedPoints.value[0]?.id || ''; activeTab.value = 'ts' }, { immediate: true })
+watch(groups, () => { selectedId.value = sortedPoints.value[0]?.id || ''; activeTab.value = 'health' }, { immediate: true })
 const rows = new Map<string, Element>()
 function rememberRow(id: string, el: Element | ComponentPublicInstance | null) { if (el instanceof Element) rows.set(id, el); else rows.delete(id) }
 function selectPoint(id: string, scroll = false) { selectedId.value = id; if (scroll) rows.get(id)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }) }
@@ -189,11 +223,6 @@ function openService(name: string) {
   sceneStore.setService(key)
   sceneStore.setDevice(id, true)
   router.push({ path: `/device/${id}` })
-}
-function thresholdText(n: number) {
-  const suffix = readingSuffix(selectedPoint.value?.value || '')
-  const text = formatTrendNumber(n)
-  return suffix ? `${text} ${suffix}` : text
 }
 function back() { router.push({ name: 'overviewParts', params: { id: route.params.id }, query: query.value }) }
 const STATUS_TOKEN: Record<PointStatus, string> = { alarm: '--color-danger', warn: '--color-warning', ok: '--color-success', twin: '--color-primary', off: '--color-text-muted' }
@@ -237,4 +266,15 @@ function regionFor(mode: string, status: PointStatus) {
 .highlight-aggregate { stroke-dasharray: 6 4; }
 .point-circle { stroke: var(--color-text-white); stroke-width: 2; }
 .point-chart :deep(.svc-echart) { min-height: 0; height: 156px; }
+.panel-base .tabs { overflow-x: auto; }
+.panel-base .tab { flex: 0 0 auto; white-space: nowrap; padding: 0 12px; }
+.point-readings {
+  max-height: 320px;
+  overflow: auto;
+  border: 1px solid var(--parts-color-22);
+  border-radius: 8px;
+}
+.point-readings .data-table th { position: sticky; top: 0; z-index: 1; }
+.point-pick { margin: 8px 2px 12px; }
+.point-empty { padding: 12px 0 20px; }
 </style>

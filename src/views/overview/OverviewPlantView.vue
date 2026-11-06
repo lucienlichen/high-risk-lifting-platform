@@ -55,12 +55,6 @@
           </div>
         </div>
       </section>
-      <section class="ov-chips" role="group" aria-label="按状态筛选">
-        <button v-for="chip in chips" :key="chip.id" type="button" class="ov-chip" :class="[`is-${chip.id === 'all' ? 'all' : chip.id}`, { ['active-' + chip.id]: hue === chip.id }]" @click="hue = chip.id; limit = 40">
-          <span class="dot"></span>{{ chip.label }}
-        </button>
-        <span class="ov-chip-note">停机只筛停机，不含离线。卡片保持最近一次灯色，不另标离线。</span>
-      </section>
 
       <template v-if="view === 'cards'">
         <section class="ov-grid" aria-label="设备卡片">
@@ -104,7 +98,7 @@
         </div>
         <p class="ov-footnote">示意布局：每一行是台账里的一个使用地点，竖条是该地点的起重机。没有坐标，不能当成厂区 CAD。</p>
       </section>
-      <p class="ov-footnote">卡片颜色是六项服务里最严重的一盏灯：报警、异常或正常。停机不改变颜色，只在筛选里单独列出，并且不含离线。离线设备仍用最近一次灯色，卡片上不另标离线。悬停编号可看类型和位置。</p>
+      <p class="ov-footnote">卡片颜色是六项服务里最严重的一盏灯：报警、异常或正常。停机不改变颜色。离线设备仍用最近一次灯色，卡片上不另标离线。悬停编号可看类型和位置。</p>
     </main>
   </div>
 </template>
@@ -124,7 +118,6 @@ import {
   worstUnit,
   type OverviewCard
 } from '@/mock/overviewDemo'
-import { SEVERITY_DICT } from '@/config/statusDict'
 import { overviewAccessOf, useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
@@ -134,7 +127,6 @@ const all = getOverviewCards()
 const access = computed(() => overviewAccessOf(auth))
 const q = ref('')
 const view = ref<'cards' | 'plan'>('cards')
-const hue = ref<'all' | 'red' | 'yellow' | 'green' | 'stopped'>('all')
 const limit = ref(40)
 const selectedId = ref('')
 const openGroups = ref(new Set<string>())
@@ -196,25 +188,12 @@ const searched = computed(() => {
   if (!keyword) return scopeCards.value
   return scopeCards.value.filter(card => card.code.includes(keyword) || card.location.includes(keyword) || card.unit.includes(keyword) || card.name.includes(keyword))
 })
-const chips = [
-  { id: 'all' as const, label: '全部' },
-  { id: 'red' as const, label: SEVERITY_DICT.red.label },
-  { id: 'yellow' as const, label: SEVERITY_DICT.yellow.label },
-  { id: 'green' as const, label: SEVERITY_DICT.green.label },
-  { id: 'stopped' as const, label: '停机' }
-]
 function colorRank(card: OverviewCard) {
   if (card.lamp === 'red') return 0
   if (card.lamp === 'yellow') return 1
   return 2
 }
-const filtered = computed(() => searched.value.filter(card => {
-  if (hue.value === 'stopped') return card.run === 'stopped'
-  if (hue.value === 'red') return card.lamp === 'red'
-  if (hue.value === 'yellow') return card.lamp === 'yellow'
-  if (hue.value === 'green') return card.lamp !== 'red' && card.lamp !== 'yellow'
-  return true
-}).sort((a, b) => colorRank(a) - colorRank(b) || a.code.localeCompare(b.code, 'zh-CN')))
+const filtered = computed(() => [...searched.value].sort((a, b) => colorRank(a) - colorRank(b) || a.code.localeCompare(b.code, 'zh-CN')))
 const visible = computed(() => filtered.value.slice(0, limit.value))
 const scopeName = computed(() => unit.value || (enterprise.value === BENGANG ? '板材板块' : enterpriseLabel(enterprise.value)))
 const crumb = computed(() => [enterpriseLabel(enterprise.value), enterprise.value === BENGANG ? '板材板块' : '', unit.value].filter(Boolean).join(' / '))
@@ -256,12 +235,7 @@ function craneTone(card: OverviewCard) {
 }
 function match(card: OverviewCard) {
   const keyword = q.value.trim()
-  const hit = !keyword || card.code.includes(keyword) || card.location.includes(keyword)
-  if (hue.value === 'stopped') return hit && card.run === 'stopped'
-  if (hue.value === 'red') return hit && card.lamp === 'red'
-  if (hue.value === 'yellow') return hit && card.lamp === 'yellow'
-  if (hue.value === 'green') return hit && card.lamp !== 'red' && card.lamp !== 'yellow'
-  return hit
+  return !keyword || card.code.includes(keyword) || card.location.includes(keyword)
 }
 function craneStyle(index: number, count: number) {
   const width = Math.min(5.5, 70 / Math.max(count, 1))

@@ -9,8 +9,11 @@ export interface PointTrend {
   yMax: number
 }
 
-const STEP_MINUTES = 30
+/** Sample spacing of the demo curve. The readings table uses the same clock. */
+export const TREND_STEP_MINUTES = 30
 const POINT_COUNT = 48
+/** Newest rows shown under the curve (within the requested 10–20). */
+export const TREND_TABLE_ROWS = 16
 
 /** Preset warn / alarm bands for channels whose demo readings share a scale. */
 const UNIT_LIMITS: Record<string, { warn: number; alarm: number }> = {
@@ -91,22 +94,60 @@ function limitsFor(status: PointStatus, unit: string, reading: number | null) {
   return { warn: 70, alarm: 90, current }
 }
 
-/** Deterministic 24h demo series. Shape depends on point id and status, not on a fixed sine. */
-export function buildPointTrend(point: Pick<Point, 'id' | 'status' | 'value' | 'unit'>, end: Date): PointTrend {
+/** Clock time of sample `index` (0 = oldest) in a series that ends at `end`. */
+export function trendSampleTime(end: Date, index: number, count = POINT_COUNT): Date {
+  return new Date(end.getTime() - (count - 1 - index) * TREND_STEP_MINUTES * 60 * 1000)
+}
+
+function readingStatus(value: number, status: PointStatus, warn: number, alarm: number): PointStatus {
+  if (status === 'off' || status === 'twin') return status
+  if (value >= alarm) return 'alarm'
+  if (value >= warn) return 'warn'
+  return 'ok'
+}
+
+export interface TrendTableRow {
+  at: Date
+  value: number
+  status: PointStatus
+}
+
+/** Newest-first slice of the same series drawn on the chart. */
+export function latestTrendRows(trend: PointTrend, end: Date, pointStatus: PointStatus, limit = TREND_TABLE_ROWS): TrendTableRow[] {
+  const count = trend.values.length
+  const rows: TrendTableRow[] = []
+  for (let i = count - 1; i >= 0 && rows.length < limit; i--) {
+    const value = trend.values[i]
+    rows.push({
+      at: trendSampleTime(end, i, count),
+      value,
+      status: readingStatus(value, pointStatus, trend.warn, trend.alarm)
+    })
+  }
+  return rows
+}
+
+/**
+ * Deterministic 24h demo series. Shape depends on point id, status, and an optional
+ * tab variant (`health` / `safety`) so the two time-series tabs are not identical.
+ * The last sample is always the point's current reading.
+ */
+export function buildPointTrend(point: Pick<Point, 'id' | 'status' | 'value' | 'unit'>, end: Date, variant = 'health'): PointTrend {
   let { warn, alarm, current } = limitsFor(point.status, point.unit, parseReading(point.value))
   if (!(warn < alarm)) {
     const mid = Math.max(Math.abs(warn), Math.abs(alarm), 1)
     warn = mid * 0.7
     alarm = mid
   }
-  const rand = mulberry32(hashString(`${point.id}|${point.status}`))
+  const salt = variant || 'health'
+  const rand = mulberry32(hashString(`${point.id}|${point.status}|${salt}`))
   const amp = Math.max(Math.abs(alarm - warn) * 0.22, Math.abs(current) * 0.04, 0.02)
-  const phase = (hashString(point.id) % 628) / 100
+  const phase = (hashString(`${point.id}|${salt}`) % 628) / 100
   const labels: string[] = []
   const values: number[] = []
 
   for (let i = 0; i < POINT_COUNT; i++) {
-    const at = new Date(end.getTime() - (POINT_COUNT - 1 - i) * STEP_MINUTES * 60 * 1000)
+    const at = trendSampleTime(end, i, POINT_COUNT)
     labels.push(`${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`)
     const wave = Math.sin(i / 5 + phase) * amp * 0.7 + Math.sin(i / 13 + phase * 0.5) * amp * 0.3
     const noise = (rand() - 0.5) * amp
