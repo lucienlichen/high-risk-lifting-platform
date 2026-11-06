@@ -11,7 +11,7 @@
             <template v-for="group in groups" :key="group.name">
               <li v-if="aggregate" class="point-group-title">{{ group.name }}</li>
               <li v-for="point in group.points" :key="point.id">
-                <button :ref="el => rememberRow(point.id, el)" type="button" class="point-item" :class="[`is-${point.status}`, { 'is-active': selectedId === point.id }]" :title="`${point.id} ${point.name} · ${point.unit}`" :aria-pressed="selectedId === point.id" @click="selectPoint(point.id)"><i class="pbar"></i><span class="pname">{{ point.id }} {{ point.name }}</span><span class="pval">{{ point.value }}</span><span class="pst">{{ statusLabels[point.status] }}</span></button>
+                <button :ref="el => rememberRow(point.id, el)" type="button" class="point-item" :class="[`is-${point.status}`, { 'is-active': selectedId === point.id }]" :title="pointTitle(point)" :aria-pressed="selectedId === point.id" @click="selectPoint(point.id)"><i class="pbar"></i><span class="pname">{{ point.id }} {{ point.name }}</span><span class="pval">{{ point.value }}</span><span class="pst">{{ statusLabels[point.status] }}</span></button>
               </li>
             </template>
           </ul>
@@ -53,9 +53,13 @@
       <section class="panel panel-base">
         <div class="tabs" role="tablist" aria-label="部件数据"><button v-for="tab in tabs" :id="`tab-${tab.key}`" :key="tab.key" type="button" class="tab" :class="{ 'is-on': activeTab === tab.key }" role="tab" :aria-selected="activeTab === tab.key" :aria-controls="`pane-${tab.key}`" @click="activeTab = tab.key">{{ tab.label }}</button></div>
         <div v-if="seriesTab" :id="`pane-${activeTab}`" class="tab-pane" role="tabpanel" :aria-labelledby="`tab-${activeTab}`">
-          <template v-if="selectedPoint && trend">
-            <div class="point-chart" role="img" :aria-label="`${selectedPoint.id} ${selectedPoint.name}${activeTabLabel}近24小时模拟曲线`">
-              <ServiceEChart :key="`${activeTab}-${selectedPoint.id}`" :option="chartOption" />
+          <template v-if="selectedPoint && allTrends.length">
+            <div v-if="pointChannels.length > 1" class="chan-switch" role="group" aria-label="参量">
+              <button type="button" :class="{ 'is-on': channelKey === 'all' }" @click="channelKey = 'all'">全部</button>
+              <button v-for="channel in pointChannels" :key="channel.key" type="button" :class="{ 'is-on': channelKey === channel.key }" @click="channelKey = channel.key">{{ channel.name }}</button>
+            </div>
+            <div class="point-chart" :class="{ 'is-multi': shownTrends.length > 1 }" role="img" :aria-label="`${selectedPoint.id} ${selectedPoint.name}${activeTabLabel}近24小时模拟曲线`">
+              <ServiceEChart :key="`${activeTab}-${selectedPoint.id}-${channelKey}`" :option="chartOption" />
             </div>
             <div class="point-readings">
               <table class="data-table">
@@ -64,16 +68,18 @@
                     <th>采集时间</th>
                     <th>测点编号</th>
                     <th>测点名称</th>
+                    <th>参量/通道</th>
                     <th>数值</th>
                     <th>单位</th>
                     <th>状态</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="row in readingRows" :key="`${activeTab}-${row.time}`">
+                  <tr v-for="row in readingRows" :key="`${activeTab}-${row.time}-${row.channelKey}`">
                     <td>{{ row.time }}</td>
                     <td>{{ selectedPoint.id }}</td>
                     <td>{{ selectedPoint.name }}</td>
+                    <td>{{ row.channel }}</td>
                     <td>{{ row.value }}</td>
                     <td>{{ row.unit }}</td>
                     <td><span class="tag" :class="row.status">{{ statusLabels[row.status] }}</span></td>
@@ -99,8 +105,8 @@ import DeviceStrip from '@/components/DeviceStrip.vue'
 import ServiceEChart from '@/components/ServiceEChart.vue'
 import type { ServiceKey } from '@/components/serviceCatalog'
 import { usePartsDevice } from '@/composables/usePartsDevice'
-import { structureData, statusLabels, worstStatus, type PointStatus, type SmartService } from '@/mock/partsPoint'
-import { buildPointTrend, formatTrendNumber, latestTrendRows, readingSuffix } from '@/mock/pointTrend'
+import { channelsOf, structureData, statusLabels, worstStatus, type Point, type PointChannel, type PointStatus, type SmartService } from '@/mock/partsPoint'
+import { buildPointTrend, formatTrendNumber, latestTrendRows, readingSuffix, type PointTrend } from '@/mock/pointTrend'
 import { useSceneStore } from '@/stores/scene'
 const { card, columns, query, tone, router, route } = usePartsDevice()
 const sceneStore = useSceneStore()
@@ -146,51 +152,119 @@ const seriesTab = computed(() => tabs.find(tab => tab.key === activeTab.value)?.
 const activeTabLabel = computed(() => tabs.find(tab => tab.key === activeTab.value)?.label || '')
 const rank = (s: PointStatus) => s === 'alarm' ? 0 : s === 'warn' ? 1 : 2
 const sortedPoints = computed(() => aggregate.value ? [...points.value].sort((a, b) => rank(a.status) - rank(b.status)) : points.value)
+const channelKey = ref('all')
 const collectedDate = new Date()
-const trend = computed(() => selectedPoint.value && seriesTab.value ? buildPointTrend(selectedPoint.value, collectedDate, activeTab.value) : null)
+const pointChannels = computed(() => selectedPoint.value ? channelsOf(selectedPoint.value) : [])
+const allTrends = computed(() => {
+  const point = selectedPoint.value
+  if (!point || !seriesTab.value) return [] as { channel: PointChannel; trend: PointTrend }[]
+  return pointChannels.value.map(channel => ({
+    channel,
+    trend: buildPointTrend({
+      id: `${point.id}|${channel.key}`,
+      status: channel.status,
+      value: channel.value,
+      unit: channel.unit
+    }, collectedDate, activeTab.value)
+  }))
+})
+const shownTrends = computed(() => {
+  if (channelKey.value === 'all') return allTrends.value
+  const picked = allTrends.value.filter(item => item.channel.key === channelKey.value)
+  return picked.length ? picked : allTrends.value
+})
 const readingRows = computed(() => {
   const point = selectedPoint.value
-  const series = trend.value
-  if (!point || !series) return []
-  const unit = readingSuffix(point.value) || point.unit
-  return latestTrendRows(series, collectedDate, point.status).map(row => ({
-    time: row.at.toLocaleString('sv-SE').slice(0, 16),
-    value: formatTrendNumber(row.value),
-    unit,
-    status: row.status
-  }))
+  if (!point || !allTrends.value.length) return []
+  const perChannel = allTrends.value.length > 1 ? Math.max(4, Math.floor(18 / allTrends.value.length)) : 16
+  return allTrends.value.flatMap((item, order) => {
+    const unit = readingSuffix(item.channel.value) || item.channel.unit
+    return latestTrendRows(item.trend, collectedDate, item.channel.status, perChannel).map(row => ({
+      time: row.at.toLocaleString('sv-SE').slice(0, 16),
+      at: row.at.getTime(),
+      order,
+      channel: item.channel.name,
+      channelKey: item.channel.key,
+      value: formatTrendNumber(row.value),
+      unit,
+      status: row.status
+    }))
+  }).sort((a, b) => b.at - a.at || a.order - b.order)
 })
 const chartOption = computed<EChartsOption>(() => {
   const point = selectedPoint.value
-  const series = trend.value
-  if (!point || !series) return { series: [] }
-  const stroke = token(STATUS_TOKEN[point.status], STATUS_FALLBACK[point.status])
-  const suffix = readingSuffix(point.value)
+  const items = shownTrends.value
+  if (!point || !items.length) return { series: [] }
+  const multi = items.length > 1
+  const strokes = items.map((item, index) => channelStroke(item.channel, index, multi))
+  const muted = token('--color-text-muted', '#94a3b8')
+  const border = token('--color-border', '#e8edf3')
+  const title = {
+    text: `${point.id} ${point.name} · 近 24h 模拟曲线`,
+    left: 8,
+    top: 2,
+    textStyle: { fontSize: 12, fontWeight: 600, color: token('--color-text-secondary', '#475569') }
+  }
+  const tooltip = { trigger: 'axis' as const, formatter: (params: unknown) => formatChannelTooltip(params, items) }
+  if (multi) {
+    const band = 46
+    const gap = 8
+    const head = 24
+    return {
+      animationDuration: 420,
+      title,
+      legend: { top: 2, right: 8, itemWidth: 14, itemHeight: 8, textStyle: { fontSize: 11, color: token('--color-text-secondary', '#475569') } },
+      axisPointer: { link: [{ xAxisIndex: 'all' }] },
+      tooltip,
+      grid: items.map((_, index) => ({ left: 48, right: 12, top: head + index * (band + gap), height: band })),
+      xAxis: items.map((item, index) => ({
+        type: 'category' as const,
+        gridIndex: index,
+        data: item.trend.labels,
+        boundaryGap: false,
+        axisLabel: { show: index === items.length - 1, fontSize: 10, color: muted, interval: 7 },
+        axisTick: { show: index === items.length - 1 },
+        axisLine: { lineStyle: { color: border } }
+      })),
+      yAxis: items.map((item, index) => ({
+        type: 'value' as const,
+        gridIndex: index,
+        min: item.trend.yMin,
+        max: item.trend.yMax,
+        axisLabel: { fontSize: 10, color: strokes[index] },
+        splitLine: { lineStyle: { color: '#e8eef5' } }
+      })),
+      series: items.map((item, index) => ({
+        name: item.channel.name,
+        type: 'line' as const,
+        xAxisIndex: index,
+        yAxisIndex: index,
+        smooth: 0.25,
+        symbol: 'none' as const,
+        data: item.trend.values,
+        lineStyle: { width: 2, color: strokes[index] }
+      }))
+    }
+  }
+  const item = items[0]
+  const stroke = strokes[0]
   return {
     animationDuration: 420,
-    title: {
-      text: `${point.id} ${point.name} · 近 24h 模拟曲线`,
-      left: 8,
-      top: 4,
-      textStyle: { fontSize: 12, fontWeight: 600, color: token('--color-text-secondary', '#475569') }
-    },
-    tooltip: {
-      trigger: 'axis',
-      valueFormatter: value => `${formatTrendNumber(Number(value))}${suffix ? ' ' + suffix : ''}`
-    },
-    grid: { left: 48, right: 16, top: 32, bottom: 24 },
+    title,
+    tooltip,
+    grid: { left: 48, right: 16, top: 28, bottom: 24 },
     xAxis: {
       type: 'category',
-      data: series.labels,
+      data: item.trend.labels,
       boundaryGap: false,
-      axisLabel: { fontSize: 10, color: token('--color-text-muted', '#94a3b8'), interval: 7 },
-      axisLine: { lineStyle: { color: token('--color-border', '#e8edf3') } }
+      axisLabel: { fontSize: 10, color: muted, interval: 7 },
+      axisLine: { lineStyle: { color: border } }
     },
     yAxis: {
       type: 'value',
-      min: series.yMin,
-      max: series.yMax,
-      axisLabel: { fontSize: 10, color: token('--color-text-muted', '#94a3b8') },
+      min: item.trend.yMin,
+      max: item.trend.yMax,
+      axisLabel: { fontSize: 10, color: muted },
       splitLine: { lineStyle: { color: '#e8eef5' } }
     },
     series: [{
@@ -198,21 +272,22 @@ const chartOption = computed<EChartsOption>(() => {
       type: 'line',
       smooth: 0.25,
       symbol: 'none',
-      data: series.values,
+      data: item.trend.values,
       lineStyle: { width: 2, color: stroke },
       areaStyle: { color: withAlpha(stroke, 0.16) },
       markLine: {
         symbol: 'none',
         silent: true,
         data: [
-          { yAxis: series.warn, lineStyle: { type: 'dashed', color: token('--color-warning', '#fa8c16') }, label: { formatter: '异常阈值', position: 'insideStartTop', color: '#d46b08', fontSize: 10 } },
-          { yAxis: series.alarm, lineStyle: { type: 'dashed', color: token('--color-danger', '#f5222d') }, label: { formatter: '报警阈值', position: 'insideEndTop', color: '#cf1322', fontSize: 10 } }
+          { yAxis: item.trend.warn, lineStyle: { type: 'dashed', color: token('--color-warning', '#fa8c16') }, label: { formatter: '异常阈值', position: 'insideStartTop', color: '#d46b08', fontSize: 10 } },
+          { yAxis: item.trend.alarm, lineStyle: { type: 'dashed', color: token('--color-danger', '#f5222d') }, label: { formatter: '报警阈值', position: 'insideEndTop', color: '#cf1322', fontSize: 10 } }
         ]
       }
     }]
   }
 })
-watch(groups, () => { selectedId.value = sortedPoints.value[0]?.id || ''; activeTab.value = 'health' }, { immediate: true })
+watch(groups, () => { selectedId.value = sortedPoints.value[0]?.id || ''; activeTab.value = 'health'; channelKey.value = 'all' }, { immediate: true })
+watch(selectedId, () => { channelKey.value = 'all' })
 const rows = new Map<string, Element>()
 function rememberRow(id: string, el: Element | ComponentPublicInstance | null) { if (el instanceof Element) rows.set(id, el); else rows.delete(id) }
 function selectPoint(id: string, scroll = false) { selectedId.value = id; if (scroll) rows.get(id)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }) }
@@ -225,6 +300,33 @@ function openService(name: string) {
   router.push({ path: `/device/${id}` })
 }
 function back() { router.push({ name: 'overviewParts', params: { id: route.params.id }, query: query.value }) }
+function pointTitle(point: Point) {
+  const channels = channelsOf(point)
+  if (channels.length < 2) return `${point.id} ${point.name} · ${point.unit}`
+  return `${point.id} ${point.name} · ${channels.map(channel => `${channel.name} ${channel.value}`).join(' / ')}`
+}
+const NAMED_STROKE: Record<string, [string, string]> = {
+  温度: ['--color-warning', '#fa8c16'],
+  声音: ['--color-primary', '#1677ff'],
+  振动: ['--color-success', '#52c41a']
+}
+function channelStroke(channel: PointChannel, index: number, multi: boolean) {
+  if (!multi) return token(STATUS_TOKEN[channel.status], STATUS_FALLBACK[channel.status])
+  const named = NAMED_STROKE[channel.name]
+  if (named) return token(named[0], named[1])
+  const palette: [string, string][] = [['--color-primary', '#1677ff'], ['--color-warning', '#fa8c16'], ['--color-success', '#52c41a']]
+  const pair = palette[index % palette.length]
+  return token(pair[0], pair[1])
+}
+function formatChannelTooltip(params: unknown, items: { channel: PointChannel }[]) {
+  const list = (Array.isArray(params) ? params : [params]) as { seriesIndex?: number; marker?: string; data?: unknown; axisValueLabel?: string }[]
+  const lines = list.map(item => {
+    const channel = items[item.seriesIndex ?? 0]?.channel
+    const suffix = channel ? readingSuffix(channel.value) : ''
+    return `${item.marker || ''}${channel?.name || ''} ${formatTrendNumber(Number(item.data))}${suffix ? ' ' + suffix : ''}`
+  })
+  return [list[0]?.axisValueLabel || '', ...lines].join('<br/>')
+}
 const STATUS_TOKEN: Record<PointStatus, string> = { alarm: '--color-danger', warn: '--color-warning', ok: '--color-success', twin: '--color-primary', off: '--color-text-muted' }
 const STATUS_FALLBACK: Record<PointStatus, string> = { alarm: '#f5222d', warn: '#fa8c16', ok: '#52c41a', twin: '#1677ff', off: '#94a3b8' }
 function token(name: string, fallback: string) {
@@ -266,6 +368,15 @@ function regionFor(mode: string, status: PointStatus) {
 .highlight-aggregate { stroke-dasharray: 6 4; }
 .point-circle { stroke: var(--color-text-white); stroke-width: 2; }
 .point-chart :deep(.svc-echart) { min-height: 0; height: 156px; }
+.point-chart.is-multi { height: 220px; }
+.point-chart.is-multi :deep(.svc-echart) { height: 220px; }
+.chan-switch { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.chan-switch button {
+  height: 26px; padding: 0 10px; border-radius: 13px;
+  border: 1px solid var(--color-border); background: transparent;
+  font-size: 12px; font-weight: 600; color: var(--color-text-secondary);
+}
+.chan-switch button.is-on { background: var(--color-primary); border-color: var(--color-primary); color: var(--color-text-white); }
 .panel-base .tabs { overflow-x: auto; }
 .panel-base .tab { flex: 0 0 auto; white-space: nowrap; padding: 0 12px; }
 .point-readings {

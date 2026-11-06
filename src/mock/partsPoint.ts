@@ -4,7 +4,14 @@ export type PointStatus = 'alarm' | 'warn' | 'ok' | 'off' | 'twin'
 export interface PartNode { name: string; status: PointStatus }
 export interface PartGroup { name: string; nodes: PartNode[] }
 export interface PartColumn { name: string; groups: PartGroup[] }
-export interface Point { id: string; name: string; status: PointStatus; value: string; unit: string; twin: { x: number; y: number }; group?: string }
+/** One measured param on a sensor. A point may carry several (温度 / 声音 / 振动). */
+export interface PointChannel { key: string; name: string; status: PointStatus; value: string; unit: string }
+export interface Point { id: string; name: string; status: PointStatus; value: string; unit: string; twin: { x: number; y: number }; group?: string; channels?: PointChannel[] }
+/** Channels on a multi-param sensor, or one synthetic channel for a single-reading point. */
+export function channelsOf(point: Pick<Point, 'status' | 'value' | 'unit' | 'channels'>): PointChannel[] {
+  if (point.channels?.length) return point.channels
+  return [{ key: 'value', name: point.unit || '测值', status: point.status, value: point.value, unit: point.unit }]
+}
 export interface SmartService { name: string; hot: boolean; conclusion: string }
 interface StructureData { specialty: string; points: Point[]; services: SmartService[]; highlight: string }
 export const statusLabels: Record<PointStatus, string> = { alarm: '报警', warn: '异常', ok: '正常', off: '未接入', twin: '孪生' }
@@ -363,13 +370,29 @@ const structures: Record<string, StructureData> = {
           "x": 360,
           "y": 190
         }
+      },
+      {
+        "id": "ML-10",
+        "name": "跨中温声振",
+        "status": "warn",
+        "value": "4.6 mm/s",
+        "unit": "温声振",
+        "twin": {
+          "x": 150,
+          "y": 176
+        },
+        "channels": [
+          { "key": "temp", "name": "温度", "status": "ok", "value": "42.6 ℃", "unit": "温度" },
+          { "key": "sound", "name": "声音", "status": "ok", "value": "71 dB", "unit": "声音" },
+          { "key": "vib", "name": "振动", "status": "warn", "value": "4.6 mm/s", "unit": "振动" }
+        ]
       }
     ],
     "services": [
       {
         "name": "健康监测",
         "hot": true,
-        "conclusion": "主梁跨中应变持续超限（ML-01/ML-02），健康指数 62，建议限载并复核焊缝。"
+        "conclusion": "主梁跨中应变持续超限（ML-01/ML-02），健康指数 62，建议限载并复核焊缝。跨中温声振 ML-10 振动通道偏高。"
       },
       {
         "name": "裂纹预测",
@@ -740,12 +763,37 @@ export function partsForDevice(card: OverviewCard): PartColumn[] {
     status: card.lamp === 'off' ? 'off' : node.status === 'off' ? 'off' : card.lamp === 'normal' ? 'ok' : card.lamp === 'yellow' && node.status === 'alarm' ? 'warn' : node.status
   })) })) }))
 }
+function applyNodeStatus(original: PointStatus, nodeStatus: PointStatus): PointStatus {
+  if (nodeStatus === 'ok') return original === 'twin' ? 'twin' : 'ok'
+  if (nodeStatus === 'off') return 'off'
+  if (nodeStatus === 'warn' && original === 'alarm') return 'warn'
+  return original
+}
+function statusRank(status: PointStatus) {
+  return status === 'alarm' ? 0 : status === 'warn' ? 1 : 2
+}
+function presentPoint(point: Point, nodeStatus: PointStatus): Point {
+  const channels = point.channels?.map(channel => ({
+    ...channel,
+    status: applyNodeStatus(channel.status, nodeStatus),
+    value: nodeStatus === 'off' ? '—' : channel.value
+  }))
+  const lead = channels?.length ? [...channels].sort((a, b) => statusRank(a.status) - statusRank(b.status))[0] : undefined
+  const status = lead ? lead.status : applyNodeStatus(point.status, nodeStatus)
+  const value = nodeStatus === 'off'
+    ? '—'
+    : lead
+      ? lead.value
+      : nodeStatus === 'ok' && (point.status === 'alarm' || point.status === 'warn')
+        ? '95 µε'
+        : point.value
+  return { ...point, status, value, channels }
+}
 export function structureData(node: PartNode, specialty: string): StructureData {
   const source = structures[node.name]
   const status = node.status
   const seed = [...node.name].reduce((sum, ch) => (sum * 31 + ch.charCodeAt(0)) >>> 0, 0)
-  const points: Point[] = source ? source.points.map(p => ({ ...p, status: status === 'ok' ? (p.status === 'twin' ? 'twin' : 'ok') : status === 'off' ? 'off' : status === 'warn' && p.status === 'alarm' ? 'warn' : p.status,
-    value: status === 'off' ? '—' : status === 'ok' && (p.status === 'alarm' || p.status === 'warn') ? '95 µε' : p.value })) : [1, 2, 3].map((i) => ({
+  const points: Point[] = source ? source.points.map(point => presentPoint(point, status)) : [1, 2, 3].map((i) => ({
       id: `PT-${String(seed % 1000).padStart(3, '0')}-${i}`, name: `${node.name}${['运行状态', '温度', '振动'][i - 1]}`, status: i === 1 ? status : 'ok',
       value: status === 'off' ? '—' : i === 1 ? statusLabels[status] : i === 2 ? '38.2 ℃' : '1.2 mm/s', unit: '示意', twin: { x: 180 + i * 70, y: 120 + i * 18 }
     }))
