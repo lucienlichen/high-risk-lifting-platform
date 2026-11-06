@@ -109,7 +109,7 @@ const auth   = useAuthStore()
 const searchVal    = ref('')
 const currentTime  = ref('')
 const currentScene = computed(() => store.currentScene)
-const showTopHierarchy = computed(() => route.name === 'scene' || route.name === 'device')
+const showTopHierarchy = computed(() => route.name === 'scene')
 const activeServiceKey = computed(() => store.activeService as ServiceKey | null)
 const activeServiceMeta = computed(() =>
   activeServiceKey.value ? flatServices.find(service => service.key === activeServiceKey.value) : null

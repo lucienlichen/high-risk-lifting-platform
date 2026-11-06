@@ -21,7 +21,6 @@
 .ov-rolebar button,
 .ov-back,
 .ov-textbtn,
-.ov-chip,
 .ov-toggle button,
 .ov-card,
 .ov-tree-btn,
@@ -345,43 +344,6 @@
   font-size: 13px;
 }
 .ov-toggle button.active { background: #1677ff; color: #fff; }
-
-.ov-chips { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-.ov-chip {
-  height: 36px;
-  padding: 0 14px;
-  border-radius: 18px;
-  border: 1px solid #cbd5e1;
-  background: #fff;
-  color: #0f172a;
-  font-size: 13px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.ov-chip b { font-variant-numeric: tabular-nums; }
-.ov-chip .dot { width: 8px; height: 8px; border-radius: 50%; background: #64748b; }
-.ov-chip.is-red .dot,
-.ov-chip.is-abnormal .dot { background: #f5222d; }
-.ov-chip.is-yellow .dot { background: #faad14; }
-.ov-chip.is-green .dot,
-.ov-chip.is-normal .dot { background: #16a34a; }
-.ov-chip.is-off .dot { background: #fff; border: 1px dashed #64748b; }
-.ov-chip.is-running .dot { background: #1677ff; }
-.ov-chip.is-stopped .dot { background: #94a3b8; }
-.ov-chip.active-all { background: #0f172a; color: #fff; border-color: #0f172a; }
-.ov-chip.active-red,
-.ov-chip.active-abnormal { background: #f5222d; color: #fff; border-color: #f5222d; }
-.ov-chip.active-yellow { background: #faad14; color: #3d2600; border-color: #faad14; }
-.ov-chip.active-green { background: #237804; color: #fff; border-color: #237804; }
-.ov-chip.active-off { background: #475569; color: #fff; border-color: #475569; }
-.ov-chip.active-normal { background: #237804; color: #fff; border-color: #237804; }
-.ov-chip.active-running { background: #1677ff; color: #fff; border-color: #1677ff; }
-.ov-chip.active-stopped { background: #64748b; color: #fff; border-color: #64748b; }
-.ov-chip-split { width: 1px; align-self: stretch; background: #cbd5e1; margin: 4px 2px; }
-.ov-chip-note { margin-left: auto; font-size: 12px; color: #64748b; }
-.ov-monitor-line { margin: 0 0 8px; font-size: 14px; color: #334155; }
-.ov-monitor-line b { font-size: 18px; font-weight: 700; color: #0f172a; margin: 0 2px; }
 
 .ov-grid {
   display: grid;

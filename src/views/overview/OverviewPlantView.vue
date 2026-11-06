@@ -42,7 +42,7 @@
       <section class="ov-section-head">
         <div class="ov-scope">
           <nav aria-label="位置">{{ crumb }}</nav>
-          <h1>{{ scopeName }} <span>{{ scopeCards.length }} 台设备</span></h1>
+          <h1>{{ scopeName }}</h1>
         </div>
         <div class="ov-tools">
           <label class="ov-search">
@@ -54,13 +54,6 @@
             <button type="button" :class="{ active: view === 'plan' }" @click="view = 'plan'">厂区平面图</button>
           </div>
         </div>
-      </section>
-      <p class="ov-monitor-line">监控设备 共 <b>{{ scopeCards.length }}</b> 台</p>
-      <section class="ov-chips" role="group" aria-label="按状态筛选">
-        <button v-for="chip in chips" :key="chip.id" type="button" class="ov-chip" :class="[`is-${chip.id === 'all' ? 'all' : chip.id}`, { ['active-' + chip.id]: hue === chip.id }]" @click="hue = chip.id; limit = 40">
-          <span class="dot"></span>{{ chip.label }}<b>{{ chip.n }}</b>
-        </button>
-        <span class="ov-chip-note">停机只筛停机，不含离线。卡片保持最近一次灯色，不另标离线。</span>
       </section>
 
       <template v-if="view === 'cards'">
@@ -105,7 +98,7 @@
         </div>
         <p class="ov-footnote">示意布局：每一行是台账里的一个使用地点，竖条是该地点的起重机。没有坐标，不能当成厂区 CAD。</p>
       </section>
-      <p class="ov-footnote">卡片颜色是六项服务里最严重的一盏灯：报警、异常或正常。停机不改变颜色，只在筛选里单独列出，并且不含离线。离线设备仍用最近一次灯色，卡片上不另标离线。悬停编号可看类型和位置。</p>
+      <p class="ov-footnote">卡片颜色是六项服务里最严重的一盏灯：报警、异常或正常。停机不改变颜色。离线设备仍用最近一次灯色，卡片上不另标离线。悬停编号可看类型和位置。</p>
     </main>
   </div>
 </template>
@@ -125,7 +118,6 @@ import {
   worstUnit,
   type OverviewCard
 } from '@/mock/overviewDemo'
-import { SEVERITY_DICT } from '@/config/statusDict'
 import { overviewAccessOf, useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
@@ -135,7 +127,6 @@ const all = getOverviewCards()
 const access = computed(() => overviewAccessOf(auth))
 const q = ref('')
 const view = ref<'cards' | 'plan'>('cards')
-const hue = ref<'all' | 'red' | 'yellow' | 'green' | 'stopped'>('all')
 const limit = ref(40)
 const selectedId = ref('')
 const openGroups = ref(new Set<string>())
@@ -197,36 +188,12 @@ const searched = computed(() => {
   if (!keyword) return scopeCards.value
   return scopeCards.value.filter(card => card.code.includes(keyword) || card.location.includes(keyword) || card.unit.includes(keyword) || card.name.includes(keyword))
 })
-const counts = computed(() => {
-  const base = { all: searched.value.length, red: 0, yellow: 0, green: 0, stopped: 0 }
-  searched.value.forEach(card => {
-    if (card.lamp === 'red') base.red += 1
-    else if (card.lamp === 'yellow') base.yellow += 1
-    else base.green += 1
-    // 停机不含离线。离线时 run 为 null，卡片仍按 lamp 计入报警/异常/正常。
-    if (card.run === 'stopped') base.stopped += 1
-  })
-  return base
-})
-const chips = computed(() => [
-  { id: 'all' as const, label: '全部', n: counts.value.all },
-  { id: 'red' as const, label: SEVERITY_DICT.red.label, n: counts.value.red },
-  { id: 'yellow' as const, label: SEVERITY_DICT.yellow.label, n: counts.value.yellow },
-  { id: 'green' as const, label: SEVERITY_DICT.green.label, n: counts.value.green },
-  { id: 'stopped' as const, label: '停机', n: counts.value.stopped }
-])
 function colorRank(card: OverviewCard) {
   if (card.lamp === 'red') return 0
   if (card.lamp === 'yellow') return 1
   return 2
 }
-const filtered = computed(() => searched.value.filter(card => {
-  if (hue.value === 'stopped') return card.run === 'stopped'
-  if (hue.value === 'red') return card.lamp === 'red'
-  if (hue.value === 'yellow') return card.lamp === 'yellow'
-  if (hue.value === 'green') return card.lamp !== 'red' && card.lamp !== 'yellow'
-  return true
-}).sort((a, b) => colorRank(a) - colorRank(b) || a.code.localeCompare(b.code, 'zh-CN')))
+const filtered = computed(() => [...searched.value].sort((a, b) => colorRank(a) - colorRank(b) || a.code.localeCompare(b.code, 'zh-CN')))
 const visible = computed(() => filtered.value.slice(0, limit.value))
 const scopeName = computed(() => unit.value || (enterprise.value === BENGANG ? '板材板块' : enterpriseLabel(enterprise.value)))
 const crumb = computed(() => [enterpriseLabel(enterprise.value), enterprise.value === BENGANG ? '板材板块' : '', unit.value].filter(Boolean).join(' / '))
@@ -268,12 +235,7 @@ function craneTone(card: OverviewCard) {
 }
 function match(card: OverviewCard) {
   const keyword = q.value.trim()
-  const hit = !keyword || card.code.includes(keyword) || card.location.includes(keyword)
-  if (hue.value === 'stopped') return hit && card.run === 'stopped'
-  if (hue.value === 'red') return hit && card.lamp === 'red'
-  if (hue.value === 'yellow') return hit && card.lamp === 'yellow'
-  if (hue.value === 'green') return hit && card.lamp !== 'red' && card.lamp !== 'yellow'
-  return hit
+  return !keyword || card.code.includes(keyword) || card.location.includes(keyword)
 }
 function craneStyle(index: number, count: number) {
   const width = Math.min(5.5, 70 / Math.max(count, 1))
