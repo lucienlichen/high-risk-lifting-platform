@@ -1,6 +1,8 @@
 .parts-workspace {
-  --parts-color-1: rgba(245,34,45,0);
-  --parts-color-2: rgba(245,34,45,0.12);
+  --parts-color-1: rgba(207,19,34,0);
+  --parts-color-2: rgba(207,19,34,0.34);
+  --parts-color-45: #ffb8b4;
+  --parts-color-46: #820014;
   --parts-color-3: #ff7875;
   --parts-color-4: #ffd666;
   --parts-color-5: #b7eb8f;
@@ -66,7 +68,7 @@
   display: inline-block; width: 12px; height: 12px; border-radius: 3px;
   margin-right: 5px; vertical-align: -1px; border: 1.5px solid;
 }
-.lg-alarm { background: var(--color-danger-bg); border-color: var(--parts-color-3); }
+.lg-alarm { background: var(--parts-color-45); border-color: var(--parts-color-32); }
 .lg-warn { background: var(--color-warning-bg); border-color: var(--parts-color-4); }
 .lg-ok { background: var(--color-success-bg); border-color: var(--parts-color-5); }
 .lg-off { background: var(--parts-color-6); border-color: var(--parts-color-7); border-style: dashed; }
@@ -112,8 +114,8 @@
   line-height: 1.2;
 }
 .col-head.is-alarm {
-  background: var(--color-danger-bg);
-  border-color: var(--parts-color-8); color: var(--parts-color-9);
+  background: var(--parts-color-45);
+  border-color: var(--parts-color-32); color: var(--parts-color-46);
   animation: card-breath-red 2.4s ease-in-out infinite;
 }
 .col-head.is-warn {
@@ -241,9 +243,9 @@
 
 
 .node-card.is-alarm {
-  border: 1.5px solid var(--parts-color-8);
-  background: var(--parts-color-26);
-  color: var(--parts-color-9);
+  border: 2px solid var(--parts-color-32);
+  background: var(--parts-color-45);
+  color: var(--parts-color-46);
   animation: card-breath-red 2.4s ease-in-out infinite;
 }
 
@@ -277,8 +279,8 @@
   border-color: var(--parts-color-13); color: var(--parts-color-14);
 }
 .col-head.is-alarm {
-  background: var(--color-danger-bg);
-  border-color: var(--parts-color-8); color: var(--parts-color-9);
+  background: var(--parts-color-45);
+  border-color: var(--parts-color-32); color: var(--parts-color-46);
   animation: card-breath-red 2.4s ease-in-out infinite;
 }
 .col-head.is-warn {

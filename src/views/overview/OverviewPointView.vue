@@ -218,8 +218,9 @@ function selectService(key: SvcKey) {
   expanded.value = false
 }
 function serviceClass(key: SvcKey) {
-  const state = activePoint.value?.services[key].state
-  return state === 'off' ? 'is-off' : 'is-live'
+  const result = activePoint.value?.services[key].result
+  if (result === 'alarm' || result === 'warn' || result === 'ok') return `is-${result}`
+  return 'is-na'
 }
 function serviceTitle(key: SvcKey) {
   const point = activePoint.value

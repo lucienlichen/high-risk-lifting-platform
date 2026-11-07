@@ -41,7 +41,6 @@
               <span v-if="block.key === 'safety'" class="pd-tag" :class="focusing ? 'is-warn' : 'is-ok'">{{ focusing ? '仅超限 / 异常' : '整机参数' }}</span>
               <span v-else-if="block.key === 'health'" class="pd-tag" :class="focusing ? 'is-warn' : 'is-ok'">{{ focusing ? '仅越阈通道' : '当前点时序' }}</span>
               <span v-else class="pd-tag is-muted">{{ block.open ? '已展开' : '折叠' }}</span>
-              <span v-if="block.key === 'safety' && !focusing" class="pd-meta">结果范围：整机共享工况</span>
               <button v-if="!block.primary && !focusing" type="button" class="pd-btn pd-btn-ghost" @click="toggleRemote(block.key)">{{ block.open ? '收起' : '展开此类' }}</button>
             </div>
             <div v-if="block.open" class="pd-remote-bd">
@@ -228,8 +227,7 @@ const SafetyBoard = defineComponent({
       params.value.length
         ? h('div', { class: boardProps.mode === 'summary' ? 'pd-cards is-summary' : 'pd-cards' }, params.value.map(item => h('div', { class: ['pd-param', item.level !== 'ok' ? `is-${item.level}` : ''] }, [
           h('div', { class: 'k' }, item.name),
-          h('div', { class: 'v' }, [item.value, item.unit ? h('span', { class: 'u' }, ` ${item.unit}`) : null]),
-          h('div', { class: 'sub' }, `${item.sub} · 结果范围：整机共享工况`)
+          h('div', { class: 'v' }, [item.value, item.unit ? h('span', { class: 'u' }, ` ${item.unit}`) : null])
         ])))
         : h('p', { class: 'pd-meta' }, '暂无超限参数。可点「查看全部」看完整安全监控。'),
       boardProps.mode === 'summary' ? null : h('h3', { class: 'pd-subhead' }, boardProps.mode === 'focus' ? '状态监控 · 仅异常项' : '状态监控'),
