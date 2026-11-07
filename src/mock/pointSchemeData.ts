@@ -9,13 +9,6 @@ export interface SchemePoint {
   name: string
   measured: boolean
   status: Exclude<Tone, 'na'>
-  /** Horizontal model, percent. */
-  hx: number
-  hy: number
-  /** Vertical model, percent. Dot sits on the spine; text grows to `vSide`. */
-  vx: number
-  vy: number
-  vSide: 'left' | 'right'
 }
 
 export interface CycleRow {
@@ -63,24 +56,24 @@ export const DATA_TABS: { key: DataKey; name: string; live: boolean }[] = [
 ]
 
 export const STRUCTURE_POINTS: SchemePoint[] = [
-  { id: 'ML-01', name: '跨中上翼缘', measured: true, status: 'ok', hx: 50, hy: 16, vx: 50, vy: 42, vSide: 'left' },
-  { id: 'ML-02', name: '跨中下翼缘', measured: true, status: 'alarm', hx: 50, hy: 74, vx: 50, vy: 58, vSide: 'right' },
-  { id: 'ML-03', name: '1/4跨上翼缘', measured: true, status: 'warn', hx: 30, hy: 16, vx: 50, vy: 26, vSide: 'left' },
-  { id: 'ML-04', name: '1/4跨下翼缘', measured: true, status: 'ok', hx: 32, hy: 74, vx: 50, vy: 34, vSide: 'right' },
-  { id: 'ML-05', name: '3/4跨上翼缘', measured: true, status: 'ok', hx: 70, hy: 16, vx: 50, vy: 62, vSide: 'left' },
-  { id: 'ML-06', name: '3/4跨下翼缘', measured: true, status: 'ok', hx: 72, hy: 74, vx: 50, vy: 74, vSide: 'right' },
-  { id: 'ML-07', name: '左端头焊缝', measured: true, status: 'ok', hx: 12, hy: 16, vx: 50, vy: 8, vSide: 'left' },
-  { id: 'ML-08', name: '支座附近', measured: false, status: 'ok', hx: 18, hy: 74, vx: 50, vy: 12, vSide: 'right' },
-  { id: 'ML-09', name: '腹板中部', measured: false, status: 'ok', hx: 61, hy: 90, vx: 50, vy: 90, vSide: 'right' },
-  { id: 'ML-10', name: '右端头焊缝', measured: false, status: 'ok', hx: 88, hy: 16, vx: 50, vy: 80, vSide: 'left' }
+  { id: 'ML-01', name: '跨中上翼缘', measured: true, status: 'ok' },
+  { id: 'ML-02', name: '跨中下翼缘', measured: true, status: 'alarm' },
+  { id: 'ML-03', name: '1/4跨上翼缘', measured: true, status: 'warn' },
+  { id: 'ML-04', name: '1/4跨下翼缘', measured: true, status: 'ok' },
+  { id: 'ML-05', name: '3/4跨上翼缘', measured: true, status: 'ok' },
+  { id: 'ML-06', name: '3/4跨下翼缘', measured: true, status: 'ok' },
+  { id: 'ML-07', name: '左端头焊缝', measured: true, status: 'ok' },
+  { id: 'ML-08', name: '支座附近', measured: false, status: 'ok' },
+  { id: 'ML-09', name: '腹板中部', measured: false, status: 'ok' },
+  { id: 'ML-10', name: '右端头焊缝', measured: false, status: 'ok' }
 ]
 
 export const MECHANISM_POINTS: SchemePoint[] = [
-  { id: 'M-01', name: '电机输出轴', measured: true, status: 'ok', hx: 16, hy: 28, vx: 50, vy: 12, vSide: 'right' },
-  { id: 'G-01', name: '减速器高速轴', measured: true, status: 'ok', hx: 37, hy: 24, vx: 50, vy: 40, vSide: 'right' },
-  { id: 'G-02', name: '减速器中间轴', measured: true, status: 'ok', hx: 40, hy: 74, vx: 50, vy: 50, vSide: 'right' },
-  { id: 'G-03', name: '减速器低速轴', measured: true, status: 'warn', hx: 49, hy: 30, vx: 50, vy: 60, vSide: 'right' },
-  { id: 'D-01', name: '卷筒轴承座', measured: true, status: 'ok', hx: 90, hy: 26, vx: 50, vy: 90, vSide: 'right' }
+  { id: 'M-01', name: '电机输出轴', measured: true, status: 'ok' },
+  { id: 'G-01', name: '减速器高速轴', measured: true, status: 'ok' },
+  { id: 'G-02', name: '减速器中间轴', measured: true, status: 'ok' },
+  { id: 'G-03', name: '减速器低速轴', measured: true, status: 'warn' },
+  { id: 'D-01', name: '卷筒轴承座', measured: true, status: 'ok' }
 ]
 
 const STRUCT_CYCLES: CycleRow[] = [

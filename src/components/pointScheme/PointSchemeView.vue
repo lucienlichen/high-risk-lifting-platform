@@ -40,11 +40,15 @@
 
       <section v-else class="ps-top">
         <div class="ps-table-wrap">
-          <div class="ps-tools">
-            <strong>点位表</strong>
-            <span class="ps-count">共 {{ points.length }} 个点位 · 报警 {{ counts.alarm }} · 异常 {{ counts.warn }}</span>
-            <label class="ps-check"><input v-model="alarmOnly" type="checkbox"> 仅看报警/异常</label>
-            <input v-model="search" class="ps-search" type="search" placeholder="搜索名称或编号" aria-label="搜索名称或编号">
+          <div class="ps-table-hd">
+            <div class="ps-table-hd-top">
+              <strong>点位表</strong>
+              <span class="ps-count">共 {{ points.length }} 个点位 · 报警 {{ counts.alarm }} · 异常 {{ counts.warn }}</span>
+            </div>
+            <div class="ps-table-hd-bot">
+              <label class="ps-check"><input v-model="alarmOnly" type="checkbox"> 仅看报警/异常</label>
+              <input v-model="search" class="ps-search" type="search" placeholder="搜索名称或编号" aria-label="搜索名称或编号">
+            </div>
           </div>
           <SchemeTable :rows="visiblePoints" :selected-id="active.id" name-label="名称" @select="selectPoint" />
         </div>
@@ -207,7 +211,7 @@ function lineOption(values: number[], color: string, mark?: { value: number; nam
     xAxis: { type: 'category', data: values.map((_, index) => index + 1), axisLabel: { show: false }, axisTick: { show: false }, axisLine: { lineStyle: { color: '#e5eaf1' } } },
     yAxis: { type: 'value', axisLabel: { fontSize: 9, color: '#94a3b8' }, splitLine: { lineStyle: { color: '#eef2f6' } } },
     series: [{
-      type: 'line', data: values, symbol: 'none', lineStyle: { width: 1.4, color },
+      type: 'line', data: values, smooth: 0.25, symbol: 'none', lineStyle: { width: 1.4, color },
       markLine: mark ? { symbol: 'none', data: [{ yAxis: mark.value, label: { formatter: mark.name, fontSize: 9, color: '#fa8c16' }, lineStyle: { type: 'dashed', color: '#fa8c16' } }] } : undefined
     }]
   }
@@ -215,10 +219,18 @@ function lineOption(values: number[], color: string, mark?: { value: number; nam
 function sparkOption(values: number[], color: string, fft = false): EChartsOption {
   return {
     animation: false,
-    grid: { left: 2, right: 2, top: 6, bottom: 2 },
-    xAxis: { type: 'category', show: false, data: values.map((_, index) => index) },
-    yAxis: { type: 'value', show: false },
-    series: [{ type: fft ? 'bar' : 'line', data: values, symbol: 'none', barWidth: '60%', itemStyle: { color }, lineStyle: { width: 1.2, color }, areaStyle: fft ? undefined : { color: 'rgba(22,119,255,0.08)' } }]
+    grid: { left: 1, right: 1, top: 4, bottom: 2 },
+    xAxis: { type: 'category', show: false, boundaryGap: false, data: values.map((_, index) => index) },
+    yAxis: { type: 'value', show: false, scale: true },
+    series: [{
+      type: 'line',
+      data: values,
+      smooth: fft ? false : 0.35,
+      symbol: 'none',
+      sampling: 'lttb',
+      lineStyle: { width: 1.15, color },
+      areaStyle: fft ? undefined : { color: 'rgba(22,119,255,0.06)' }
+    }]
   }
 }
 function weightOption(): EChartsOption {
@@ -228,7 +240,7 @@ function weightOption(): EChartsOption {
     xAxis: { type: 'category', data: WEIGHT_AXIS, axisLabel: { fontSize: 10, color: '#64748b', interval: 0 }, axisTick: { show: false }, axisLine: { lineStyle: { color: '#e5eaf1' } } },
     yAxis: { type: 'value', min: 0, max: 60, interval: 60, axisLabel: { fontSize: 10, color: '#94a3b8' }, splitLine: { lineStyle: { color: '#eef2f6' } } },
     series: [{
-      type: 'line', data: WEIGHT_SERIES, symbol: 'none', lineStyle: { width: 1.6, color: '#1677ff' },
+      type: 'line', data: WEIGHT_SERIES, smooth: 0.3, symbol: 'none', lineStyle: { width: 1.6, color: '#1677ff' },
       markLine: { symbol: 'none', data: [{ yAxis: 50, label: { formatter: '额定起重量 50 t', fontSize: 10, color: '#fa8c16' }, lineStyle: { type: 'dashed', color: '#fa8c16' } }] }
     }]
   }
