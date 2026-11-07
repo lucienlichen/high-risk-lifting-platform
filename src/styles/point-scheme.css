@@ -111,7 +111,7 @@
 .ps-count, .ps-hint, .ps-cap, .ps-block-hd span, .ps-chart-hd span, .ps-time { color: #64748b; }
 .ps-hint { margin-left: auto; }
 .ps-block-hd em { margin-left: auto; color: #94a3b8; font-style: normal; }
-.ps-table-hd { flex-shrink: 0; display: flex; flex-direction: column; gap: 4px; padding: 6px 8px 4px; }
+.ps-table-hd { flex-shrink: 0; display: flex; flex-direction: column; gap: 6px; padding: 8px 8px 6px; }
 .ps-table-hd-top, .ps-table-hd-bot { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .ps-table-hd-top strong { white-space: nowrap; font-size: 13px; font-weight: 750; flex: none; }
 .ps-table-hd-top .ps-count { margin-left: auto; white-space: nowrap; font-size: 11px; }
@@ -206,7 +206,7 @@
 .ps-tag.on em { background: #1677ff; border-color: #1677ff; color: #fff; }
 .ps-tag.on em b { color: #fff; }
 .ps-cap { margin: 0; padding: 0 8px 4px; font-size: 11px; }
-.ps-table-cap { padding: 2px 8px; font-weight: 700; }
+.ps-table-cap { padding: 6px 8px 4px; font-weight: 700; }
 .ps-rows { flex: 1; min-height: 0; overflow: auto; }
 .ps-row {
   width: 100%;
@@ -218,12 +218,12 @@
   border: 0;
   border-bottom: 1px solid #f1f5f9;
   background: #fff;
-  height: 18px;
-  padding: 0 6px;
+  height: 30px;
+  padding: 6px 8px;
   font-size: 12px;
   cursor: pointer;
 }
-.ps-row-hd { color: #94a3b8; font-size: 11px; cursor: default; position: sticky; top: 0; background: #fff; }
+.ps-row-hd { height: 26px; padding-top: 4px; padding-bottom: 4px; color: #94a3b8; font-size: 11px; cursor: default; position: sticky; top: 0; background: #fff; }
 .ps-row.on { background: #e6f4ff; }
 .ps-row.on .name { color: #1677ff; font-weight: 750; }
 .ps-row .name, .ps-row .id { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
