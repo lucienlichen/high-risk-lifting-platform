@@ -40,20 +40,22 @@
             <strong>{{ column.name }}</strong>
             <span>{{ column.groups.length }}组 · {{ flatNodes(column).length }}个部件 · {{ countStatus(flatNodes(column), 'off') }}未接入</span>
           </button>
-          <article v-for="group in visibleGroups(column)" :key="group.name" class="nest-group" :class="`is-${worstStatus(group.nodes)}`">
-            <button type="button" class="nest-group-hd" @click="open(column.name, group.name, true)">
-              <span>{{ group.name }}</span>
-              <em>{{ group.nodes.length }}个部件</em>
-            </button>
-            <button v-for="node in visibleNodes(group.nodes)" :key="node.name" type="button" class="nest-row" :class="`is-${node.status}`" :disabled="node.status === 'off'" @click="open(column.name, node.name, false)">
-              <i class="nest-dot" :class="node.status"></i>
-              <span class="nest-name">{{ node.name }}</span>
-              <span v-if="node.status !== 'ok'" class="nest-state">{{ statusLabels[node.status] }}</span>
-              <span class="nest-pts">{{ pointCounts.get(keyOf(column.name, node.name)) || 0 }} 点位</span>
-              <span v-if="node.status !== 'off'" class="nest-go">›</span>
-            </button>
-            <p v-if="!visibleNodes(group.nodes).length" class="nest-empty">暂无报警/异常</p>
-          </article>
+          <div class="nest-body">
+            <article v-for="group in visibleGroups(column)" :key="group.name" class="nest-group" :class="`is-${worstStatus(group.nodes)}`">
+              <button type="button" class="nest-group-hd" @click="open(column.name, group.name, true)">
+                <span>{{ group.name }}</span>
+                <em>{{ group.nodes.length }}个部件</em>
+              </button>
+              <button v-for="node in visibleNodes(group.nodes)" :key="node.name" type="button" class="nest-row" :class="`is-${node.status}`" :disabled="node.status === 'off'" @click="open(column.name, node.name, false)">
+                <i class="nest-dot" :class="node.status"></i>
+                <span class="nest-name">{{ node.name }}</span>
+                <span v-if="node.status !== 'ok'" class="nest-state">{{ statusLabels[node.status] }}</span>
+                <span class="nest-pts">{{ pointCounts.get(keyOf(column.name, node.name)) || 0 }} 点位</span>
+                <span v-if="node.status !== 'off'" class="nest-go">›</span>
+              </button>
+              <p v-if="!visibleNodes(group.nodes).length" class="nest-empty">暂无报警/异常</p>
+            </article>
+          </div>
         </section>
       </div>
       <div class="legend-row nest-legend">
