@@ -9,6 +9,11 @@ import { usePartsDevice } from '@/composables/usePartsDevice'
 const { query, router, route } = usePartsDevice()
 
 function back() {
-  router.push({ name: 'overviewParts', params: { id: String(route.params.id || '') }, query: query.value })
+  const partsScheme = route.query.partsScheme === 'nest' ? 'nest' : ''
+  router.push({
+    name: 'overviewParts',
+    params: { id: String(route.params.id || '') },
+    query: { ...query.value, ...(partsScheme ? { partsScheme } : {}) }
+  })
 }
 </script>
