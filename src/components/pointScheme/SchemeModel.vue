@@ -1,104 +1,51 @@
 <template>
-  <div ref="stageEl" class="ps-stage" :class="{ mechanism: side === 'mechanism' }">
-    <svg :viewBox="layout.box" class="ps-svg" preserveAspectRatio="xMidYMid meet" role="img" :aria-label="side === 'structure' ? '结构测点' : '机构测点'">
+  <div ref="host" class="ps-canvas-host" :style="{ height: `${Math.round(230 * scale)}px` }">
+    <div class="ps-canvas" :style="{ transform: `scale(${scale})` }">
       <template v-if="side === 'structure'">
-        <rect
-          v-for="truck in layout.trucks"
-          :key="truck.key"
-          :x="truck.x"
-          :y="truck.y"
-          :width="truck.w"
-          :height="truck.h"
-          rx="3"
-          class="truck"
-        />
-        <text
-          v-for="truck in layout.trucks"
-          :key="`${truck.key}-tx`"
-          :x="truck.x + truck.w / 2"
-          :y="truck.y + truck.h / 2"
-          text-anchor="middle"
-          dominant-baseline="central"
-          class="truck-tx"
-        >端梁</text>
-        <rect :x="layout.beam.x" :y="layout.beam.y" :width="layout.beam.w" :height="layout.beam.h" class="beam" />
-        <rect :x="layout.beam.x" :y="layout.beam.y" :width="layout.beam.w" :height="layout.flange" class="flange-plate" />
-        <rect :x="layout.beam.x" :y="layout.beam.y + layout.beam.h - layout.flange" :width="layout.beam.w" :height="layout.flange" class="flange-plate" />
-        <line
-          v-for="web in layout.webs"
-          :key="web"
-          :x1="web"
-          :y1="layout.beam.y + layout.flange"
-          :x2="web"
-          :y2="layout.beam.y + layout.beam.h - layout.flange"
-          class="web"
-        />
-        <g class="dim">
-          <line :x1="layout.beam.x" :y1="layout.stationY" :x2="layout.beam.x + layout.beam.w" :y2="layout.stationY" />
-          <template v-for="mark in layout.stations" :key="mark.t">
-            <line :x1="mark.x" :y1="layout.stationY - 6" :x2="mark.x" :y2="layout.stationY + 6" />
-            <text :x="mark.x" :y="layout.stationY + 16" text-anchor="middle">{{ mark.t }}</text>
-          </template>
-        </g>
+        <div class="ps-abs" style="left:0;top:186px;width:568px;height:2px;background:#cbd5e1"></div>
+        <div class="ps-abs ps-truck" style="left:14px;top:168px;width:50px;height:18px">端梁</div>
+        <div class="ps-abs ps-truck" style="left:504px;top:168px;width:50px;height:18px">端梁</div>
+        <div class="ps-abs" style="left:34px;top:130px;width:500px;height:38px;background:#dbeafe;border:1.5px solid #60a5fa;border-radius:3px"></div>
+        <div v-for="mark in stations" :key="mark.t" class="ps-abs ps-station" :style="{ left: `${mark.x}px` }">{{ mark.t }}</div>
       </template>
       <template v-else>
-        <line :x1="layout.shaft.x1" :y1="layout.shaft.y" :x2="layout.shaft.x2" :y2="layout.shaft.y" class="shaft" />
-        <g v-for="part in layout.parts" :key="part.key">
-          <rect :x="part.x" :y="part.y" :width="part.w" :height="part.h" rx="4" class="box" />
-          <template v-if="part.key === 'drum'">
-            <line
-              v-for="wire in part.wires"
-              :key="wire"
-              :x1="part.x + 10"
-              :y1="wire"
-              :x2="part.x + part.w - 10"
-              :y2="wire"
-              class="wire"
-            />
-          </template>
-        </g>
-        <text
-          v-for="part in layout.parts"
-          :key="`${part.key}-tx`"
-          :x="part.x + part.w / 2"
-          :y="part.labelY"
-          text-anchor="middle"
-          class="box-tx"
-        >
-          <tspan
-            v-for="(line, index) in part.lines"
-            :key="line"
-            :x="part.x + part.w / 2"
-            :dy="index === 0 ? 0 : 16"
-          >{{ line }}</tspan>
-        </text>
+        <div class="ps-abs ps-part" style="left:16px;top:120px;width:80px;height:60px">电机</div>
+        <div class="ps-abs" style="left:96px;top:148px;width:18px;height:4px;background:#64748b;border-radius:2px"></div>
+        <div class="ps-abs" style="left:114px;top:138px;width:16px;height:24px;background:#e2e8f0;border:1.5px solid #94a3b8;border-radius:3px"></div>
+        <div class="ps-abs ps-small" style="left:84px;top:186px;width:80px">联轴器·制动器</div>
+        <div class="ps-abs" style="left:130px;top:148px;width:14px;height:4px;background:#64748b;border-radius:2px"></div>
+        <div class="ps-abs ps-part" style="left:144px;top:96px;width:150px;height:112px;justify-content:flex-start;padding-left:6px">减速器</div>
+        <div class="ps-abs" style="left:144px;top:120px;width:60px;height:4px;background:#64748b;border-radius:2px"></div>
+        <div class="ps-abs" style="left:196px;top:150px;width:60px;height:4px;background:#64748b;border-radius:2px"></div>
+        <div class="ps-abs" style="left:250px;top:180px;width:64px;height:4px;background:#64748b;border-radius:2px"></div>
+        <div class="ps-abs ps-part ps-drum" style="left:314px;top:140px;width:190px;height:60px">卷筒</div>
+        <div class="ps-abs ps-part" style="left:504px;top:132px;width:34px;height:40px"></div>
       </template>
-      <g
-        v-for="mark in layout.marks"
+      <div v-if="callout" class="ps-leader" :style="callout.line"></div>
+      <button
+        v-for="mark in marks"
         :key="mark.id"
-        class="mk"
-        :class="[mark.status, { on: mark.id === selectedId, twin: !mark.measured, dim: hiddenIds.includes(mark.id) }]"
-        :data-marker="mark.id"
+        type="button"
+        class="ps-dot"
+        :class="{ dim: hiddenIds.includes(mark.id) }"
+        :style="mark.style"
+        :aria-label="mark.aria"
         @click="$emit('select', mark.id)"
-      >
-        <circle v-if="mark.id === selectedId" class="halo" :cx="mark.x" :cy="mark.y" r="13" />
-        <circle class="dot" :cx="mark.x" :cy="mark.y" r="8" />
-        <g class="tag short">
-          <rect class="pill" :x="mark.sx - mark.sw / 2" :y="mark.sy - 10" :width="mark.sw" height="20" rx="10" />
-          <text class="pill-tx" :x="mark.sx" :y="mark.sy" text-anchor="middle" dominant-baseline="central">{{ mark.id }}</text>
-        </g>
-        <g class="tag full">
-          <rect class="pill" :x="mark.fx - mark.fw / 2" :y="mark.fy - 11" :width="mark.fw" height="22" rx="11" />
-          <text class="pill-tx" :x="mark.fx" :y="mark.fy" text-anchor="middle" dominant-baseline="central">{{ mark.name }} {{ mark.id }}</text>
-        </g>
-      </g>
-    </svg>
+        @mouseenter="hoverId = mark.id"
+        @mouseleave="hoverId = ''"
+      ></button>
+      <div v-if="callout" class="ps-callout" :style="callout.box">
+        <b>{{ callout.name }}</b>
+        <span>{{ callout.id }}</span>
+        <span>{{ callout.status }}</span>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { type SchemePoint, type Side, type Tone } from '@/mock/pointSchemeData'
+import { TONE_TEXT, type SchemePoint, type Side } from '@/mock/pointSchemeData'
 
 const props = defineProps<{
   side: Side
@@ -109,238 +56,149 @@ const props = defineProps<{
 }>()
 defineEmits<{ select: [id: string] }>()
 
-const stageEl = ref<HTMLElement | null>(null)
-const size = ref({ w: 360, h: 420 })
+const host = ref<HTMLElement | null>(null)
+const width = ref(568)
+const hoverId = ref('')
 let observer: ResizeObserver | null = null
 
-function measure() {
-  const el = stageEl.value
-  if (!el) return
-  const rect = el.getBoundingClientRect()
-  const w = Math.max(1, Math.round(rect.width))
-  const h = Math.max(1, Math.round(rect.height))
-  if (w !== size.value.w || h !== size.value.h) size.value = { w, h }
+const STRUCT = [
+  { id: 'ML-01', sec: 'top', pos: 0.5 },
+  { id: 'ML-02', sec: 'bot', pos: 0.5 },
+  { id: 'ML-03', sec: 'top', pos: 0.25 },
+  { id: 'ML-04', sec: 'bot', pos: 0.25 },
+  { id: 'ML-05', sec: 'top', pos: 0.75 },
+  { id: 'ML-06', sec: 'bot', pos: 0.75 },
+  { id: 'ML-07', sec: 'top', pos: 0.04 },
+  { id: 'ML-08', sec: 'bot', pos: 0.08 },
+  { id: 'ML-09', sec: 'web', pos: 0.62 },
+  { id: 'ML-10', sec: 'top', pos: 0.96 }
+] as const
+const MECH = [
+  { id: 'M-01', x: 96, y: 150 },
+  { id: 'G-01', x: 168, y: 122 },
+  { id: 'G-02', x: 222, y: 152 },
+  { id: 'G-03', x: 276, y: 182 },
+  { id: 'D-01', x: 520, y: 150 }
+] as const
+const COLOR = { ok: '#16a34a', warn: '#f59e0b', alarm: '#e5484d' }
+const stations = [
+  { t: '0', x: 14 },
+  { t: 'L/4', x: 139 },
+  { t: 'L/2', x: 264 },
+  { t: '3L/4', x: 389 },
+  { t: 'L', x: 514 }
+]
+
+const scale = computed(() => Math.min(1, width.value / 568))
+
+function place(point: SchemePoint) {
+  if (props.side === 'mechanism') {
+    const spec = MECH.find(item => item.id === point.id)
+    return spec ? { x: spec.x, y: spec.y, above: true } : { x: 280, y: 140, above: true }
+  }
+  const spec = STRUCT.find(item => item.id === point.id)
+  const pos = spec?.pos ?? 0.5
+  const sec = spec?.sec ?? 'top'
+  return {
+    x: 34 + pos * 500,
+    y: sec === 'top' ? 130 : sec === 'bot' ? 168 : 149,
+    above: sec === 'top'
+  }
 }
 
+const marks = computed(() => props.points.map(point => {
+  const geo = place(point)
+  const color = COLOR[point.status]
+  const selected = point.id === props.selectedId
+  return {
+    id: point.id,
+    aria: `${point.id} ${point.name} ${TONE_TEXT[point.status]}`,
+    style: {
+      left: `${geo.x - 9}px`,
+      top: `${geo.y - 9}px`,
+      borderColor: color,
+      background: point.measured ? color : '#fff',
+      boxShadow: selected ? '0 0 0 3px #fff, 0 0 0 5px #1677ff' : 'none',
+      zIndex: selected ? 2 : 1
+    }
+  }
+}))
+
+const callout = computed(() => {
+  const id = hoverId.value && props.points.some(point => point.id === hoverId.value) ? hoverId.value : props.selectedId
+  const point = props.points.find(item => item.id === id)
+  if (!point || props.hiddenIds.includes(point.id)) return null
+  const geo = place(point)
+  const top = geo.above ? geo.y - 66 : geo.y + 26
+  const left = Math.max(90, Math.min(478, geo.x))
+  const lineTop = geo.above ? top + 28 : geo.y + 9
+  const lineHeight = geo.above ? geo.y - 9 - (top + 28) : top - (geo.y + 9)
+  return {
+    name: point.name,
+    id: point.id,
+    status: TONE_TEXT[point.status],
+    box: { left: `${left}px`, top: `${top}px` },
+    line: { left: `${geo.x}px`, top: `${lineTop}px`, height: `${Math.max(0, lineHeight)}px` }
+  }
+})
+
+function measure() {
+  const next = host.value?.clientWidth ?? 568
+  if (next > 0 && next !== width.value) width.value = next
+}
 onMounted(() => {
   measure()
-  if (!stageEl.value) return
+  if (!host.value) return
   observer = new ResizeObserver(() => measure())
-  observer.observe(stageEl.value)
+  observer.observe(host.value)
 })
 onBeforeUnmount(() => observer?.disconnect())
-
-function textWidth(text: string, pad = 14) {
-  let width = pad
-  for (const char of text) width += char.charCodeAt(0) > 255 ? 12 : 6.6
-  return Math.ceil(width)
-}
-
-function clampCenter(center: number, width: number, limit: number) {
-  return Math.min(Math.max(center, width / 2 + 2), Math.max(width / 2 + 2, limit - width / 2 - 2))
-}
-
-function spread<T extends { lx: number; w: number }>(items: T[], limit: number) {
-  const sorted = [...items].sort((a, b) => a.lx - b.lx)
-  for (let i = 1; i < sorted.length; i += 1) {
-    const prev = sorted[i - 1]
-    const min = prev.lx + prev.w / 2 + 4 + sorted[i].w / 2
-    if (sorted[i].lx < min) sorted[i].lx = min
-  }
-  const last = sorted[sorted.length - 1]
-  if (last) {
-    const overflow = last.lx + last.w / 2 + 2 - limit
-    if (overflow > 0) sorted.forEach(item => { item.lx -= overflow })
-  }
-  const first = sorted[0]
-  if (first) {
-    const under = first.w / 2 + 2 - first.lx
-    if (under > 0) sorted.forEach(item => { item.lx += under })
-  }
-  return sorted
-}
-
-const STRUCT = [
-  { id: 'ML-07', t: 0.08, band: 'top', row: 2 },
-  { id: 'ML-03', t: 0.26, band: 'top', row: 1 },
-  { id: 'ML-01', t: 0.5, band: 'top', row: 0 },
-  { id: 'ML-05', t: 0.76, band: 'top', row: 1 },
-  { id: 'ML-10', t: 0.92, band: 'top', row: 2 },
-  { id: 'ML-08', t: 0.12, band: 'bottom', row: 2 },
-  { id: 'ML-04', t: 0.34, band: 'bottom', row: 1 },
-  { id: 'ML-02', t: 0.5, band: 'bottom', row: 0 },
-  { id: 'ML-06', t: 0.86, band: 'bottom', row: 2 },
-  { id: 'ML-09', t: 0.63, band: 'web', row: 0 }
-] as const
-
-const layout = computed(() => {
-  const w = size.value.w
-  const h = size.value.h
-  if (props.side === 'structure') {
-    const beamX = 28
-    const beamW = Math.max(80, w - 56)
-    const beam = {
-      x: beamX,
-      y: 48,
-      w: beamW,
-      h: Math.max(64, h - 48 - 78)
-    }
-    const flange = Math.max(8, Math.round(Math.min(16, beam.h * 0.1)))
-    const trucks = [
-      { key: 'L', x: 4, y: beam.y, w: 26, h: beam.h },
-      { key: 'R', x: w - 30, y: beam.y, w: 26, h: beam.h }
-    ]
-    const stationY = h - 22
-    const stations = [
-      { t: '0', x: beam.x },
-      { t: 'L/4', x: beam.x + beam.w * 0.25 },
-      { t: 'L/2', x: beam.x + beam.w * 0.5 },
-      { t: '3L/4', x: beam.x + beam.w * 0.75 },
-      { t: 'L', x: beam.x + beam.w }
-    ]
-    const webs = [0.25, 0.5, 0.75].map(t => beam.x + beam.w * t)
-    const flank = props.points.flatMap(point => {
-      const spec = STRUCT.find(item => item.id === point.id)
-      if (!spec || spec.band === 'web') return []
-      const sw = textWidth(point.id, 12)
-      const fw = textWidth(`${point.name} ${point.id}`)
-      const anchor = beam.x + beam.w * spec.t
-      return [{
-        point,
-        band: spec.band,
-        sx: clampCenter(anchor, sw, w),
-        sw,
-        fx: clampCenter(anchor, fw, w),
-        fw,
-        lx: anchor,
-        w: sw
-      }]
-    })
-    spread(flank.filter(item => item.band === 'top').map(item => ({ lx: item.sx, w: item.sw, item })), w)
-      .forEach(entry => { entry.item.sx = clampCenter(entry.lx, entry.item.sw, w) })
-    spread(flank.filter(item => item.band === 'bottom').map(item => ({ lx: item.sx, w: item.sw, item })), w)
-      .forEach(entry => { entry.item.sx = clampCenter(entry.lx, entry.item.sw, w) })
-    const marks = flank.map(item => {
-      const y = item.band === 'top' ? beam.y + flange / 2 : beam.y + beam.h - flange / 2
-      const sy = item.band === 'top' ? beam.y - 12 : beam.y + beam.h + 14
-      const fy = item.band === 'top' ? 13 : h - 36
-      return {
-        ...item.point,
-        x: item.lx,
-        y,
-        sx: item.sx,
-        sy,
-        sw: item.sw,
-        fx: clampCenter(item.lx, item.fw, w),
-        fy,
-        fw: item.fw,
-        status: item.point.status as Exclude<Tone, 'na'>
-      }
-    })
-    const webPoint = props.points.find(point => STRUCT.find(item => item.id === point.id)?.band === 'web')
-    if (webPoint) {
-      const spec = STRUCT.find(item => item.id === webPoint.id)!
-      const sw = textWidth(webPoint.id, 12)
-      const fw = textWidth(`${webPoint.name} ${webPoint.id}`)
-      const x = beam.x + beam.w * spec.t
-      const y = beam.y + beam.h / 2
-      marks.push({
-        ...webPoint,
-        x,
-        y,
-        sx: clampCenter(x + sw / 2 + 14, sw, w),
-        sy: y,
-        sw,
-        fx: clampCenter(x + fw / 2 + 14, fw, w),
-        fy: y,
-        fw,
-        status: webPoint.status as Exclude<Tone, 'na'>
-      })
-    }
-    return { box: `0 0 ${w} ${h}`, beam, flange, trucks, stationY, stations, webs, parts: [], shaft: { x1: 0, y: 0, x2: 0 }, marks }
-  }
-
-  const topBand = 50
-  const botBand = 46
-  const gap = 8
-  const pad = 8
-  const fractions = [0.16, 0.16, 0.26, 0.24, 0.18]
-  const specs = [
-    { key: 'motor', label: '电机', lines: ['电机'] },
-    { key: 'couple', label: '联轴器', lines: ['联轴器', '制动器'] },
-    { key: 'reducer', label: '减速器', lines: ['减速器'] },
-    { key: 'drum', label: '卷筒', lines: ['卷筒'] },
-    { key: 'bearing', label: '轴承座', lines: ['轴承座'] }
-  ]
-  const inner = Math.max(40, w - pad * 2 - gap * (specs.length - 1))
-  let cursor = pad
-  const fullH = Math.max(72, h - topBand - botBand)
-  const parts = specs.map((spec, index) => {
-    const partW = inner * fractions[index]
-    const partH = spec.key === 'couple' ? fullH * 0.78 : fullH
-    const y = topBand + (fullH - partH) / 2
-    const labelShift = spec.key === 'reducer' ? -partH * 0.16 : spec.key === 'drum' ? partH * 0.18 : 0
-    const part = {
-      ...spec,
-      x: cursor,
-      y,
-      w: partW,
-      h: partH,
-      labelY: y + partH / 2 + labelShift - (spec.lines.length - 1) * 8,
-      wires: [] as number[]
-    }
-    cursor += partW + gap
-    if (spec.key === 'drum') {
-      part.wires = [0.28, 0.4, 0.52, 0.64].map(ratio => part.y + part.h * ratio)
-    }
-    return part
-  })
-  const byKey = Object.fromEntries(parts.map(part => [part.key, part]))
-  const reducer = byKey.reducer
-  const motor = byKey.motor
-  const bearing = byKey.bearing
-  const places: Record<string, { x: number; y: number; edge: 'top' | 'bottom' }> = {
-    'M-01': { x: motor.x + motor.w * 0.55, y: motor.y + 28, edge: 'top' },
-    'G-01': { x: reducer.x + reducer.w * 0.4, y: reducer.y + 28, edge: 'top' },
-    'G-02': { x: reducer.x + reducer.w * 0.28, y: reducer.y + reducer.h - 28, edge: 'bottom' },
-    'G-03': { x: reducer.x + reducer.w * 0.72, y: reducer.y + reducer.h * 0.62, edge: 'bottom' },
-    'D-01': { x: bearing.x + bearing.w * 0.5, y: bearing.y + 28, edge: 'top' }
-  }
-  const draft = props.points.flatMap(point => {
-    const place = places[point.id]
-    if (!place) return []
-    const sw = textWidth(point.id, 12)
-    const fw = textWidth(`${point.name} ${point.id}`)
-    return [{ point, ...place, sw, fw, sx: clampCenter(place.x, sw, w) }]
-  })
-  for (const edge of ['top', 'bottom'] as const) {
-    spread(draft.filter(item => item.edge === edge).map(item => ({ lx: item.sx, w: item.sw, item })), w)
-      .forEach(entry => { entry.item.sx = clampCenter(entry.lx, entry.item.sw, w) })
-  }
-  const marks = draft.map(item => ({
-    ...item.point,
-    x: item.x,
-    y: item.y,
-    sx: item.sx,
-    sy: item.edge === 'top' ? 34 : h - 34,
-    sw: item.sw,
-    fx: clampCenter(item.x, item.fw, w),
-    fy: item.edge === 'top' ? 13 : h - 13,
-    fw: item.fw,
-    status: item.point.status as Exclude<Tone, 'na'>
-  }))
-  const shaftY = topBand + fullH / 2
-  return {
-    box: `0 0 ${w} ${h}`,
-    beam: { x: 0, y: 0, w: 0, h: 0 },
-    flange: 0,
-    trucks: [],
-    stationY: 0,
-    stations: [],
-    webs: [],
-    parts,
-    shaft: { x1: motor.x + motor.w, y: shaftY, x2: bearing.x, y2: shaftY },
-    marks
-  }
-})
 </script>
+
+<style scoped>
+.ps-canvas-host { position: relative; width: 100%; overflow: hidden; }
+.ps-canvas { position: absolute; left: 0; top: 0; width: 568px; height: 230px; transform-origin: top left; }
+.ps-abs { position: absolute; box-sizing: border-box; }
+.ps-truck, .ps-part {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 1px;
+  border-radius: 3px;
+  font-size: 11px;
+}
+.ps-truck { background: #e2e8f0; border: 1px solid #94a3b8; color: #475569; line-height: 16px; }
+.ps-part { background: #dbeafe; border: 1.5px solid #60a5fa; border-radius: 4px; color: #1e3a8a; font-size: 12px; padding-top: 4px; }
+.ps-drum { background: repeating-linear-gradient(90deg, #dbeafe 0 14px, #cfe0fb 14px 16px); }
+.ps-small { font-size: 11px; color: #6b7280; text-align: center; }
+.ps-station { top: 196px; width: 40px; font-size: 11px; color: #6b7280; text-align: center; }
+.ps-dot {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border-radius: 50%;
+  border: 3px solid #16a34a;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+.ps-dot.dim { opacity: 0.16; pointer-events: none; }
+.ps-leader { position: absolute; width: 1.5px; background: #1677ff; }
+.ps-callout {
+  position: absolute;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 14px;
+  background: #1677ff;
+  color: #fff;
+  font-size: 13px;
+  white-space: nowrap;
+  z-index: 3;
+}
+.ps-callout b { font-weight: 700; }
+.ps-callout span { font-size: 12px; opacity: 0.9; }
+</style>

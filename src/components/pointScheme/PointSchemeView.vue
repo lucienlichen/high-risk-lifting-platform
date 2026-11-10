@@ -2,7 +2,9 @@
   <div class="ps-page" :data-scheme="scheme" :data-side="side">
     <header class="ps-info">
       <button type="button" class="ps-back" @click="$emit('back')">← 返回部件模型</button>
-      <span class="ps-path">{{ pathOf(side) }}</span>
+      <strong class="ps-dev">3G211-A2</strong>
+      <span class="ps-path">{{ side === 'structure' ? '冶金桥式起重机 / 金属结构 / 桥架 / 单双主梁' : '冶金桥式起重机 / 起升机构 / 主起升机构 / 驱动装置' }}</span>
+      <span class="ps-split"></span>
       <span class="ps-cur-label">当前点位</span>
       <strong class="ps-cur-name">{{ active.name }}</strong>
       <span class="ps-id">{{ active.id }}</span>
@@ -23,7 +25,7 @@
           <div class="ps-table-hd">
             <div class="ps-table-hd-top">
               <strong>点位表</strong>
-              <span class="ps-count">共 {{ points.length }} 个 · 报警 {{ counts.alarm }} · 异常 {{ counts.warn }}</span>
+              <span class="ps-count">共 {{ points.length }} 个 · <em class="a">报警 {{ counts.alarm }}</em> · <em class="w">异常 {{ counts.warn }}</em></span>
             </div>
             <div class="ps-table-hd-bot">
               <input v-model="search" class="ps-search" type="search" placeholder="搜索名称或编号" aria-label="搜索名称或编号">
@@ -35,16 +37,16 @@
         <section class="ps-model-wrap">
           <div class="ps-tools">
             <strong>{{ side === 'structure' ? '结构模型' : '机构模型' }}</strong>
-            <span class="ps-count">{{ side === 'structure' ? '主梁 · 立面示意' : '主起升 · 传动链示意' }}</span>
+            <span class="ps-count">{{ side === 'structure' ? '单双主梁 · 立面示意' : '主起升机构 · 传动链示意' }}</span>
           </div>
           <SchemeModel :side="side" :points="points" :selected-id="active.id" :hidden-ids="hiddenIds" @select="selectPoint" />
-          <p class="ps-cap">{{ side === 'structure' ? '上翼缘在梁上方，下翼缘在梁下方，腹板在侧边。实心为实测点，空心为孪生点。' : '电机 → 联轴器 → 减速器 → 卷筒 → 轴承座。实心为实测点。' }}</p>
+          <p class="ps-cap">{{ side === 'structure' ? '上翼缘点位在梁上沿，下翼缘在下沿，腹板在中部；实心为实测点，空心为孪生点' : '电机 → 联轴器 → 减速器 → 卷筒 → 卷筒轴承座；实心为实测点' }}</p>
         </section>
       </div>
       <div class="ps-final-right">
         <section class="ps-panel">
           <div class="ps-dtabs" role="tablist" aria-label="监测数据">
-            <button v-for="tab in finalTabs" :key="tab.key" type="button" :class="{ on: dataKey === tab.key }" @click="pickData(tab.key)">{{ tab.name }}</button>
+            <button v-for="tab in finalTabs" :key="tab.key" type="button" :class="{ on: dataKey === tab.key, na: !tab.live }" @click="pickData(tab.key)">{{ tab.name }}</button>
           </div>
           <div class="ps-panel-bd">
             <MonitorBoard v-if="dataKey === 'health'" :side="side" :point="active" />
@@ -71,7 +73,7 @@ import SchemeTable from '@/components/pointScheme/SchemeTable.vue'
 import {
   DATA_TABS, TONE_TEXT, WEIGHT_AXIS, WEIGHT_SERIES,
   cardOrder, conditionCards, cycleHead, cyclesFor, defaultPointId, healthStats,
-  modelCaption, modelTitle, navKeys, pathOf, pointsOf, serviceViews,
+  navKeys, pointsOf, serviceViews,
   type DataKey, type SchemeId, type SchemePoint, type Side, type SvcKey, type SvcView, type Tone
 } from '@/mock/pointSchemeData'
 import type { EChartsOption } from 'echarts'
@@ -90,12 +92,12 @@ const scheme = ref<SchemeId>(1)
 const side = ref<Side>('structure')
 const selectedId = ref('ML-01')
 const dataKey = ref<DataKey>('health')
-const finalTabs: { key: DataKey; name: string }[] = [
-  { key: 'health', name: '健康监测' },
-  { key: 'safety', name: '安全监控' },
-  { key: 'risk', name: '风险监测' },
-  { key: 'inspect', name: '检验检测' },
-  { key: 'patrol', name: '日常点巡检' }
+const finalTabs: { key: DataKey; name: string; live: boolean }[] = [
+  { key: 'health', name: '健康监测', live: true },
+  { key: 'safety', name: '安全监控', live: true },
+  { key: 'risk', name: '风险监测', live: false },
+  { key: 'inspect', name: '检验检测', live: false },
+  { key: 'patrol', name: '日常点巡检', live: false }
 ]
 const svcKey = ref<SvcKey>('overview')
 const showService = ref(false)
@@ -223,18 +225,6 @@ function weightOption(): EChartsOption {
   }
 }
 
-function series(seed: number, count: number, base: number, amp: number) {
-  return Array.from({ length: count }, (_, index) => Math.round((base + Math.sin((index + seed) / 2.2) * amp + ((index * 3 + seed) % 5) * amp * 0.15) * 10) / 10)
-}
-function axisStep(min: number, max: number) {
-  const span = Math.max(max - min, 1e-9)
-  const raw = span / 4
-  const pow = 10 ** Math.floor(Math.log10(raw))
-  const n = raw / pow
-  const nice = n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10
-  return nice * pow
-}
-
 function trendOption(values: number[], labels: string[], color: string, min: number, max: number, marks: { value: number; name: string; color: string }[] = []): EChartsOption {
   return {
     animation: false,
@@ -244,8 +234,8 @@ function trendOption(values: number[], labels: string[], color: string, min: num
       type: 'value',
       min,
       max,
-      interval: axisStep(min, max),
-      axisLabel: { fontSize: 10, color: '#94a3b8', hideOverlap: true },
+      interval: max > min ? max - min : undefined,
+      axisLabel: { fontSize: 11, color: '#6b7280', hideOverlap: true },
       splitLine: { lineStyle: { color: '#f1f5f9' } }
     },
     series: [{
@@ -254,67 +244,102 @@ function trendOption(values: number[], labels: string[], color: string, min: num
     }]
   }
 }
-function num(base: number, point: SchemePoint, digits = 1) {
-  if (point.id === 'ML-01' || point.id === 'G-01') return base.toFixed(digits)
-  const factor = point.status === 'alarm' ? 1.35 : point.status === 'warn' ? 1.18 : 0.9
-  return (base * factor).toFixed(digits)
+type ToneKey = SchemePoint['status']
+type Kpi = { label: string; value: string; unit: string; tone?: ToneKey }
+const STRUCT_PROFILE = {
+  ok: { s: 97.2, mx: 142.6, mn: 38.1, D: 0.42, lv: 0, y: 6.2, rn: '8.9×10⁵', ae: { st: 'ok' as ToneKey, rate: 3, amp: 42, en: '1.2×10³' }, ec: { amp: 0.12, ph: 12 } },
+  warn: { s: 151.4, mx: 168.3, mn: 41.0, D: 0.74, lv: 2, y: 3.4, rn: '4.0×10⁵', ae: { st: 'ok' as ToneKey, rate: 5, amp: 47, en: '2.0×10³' }, ec: { amp: 0.15, ph: 14 } },
+  alarm: { s: 186.4, mx: 198.3, mn: 41.2, D: 0.88, lv: 3, y: 1.6, rn: '1.8×10⁵', ae: { st: 'warn' as ToneKey, rate: 18, amp: 68, en: '9.6×10³' }, ec: { amp: 0.21, ph: 17 } }
+}
+const MECH_PROFILE = {
+  ok: { rms: 2.8, pk: 1.9, ku: 3.1, vi: 2.6, stage: 0, life: 1860, ci: '1620–2050', bpfo: '0.08 g' },
+  warn: { rms: 5.2, pk: 3.6, ku: 4.6, vi: 4.9, stage: 1, life: 410, ci: '320–520', bpfo: '0.41 g' },
+  alarm: { rms: 5.2, pk: 3.6, ku: 4.6, vi: 4.9, stage: 1, life: 410, ci: '320–520', bpfo: '0.41 g' }
+}
+const LV_NAME = ['Ⅰ级 健康', 'Ⅱ级 亚健康', 'Ⅲ级 关注', 'Ⅳ级 高危预警', 'Ⅴ级 失效']
+const LV_ACT = ['正常运行', '监测运行', '密切监测', '控载速修', '立即停机']
+const STAGE = ['A 正常', 'B 早期', 'C 故障', 'D 失效']
+const HOUR = ['14:30', '14:45', '15:00', '15:15', '15:30']
+
+function rndSeries(count: number, seed: number, map: (index: number, random: number) => number) {
+  let state = seed
+  return Array.from({ length: count }, (_, index) => {
+    state = (state * 9301 + 49297) % 233280
+    return Math.round(map(index, state / 233280) * 100) / 100
+  })
+}
+function xLabels(count: number, labels: string[]) {
+  return Array.from({ length: count }, (_, index) => {
+    if (index === 0) return labels[0]
+    if (index === count - 1) return labels[labels.length - 1]
+    const slot = Math.round(index / (count - 1) * (labels.length - 1))
+    return index === Math.round(slot / (labels.length - 1) * (count - 1)) ? labels[slot] : ''
+  })
 }
 
 const MonitorBoard = defineComponent({
   name: 'MonitorBoard',
   props: { side: { type: String as PropType<Side>, required: true }, point: { type: Object as PropType<SchemePoint>, required: true } },
   setup(props) {
-    const hour = ['14:30', '', '', '14:45', '', '', '15:00', '', '', '15:15', '', '', '15:30']
     return () => {
       const point = props.point
-      const tone = point.status
       if (props.side === 'structure') {
-        const stress = Number(num(97.2, point))
-        return h('div', { class: 'ps-mon-grid cols-3' }, [
-          monitor('应力光纤监测数据', tone, '光纤光栅应变 · 50 Hz', [
-            ['实时应力', `${num(97.2, point)} MPa`],
-            ['今日最大', `${num(142.6, point)} MPa`],
-            ['今日最大应力幅', `${num(104.5, point)} MPa`],
-            ['今日应力循环', '146 次']
-          ], '应力时程 · 近 1 小时', '单位 MPa', trendOption(series(2, 13, stress, 18), hour, '#1677ff', 0, 240, [
-            { value: 215, name: '预警 215', color: '#fa8c16' },
-            { value: 230, name: '报警 230', color: '#f5222d' }
-          ])),
-          monitor('疲劳损伤声发射监测数据', tone, '声发射传感器', [
-            ['撞击计数率', `${num(3, point, 0)} 次/min`],
-            ['最大幅值', `${num(42, point, 0)} dB`]
-          ], '声发射幅值 · 近 24 小时', '单位 dB', trendOption(series(4, 8, 36, 6), ['昨日', '', '', '', '', '', '', '今日'], '#722ed1', 0, 100, [
-            { value: 60, name: '关注 60 dB', color: '#fa8c16' }
+        const data = STRUCT_PROFILE[point.status]
+        const stress = rndSeries(48, 11 + point.status.length, (index, random) => (Math.sin(index / 5) > -0.1 ? data.s * 0.82 + random * data.s * 0.3 : data.mn + random * 8))
+        const acoustic = rndSeries(36, 17, (index, random) => data.ae.amp * 0.6 + random * data.ae.amp * 0.45 + (data.ae.st === 'warn' ? index * 0.25 : 0))
+        const eddy = rndSeries(28, 23, (_, random) => data.ec.amp * 0.8 + random * data.ec.amp * 0.4)
+        return h('div', { class: 'ps-mon-grid cols-4' }, [
+          monitor('应力光纤监测数据', point.status === 'ok' ? 'ok' : point.status, '光纤光栅应变 · 50 Hz', [
+            { label: '实时应力', value: String(data.s), unit: 'MPa', tone: point.status === 'ok' ? undefined : point.status },
+            { label: '今日最大', value: String(data.mx), unit: 'MPa' },
+            { label: '今日最大应力幅', value: (data.mx - data.mn).toFixed(1), unit: 'MPa' },
+            { label: '今日应力循环', value: '146', unit: '次' }
+          ], '应力时程 · 近 1 小时', '单位 MPa', trendOption(stress, xLabels(stress.length, HOUR), '#1677ff', 0, 240, [
+            { value: 190, name: '预警 190', color: '#b45309' },
+            { value: 215, name: '报警 215', color: '#c62828' }
+          ]), 2),
+          monitor('疲劳损伤声发射监测数据', data.ae.st, '声发射传感器', [
+            { label: '撞击计数率', value: String(data.ae.rate), unit: '次/min', tone: data.ae.st === 'ok' ? undefined : data.ae.st },
+            { label: '最大幅值', value: String(data.ae.amp), unit: 'dB' }
+          ], '声发射幅值 · 近 24 小时', '单位 dB', trendOption(acoustic, xLabels(acoustic.length, ['昨日', '', '今日']), '#7c3aed', 0, 100, [
+            { value: 60, name: '关注 60 dB', color: '#b45309' }
           ])),
           monitor('疲劳裂纹涡流监测数据', 'ok', '涡流传感器', [
-            ['涡流信号幅值', `${num(0.12, point, 2)} V`],
-            ['相位', '12 °']
-          ], '涡流幅值 · 近 7 天', '单位 V', trendOption(series(6, 7, 0.12, 0.03), ['11-01', '', '', '11-04', '', '', '11-07'], '#13c2c2', 0, 1, [
-            { value: 0.5, name: '裂纹阈值 0.5 V', color: '#f5222d' }
+            { label: '涡流信号幅值', value: String(data.ec.amp), unit: 'V' },
+            { label: '相位', value: String(data.ec.ph), unit: '°' }
+          ], '涡流幅值 · 近 7 天', '单位 V', trendOption(eddy, xLabels(eddy.length, ['11-01', '', '11-07']), '#0d9488', 0, 1, [
+            { value: 0.5, name: '裂纹阈值 0.5 V', color: '#c62828' }
           ]))
         ])
       }
-      return h('div', { class: 'ps-mon-grid cols-2' }, [
-        monitor('振动监测数据', tone, 'ICP 加速度传感器（径向）· 25.6 kHz', [
-          ['振动有效值', `${num(2.8, point)} mm/s`],
-          ['峰值加速度', `${num(1.2, point)} g`],
-          ['峭度', num(3.1, point)]
-        ], '振动有效值 · 近 1 小时', '单位 mm/s', trendOption(series(3, 13, Number(num(2.8, point)), 0.6), hour, '#1677ff', 0, 9, [
-          { value: 4.5, name: '预警 4.5', color: '#fa8c16' }
-        ])),
+      const data = MECH_PROFILE[point.status]
+      const vibration = rndSeries(48, 31, (index, random) => (Math.sin(index / 5) > -0.1 ? data.rms * 0.85 + random * data.rms * 0.35 : 0.3 + random * 0.3))
+      const speed = rndSeries(48, 37, (index, random) => (Math.sin(index / 5) > -0.1 ? 975 + random * 20 : 0))
+      return h('div', { class: 'ps-mon-grid cols-3' }, [
+        monitor('振动监测数据', point.status, 'ICP 加速度传感器（径向）· 25.6 kHz', [
+          { label: '振动有效值', value: String(data.rms), unit: 'mm/s', tone: point.status === 'ok' ? undefined : point.status },
+          { label: '峰值加速度', value: String(data.pk), unit: 'g' },
+          { label: '峭度', value: String(data.ku), unit: '', tone: point.status === 'ok' ? undefined : point.status }
+        ], '振动有效值 · 近 1 小时', '单位 mm/s', trendOption(vibration, xLabels(vibration.length, HOUR), '#1677ff', 0, 9, [
+          { value: 4.5, name: '预警 4.5', color: '#b45309' },
+          { value: 7.1, name: '报警 7.1', color: '#c62828' }
+        ]), 2),
         monitor('转速监测数据', 'ok', '电机编码器', [
-          ['转速', '985 r/min'],
-          ['波动', '±1.2 %']
-        ], '转速 · 近 1 小时', '单位 r/min', trendOption(series(1, 13, 980, 40), hour, '#1677ff', 0, 1200, []))
+          { label: '转速', value: '985', unit: 'r/min' },
+          { label: '波动', value: '±1.2', unit: '%' }
+        ], '转速 · 近 1 小时', '单位 r/min', trendOption(speed, xLabels(speed.length, ['14:30', '15:00', '15:30']), '#0f766e', 0, 1200, []))
       ])
     }
   }
 })
 
-function monitor(title: string, tone: SchemePoint['status'] | 'ok', sensor: string, stats: [string, string][], chart: string, unit: string, option: EChartsOption) {
-  return h('article', { class: 'ps-mon' }, [
+function monitor(title: string, tone: ToneKey, sensor: string, stats: Kpi[], chart: string, unit: string, option: EChartsOption, span = 1) {
+  return h('article', { class: ['ps-mon', tone === 'ok' ? '' : `is-${tone}`, span === 2 ? 'span-2' : ''] }, [
     h('header', [h('b', title), h('i', { class: ['ps-pill', tone] }, TONE_TEXT[tone]), h('span', sensor)]),
-    h('div', { class: 'ps-mini-metrics' }, stats.map(([label, value]) => h('div', { class: 'ps-mini' }, [h('span', label), h('strong', value)]))),
+    h('div', { class: 'ps-mini-metrics' }, stats.map(item => h('div', { class: 'ps-mini' }, [
+      h('span', item.label),
+      h('div', [h('strong', { class: item.tone ? `is-${item.tone}` : '' }, item.value), item.unit ? h('em', item.unit) : null])
+    ]))),
     h('div', { class: 'ps-chart-hd' }, [h('b', chart), h('span', unit)]),
     h('div', { class: 'ps-chart' }, [h(SchemeChart, { option })])
   ])
@@ -326,63 +351,85 @@ const ResultBoard = defineComponent({
   setup(props) {
     return () => {
       const point = props.point
-      const tone = point.status
       if (props.side === 'structure') {
-        const damage = point.id === 'ML-01' ? '0.42' : num(0.42, point, 2)
-        const hot = tone === 'alarm' ? '累积损伤超限' : tone === 'warn' ? '累积损伤接近限值' : 'I 级 健康 · 处置：正常运行'
+        const data = STRUCT_PROFILE[point.status]
+        const damageTone: ToneKey = data.lv <= 1 ? 'ok' : data.lv === 2 ? 'warn' : 'alarm'
+        const yearTone: ToneKey = data.y < 1 ? 'alarm' : data.y < 2 ? 'warn' : 'ok'
+        const months = ['1月', '4月', '7月', '11月']
+        const damage = rndSeries(11, 41, (index, random) => data.D - 0.09 + index * 0.009 + random * 0.002)
+        const remain = rndSeries(11, 47, (index, random) => data.y + 0.9 - index * 0.09 - random * 0.02)
+        const hits = rndSeries(14, 53, (index, random) => data.ae.rate * 0.7 + random * data.ae.rate * 0.4 + (data.ae.st === 'warn' ? index * 0.9 : 0))
+        const eddy = rndSeries(14, 59, (_, random) => data.ec.amp * 0.85 + random * data.ec.amp * 0.3)
         return h('div', { class: 'ps-result-grid cols-4' }, [
-          result('疲劳累积损伤评估', tone, `D = ${damage}`, hot, [
+          result('疲劳累积损伤评估', damageTone, `D = ${data.D}`, `${LV_NAME[data.lv]} · 处置：${LV_ACT[data.lv]}`, [
             ['已发生循环', '6.4×10⁵ 次'],
             ['结果时间', '11-06 09:18']
-          ], grades(['I', 'II', 'III', 'IV', 'V'], tone === 'alarm' ? 2 : tone === 'warn' ? 1 : 0), '累积损伤度 D · 今年', trendOption(series(5, 8, Number(damage), 0.04), ['1月', '', '', '', '', '', '', '11月'], '#1677ff', 0, 1, [{ value: 0.8, name: 'II级', color: '#fa8c16' }]), '应力光纤监测数据'),
-          result('裂纹预测', tone, point.id === 'ML-01' ? '6.2 年' : `${num(6.2, point)} 年`, '预计裂纹萌生前的剩余寿命', [
-            ['剩余损伤度', point.id === 'ML-01' ? '0.58' : num(0.58, point, 2)],
-            ['剩余循环', '8.9×10⁵ 次']
-          ], grades(['>2 年', '1–2 年', '<1 年'], tone === 'alarm' ? 2 : tone === 'warn' ? 1 : 0), '剩余损伤度 · 今年', trendOption(series(7, 8, 0.5, 0.05), ['1月', '', '', '', '', '', '', '11月'], '#1677ff', 0, 1, []), '应力光纤监测数据'),
-          result('疲劳损伤程度诊断', tone, tone === 'ok' ? '未见加速演化' : '损伤活动增强', tone === 'ok' ? '声发射活动平稳，损伤处于稳定累积阶段' : '声发射计数抬升，需关注', [
-            ['撞击计数率', `${num(3, point, 0)} 次/min`],
-            ['累计能量', '1.2×10³ mV·μs']
-          ], null, '日撞击计数率 · 近 14 天', trendOption(series(8, 8, 3, 1.2), ['', '', '', '', '', '', '', '今日'], '#722ed1', 0, 12, [{ value: 8, name: '关注', color: '#fa8c16' }]), '疲劳损伤声发射监测数据'),
+          ], grades(['Ⅰ', 'Ⅱ', 'Ⅲ', 'Ⅳ', 'Ⅴ'], data.lv, ['#16a34a', '#65a30d', '#d97706', '#ea580c', '#dc2626']), '累积损伤度 D · 今年', trendOption(damage, xLabels(damage.length, months), '#7c3aed', 0, 1, [{ value: 0.7, name: 'Ⅲ级', color: '#b45309' }]), '应力光纤监测数据'),
+          result('裂纹预测', yearTone, `${data.y} 年`, '预计裂纹萌生前的剩余寿命', [
+            ['剩余损伤度', (1 - data.D).toFixed(2)],
+            ['剩余循环', `${data.rn} 次`]
+          ], grades(['≥2 年', '1–2 年', '<1 年'], data.y < 1 ? 2 : data.y < 2 ? 1 : 0, ['#16a34a', '#ea580c', '#dc2626']), '剩余年限 · 今年', trendOption(remain, xLabels(remain.length, months), '#0d9488', 0, 8, []), '应力光纤监测数据'),
+          result('疲劳损伤程度诊断', data.ae.st, data.ae.st === 'ok' ? '未见加速演化' : '损伤演化加速', data.ae.st === 'ok' ? '声发射活动平稳，损伤处于稳定累积阶段' : '撞击计数率近两周持续上升，建议缩短巡检周期', [
+            ['撞击计数率', `${data.ae.rate} 次/min`],
+            ['累计能量', `${data.ae.en} mV·μs`]
+          ], null, '日撞击计数率 · 近 14 天', trendOption(hits, xLabels(hits.length, ['10-25', '11-01', '11-07']), '#7c3aed', 0, 30, [{ value: 12, name: '关注', color: '#b45309' }]), '疲劳损伤声发射监测数据'),
           result('裂纹判别', 'ok', '未发现裂纹', '涡流信号低于裂纹阈值 0.5 V', [
-            ['涡流信号', `${num(0.12, point, 2)} V`],
+            ['涡流幅值', `${data.ec.amp} V`],
             ['最近判别', '11-07 15:00']
-          ], null, '涡流幅值 · 近 14 天', trendOption(series(9, 8, 0.12, 0.03), ['', '', '', '', '', '', '', '今日'], '#13c2c2', 0, 0.8, [{ value: 0.5, name: '阈值', color: '#f5222d' }]), '疲劳裂纹涡流监测数据')
+          ], null, '涡流幅值 · 近 14 天', trendOption(eddy, xLabels(eddy.length, ['10-25', '11-01', '11-07']), '#0d9488', 0, 1, [{ value: 0.5, name: '阈值', color: '#c62828' }]), '疲劳裂纹涡流监测数据')
         ])
       }
+      const data = MECH_PROFILE[point.status]
+      const healthTone: ToneKey = data.ku >= 6 ? 'alarm' : data.ku >= 4 ? 'warn' : 'ok'
+      const lifeTone: ToneKey = data.life < 365 ? 'alarm' : data.life < 730 ? 'warn' : 'ok'
+      const faultTone: ToneKey = data.stage === 0 ? 'ok' : 'warn'
+      const kurtosis = rndSeries(30, 61, (index, random) => data.ku * 0.85 + random * data.ku * 0.25 + (point.status === 'warn' ? index * 0.02 : 0))
+      const life = rndSeries(30, 67, (index, random) => data.rms * 0.75 + random * data.rms * 0.2 + (point.status === 'warn' ? index * 0.03 : 0))
+      const fft = rndSeries(80, 71, (index, random) => {
+        const freq = index * 12.5
+        let value = 0.03 + random * 0.03
+        ;[[16.4, 0.55], [32.8, 0.25], [58.6, point.status === 'warn' ? 0.5 : 0.08], [377, 0.7], [754, 0.3]].forEach(([peak, amp]) => {
+          value += amp * Math.exp(-(((freq - peak) / 8) ** 2))
+        })
+        return value
+      })
       return h('div', { class: 'ps-result-grid cols-3' }, [
-        result('健康评估', tone, `峭度 ${num(3.1, point)}`, tone === 'ok' ? '特征值均在异常线以下，运行良好' : '特征值接近或超过异常线', [
-          ['振动烈度', `${num(2.6, point)} mm/s`],
-          ['有效值', `${num(2.8, point)} mm/s`]
-        ], null, '峭度 · 近 30 天', trendOption(series(4, 10, Number(num(3.1, point)), 0.3), ['', '', '', '', '', '', '', '', '', '今日'], '#722ed1', 0, 8, [
-          { value: 6, name: '危险', color: '#f5222d' },
-          { value: 4.5, name: '异常', color: '#fa8c16' }
+        result('健康评估', healthTone, `峭度 ${data.ku}`, healthTone === 'ok' ? '特征值均在异常线以下，运行良好' : '峭度超过异常线 4.0，建议关注', [
+          ['振动烈度', `${data.vi} mm/s`],
+          ['有效值', `${data.rms} mm/s`]
+        ], null, '峭度 · 近 30 天', trendOption(kurtosis, xLabels(kurtosis.length, ['10-08', '10-22', '11-07']), '#7c3aed', 0, 8, [
+          { value: 4, name: '异常', color: '#b45309' },
+          { value: 6, name: '危险', color: '#c62828' }
         ]), '振动监测数据'),
-        result('寿命预测', 'ok', '1860 天', '置信区间 1620–2050 天 · 约 5.1 年', [
-          ['状态阶段', 'A 正常'],
+        result('寿命预测', lifeTone, `${data.life} 天`, `置信区间 ${data.ci} 天 · 约 ${(data.life / 365).toFixed(1)} 年`, [
+          ['状态阶段', STAGE[data.stage]],
           ['计算时间点', '11-06 09:00']
-        ], grades(['A 正常', 'B 早期', 'C 故障', 'D 失效'], 0), '有效值 · 算法入参（近 30 天）', trendOption(series(2, 10, 2.8, 0.25), ['', '', '', '', '', '', '', '', '', '今日'], '#1677ff', 0, 6, [{ value: 4.5, name: '预警', color: '#fa8c16' }]), '振动监测数据'),
-        result('故障诊断', tone, tone === 'ok' ? '状态 A 正常' : '特征频率升高', tone === 'ok' ? '各特征频率幅值正常' : '包络谱出现需关注峰值', [
-          ['BPFO 58.6 Hz', tone === 'ok' ? '0.08 g' : '0.21 g'],
+        ], grades(['A 正常', 'B 早期', 'C 故障', 'D 失效'], data.stage, ['#16a34a', '#d97706', '#ea580c', '#dc2626']), '有效值 · 算法入参（近 30 天）', trendOption(life, xLabels(life.length, ['10-08', '10-22', '11-06']), '#1677ff', 0, 9, [{ value: 4.5, name: '预警', color: '#b45309' }]), '振动监测数据'),
+        result('故障诊断', faultTone, `状态 ${STAGE[data.stage]}`, faultTone === 'ok' ? '各特征频率幅值正常' : '轴承外圈特征频率（BPFO）幅值偏高', [
+          ['BPFO 58.6 Hz', data.bpfo],
           ['啮合频率', '377 Hz']
-        ], null, 'FFT 频谱 · 0–1000 Hz', trendOption([0.02, 0.04, 0.9, 0.05, 0.08, 0.7, 0.04, 0.2, 0.03, 0.06], ['0', '', '', '', '500', '', '', '', '', '1000'], '#13c2c2', 0, 1, []), '振动 + 转速监测数据')
+        ], null, 'FFT 频谱 · 0–1000 Hz', trendOption(fft, xLabels(fft.length, ['0', '500', '1000 Hz']), '#0f766e', 0, 1, []), '振动 + 转速监测数据')
       ])
     }
   }
 })
 
-function grades(labels: string[], on: number) {
-  return h('div', { class: 'ps-grade' }, labels.map((label, index) => h('i', { class: index === on ? 'on' : '' }, label)))
+function grades(labels: string[], on: number, colors: string[]) {
+  return h('div', { class: 'ps-grade' }, labels.map((label, index) => h('i', {
+    class: index === on ? 'on' : '',
+    style: index === on ? { background: colors[index] } : { background: `${colors[index]}1a` }
+  }, label)))
 }
-function result(title: string, tone: SchemePoint['status'] | 'ok', hero: string, line: string, stats: [string, string][], grade: ReturnType<typeof h> | null, chart: string, option: EChartsOption, basis: string) {
-  return h('article', { class: 'ps-result' }, [
+function result(title: string, tone: ToneKey, hero: string, line: string, facts: [string, string][], grade: ReturnType<typeof h> | null, chart: string, option: EChartsOption, basis: string) {
+  return h('article', { class: ['ps-result', tone === 'ok' ? '' : `is-${tone}`] }, [
     h('header', [h('b', title), h('i', { class: ['ps-pill', tone] }, TONE_TEXT[tone])]),
-    h('strong', { class: 'ps-hero' }, hero),
+    h('strong', { class: ['ps-hero', tone === 'ok' ? '' : `is-${tone}`] }, hero),
     h('p', line),
-    h('div', { class: 'ps-mini-metrics' }, stats.map(([label, value]) => h('div', { class: 'ps-mini' }, [h('span', label), h('strong', value)]))),
     grade,
+    h('div', { class: 'ps-facts' }, facts.map(([label, value]) => h('div', { class: 'ps-fact' }, [h('span', label), h('b', value)]))),
     h('div', { class: 'ps-chart-hd' }, [h('b', chart)]),
     h('div', { class: 'ps-chart' }, [h(SchemeChart, { option })]),
-    h('span', { class: 'ps-basis' }, `依据 ${basis}`)
+    h('span', { class: 'ps-basis' }, ['依据 ', h('em', basis)])
   ])
 }
 
