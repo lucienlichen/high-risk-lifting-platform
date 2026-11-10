@@ -1,75 +1,90 @@
 <template>
-  <div class="ps-stage" :class="{ vertical, mechanism: side === 'mechanism' }">
-    <svg :viewBox="box" class="ps-svg" role="img" :aria-label="side === 'structure' ? '结构测点' : '机构测点'">
-      <template v-if="side === 'structure' && !vertical">
-        <rect x="28" y="168" width="52" height="64" rx="3" class="truck" />
-        <rect x="960" y="168" width="52" height="64" rx="3" class="truck" />
-        <text x="54" y="206" text-anchor="middle" class="truck-tx">端梁</text>
-        <text x="986" y="206" text-anchor="middle" class="truck-tx">端梁</text>
-        <rect x="72" y="176" width="896" height="48" class="beam" />
-        <line x1="72" y1="176" x2="968" y2="176" class="flange" />
-        <line x1="72" y1="224" x2="968" y2="224" class="flange" />
+  <div ref="stageEl" class="ps-stage" :class="{ mechanism: side === 'mechanism' }">
+    <svg :viewBox="layout.box" class="ps-svg" preserveAspectRatio="xMidYMid meet" role="img" :aria-label="side === 'structure' ? '结构测点' : '机构测点'">
+      <template v-if="side === 'structure'">
+        <rect
+          v-for="truck in layout.trucks"
+          :key="truck.key"
+          :x="truck.x"
+          :y="truck.y"
+          :width="truck.w"
+          :height="truck.h"
+          rx="3"
+          class="truck"
+        />
+        <text
+          v-for="truck in layout.trucks"
+          :key="`${truck.key}-tx`"
+          :x="truck.x + truck.w / 2"
+          :y="truck.y + truck.h / 2"
+          text-anchor="middle"
+          dominant-baseline="central"
+          class="truck-tx"
+        >端梁</text>
+        <rect :x="layout.beam.x" :y="layout.beam.y" :width="layout.beam.w" :height="layout.beam.h" class="beam" />
+        <rect :x="layout.beam.x" :y="layout.beam.y" :width="layout.beam.w" :height="layout.flange" class="flange-plate" />
+        <rect :x="layout.beam.x" :y="layout.beam.y + layout.beam.h - layout.flange" :width="layout.beam.w" :height="layout.flange" class="flange-plate" />
+        <line
+          v-for="web in layout.webs"
+          :key="web"
+          :x1="web"
+          :y1="layout.beam.y + layout.flange"
+          :x2="web"
+          :y2="layout.beam.y + layout.beam.h - layout.flange"
+          class="web"
+        />
         <g class="dim">
-          <line x1="84" y1="268" x2="956" y2="268" />
-          <template v-for="mark in structStations" :key="mark.t">
-            <line :x1="mark.x" y1="260" :x2="mark.x" y2="276" />
-            <text :x="mark.x" y="294" text-anchor="middle">{{ mark.t }}</text>
+          <line :x1="layout.beam.x" :y1="layout.stationY" :x2="layout.beam.x + layout.beam.w" :y2="layout.stationY" />
+          <template v-for="mark in layout.stations" :key="mark.t">
+            <line :x1="mark.x" :y1="layout.stationY - 6" :x2="mark.x" :y2="layout.stationY + 6" />
+            <text :x="mark.x" :y="layout.stationY + 16" text-anchor="middle">{{ mark.t }}</text>
           </template>
         </g>
       </template>
-      <template v-else-if="side === 'structure' && vertical">
-        <rect x="168" y="18" width="64" height="12" rx="1" class="truck" />
-        <rect x="168" y="470" width="64" height="12" rx="1" class="truck" />
-        <rect x="186" y="28" width="28" height="444" class="beam" />
-        <line x1="186" y1="28" x2="186" y2="472" class="flange" />
-        <line x1="214" y1="28" x2="214" y2="472" class="flange" />
-      </template>
-      <template v-else-if="!vertical">
-        <line x1="188" y1="188" x2="900" y2="188" class="shaft" />
-        <rect x="36" y="130" width="150" height="116" rx="4" class="box" />
-        <text x="111" y="196" text-anchor="middle" class="box-tx">电机</text>
-        <rect x="196" y="164" width="40" height="48" class="box" />
-        <text x="216" y="232" text-anchor="middle" class="tiny">联轴器·制动器</text>
-        <rect x="268" y="108" width="230" height="160" rx="4" class="box" />
-        <text x="383" y="196" text-anchor="middle" class="box-tx">减速器</text>
-        <line x1="430" y1="236" x2="498" y2="236" class="shaft" />
-        <rect x="530" y="148" width="340" height="80" class="box" />
-        <line x1="548" y1="170" x2="852" y2="170" class="wire" />
-        <line x1="548" y1="188" x2="852" y2="188" class="wire" />
-        <line x1="548" y1="206" x2="852" y2="206" class="wire" />
-        <text x="700" y="194" text-anchor="middle" class="box-tx">卷筒</text>
-        <rect x="888" y="156" width="86" height="64" rx="3" class="box" />
-        <text x="931" y="194" text-anchor="middle" class="box-tx">轴承座</text>
-      </template>
       <template v-else>
-        <line x1="92" y1="78" x2="92" y2="430" class="shaft" />
-        <rect x="36" y="16" width="112" height="56" rx="4" class="box" />
-        <text x="92" y="48" text-anchor="middle" class="box-tx">电机</text>
-        <rect x="68" y="92" width="48" height="26" class="box" />
-        <text x="92" y="132" text-anchor="middle" class="tiny">联轴器·制动器</text>
-        <rect x="28" y="148" width="128" height="118" rx="4" class="box" />
-        <text x="92" y="210" text-anchor="middle" class="box-tx">减速器</text>
-        <line x1="40" y1="248" x2="156" y2="248" class="shaft" />
-        <rect x="40" y="286" width="104" height="78" class="box" />
-        <line x1="52" y1="306" x2="132" y2="306" class="wire" />
-        <line x1="52" y1="322" x2="132" y2="322" class="wire" />
-        <line x1="52" y1="338" x2="132" y2="338" class="wire" />
-        <text x="92" y="330" text-anchor="middle" class="box-tx">卷筒</text>
-        <rect x="52" y="384" width="80" height="40" rx="3" class="box" />
-        <text x="92" y="408" text-anchor="middle" class="box-tx">轴承座</text>
+        <line :x1="layout.shaft.x1" :y1="layout.shaft.y" :x2="layout.shaft.x2" :y2="layout.shaft.y" class="shaft" />
+        <g v-for="part in layout.parts" :key="part.key">
+          <rect :x="part.x" :y="part.y" :width="part.w" :height="part.h" rx="4" class="box" />
+          <template v-if="part.key === 'drum'">
+            <line
+              v-for="wire in part.wires"
+              :key="wire"
+              :x1="part.x + 10"
+              :y1="wire"
+              :x2="part.x + part.w - 10"
+              :y2="wire"
+              class="wire"
+            />
+          </template>
+        </g>
+        <text
+          v-for="part in layout.parts"
+          :key="`${part.key}-tx`"
+          :x="part.x + part.w / 2"
+          :y="part.labelY"
+          text-anchor="middle"
+          class="box-tx"
+        >
+          <tspan
+            v-for="(line, index) in part.lines"
+            :key="line"
+            :x="part.x + part.w / 2"
+            :dy="index === 0 ? 0 : 16"
+          >{{ line }}</tspan>
+        </text>
       </template>
       <g
-        v-for="mark in marks"
+        v-for="mark in layout.marks"
         :key="mark.id"
         class="mk"
         :class="[mark.status, { on: mark.id === selectedId, twin: !mark.measured, dim: hiddenIds.includes(mark.id) }]"
         :data-marker="mark.id"
         @click="$emit('select', mark.id)"
       >
-        <circle v-if="mark.id === selectedId" class="halo" :cx="mark.x" :cy="mark.y" r="12" />
-        <circle class="dot" :cx="mark.x" :cy="mark.y" r="7" />
-        <rect class="pill" :x="mark.lx - mark.w / 2" :y="mark.ly - 9" :width="mark.w" height="18" rx="9" />
-        <text class="pill-tx" :x="mark.lx" :y="mark.ly + 4" text-anchor="middle">
+        <circle v-if="mark.id === selectedId" class="halo" :cx="mark.x" :cy="mark.y" r="13" />
+        <circle class="dot" :cx="mark.x" :cy="mark.y" r="8" />
+        <rect class="pill" :x="mark.lx - mark.w / 2" :y="mark.ly - 11" :width="mark.w" height="22" rx="11" />
+        <text class="pill-tx" :x="mark.lx" :y="mark.ly" text-anchor="middle" dominant-baseline="central">
           {{ mark.name }} {{ mark.id }} <tspan class="st">{{ TONE_TEXT[mark.status] }}</tspan>
         </text>
       </g>
@@ -78,7 +93,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { TONE_TEXT, type SchemePoint, type Side, type Tone } from '@/mock/pointSchemeData'
 
 const props = defineProps<{
@@ -90,79 +105,177 @@ const props = defineProps<{
 }>()
 defineEmits<{ select: [id: string] }>()
 
-const structStations = [
-  { t: '0', x: 90 },
-  { t: 'L/4', x: 300 },
-  { t: 'L/2', x: 520 },
-  { t: '3L/4', x: 740 },
-  { t: 'L', x: 950 }
-]
+const stageEl = ref<HTMLElement | null>(null)
+const size = ref({ w: 360, h: 420 })
+let observer: ResizeObserver | null = null
 
-interface Geom { x: number; y: number; ly: number; edge?: 'left' | 'right'; lx?: number }
-const H_STRUCT: Record<string, Geom> = {
-  'ML-07': { x: 130, y: 188, ly: 120 },
-  'ML-03': { x: 300, y: 188, ly: 120 },
-  'ML-01': { x: 520, y: 188, ly: 120 },
-  'ML-05': { x: 740, y: 188, ly: 120 },
-  'ML-10': { x: 920, y: 188, ly: 120 },
-  'ML-08': { x: 200, y: 214, ly: 330 },
-  'ML-04': { x: 370, y: 214, ly: 330 },
-  'ML-02': { x: 520, y: 214, ly: 360 },
-  'ML-06': { x: 780, y: 214, ly: 330 },
-  'ML-09': { x: 610, y: 248, ly: 390, edge: 'right', lx: 640 }
-}
-const V_STRUCT: Record<string, Geom> = {
-  'ML-07': { x: 188, y: 72, ly: 72, edge: 'left', lx: 172 },
-  'ML-03': { x: 188, y: 168, ly: 168, edge: 'left', lx: 172 },
-  'ML-01': { x: 188, y: 264, ly: 264, edge: 'left', lx: 172 },
-  'ML-05': { x: 188, y: 360, ly: 360, edge: 'left', lx: 172 },
-  'ML-10': { x: 188, y: 448, ly: 448, edge: 'left', lx: 172 },
-  'ML-08': { x: 212, y: 72, ly: 72, edge: 'right', lx: 228 },
-  'ML-04': { x: 212, y: 168, ly: 168, edge: 'right', lx: 228 },
-  'ML-02': { x: 212, y: 264, ly: 264, edge: 'right', lx: 228 },
-  'ML-09': { x: 212, y: 320, ly: 320, edge: 'right', lx: 228 },
-  'ML-06': { x: 212, y: 416, ly: 416, edge: 'right', lx: 228 }
-}
-const H_MECH: Record<string, Geom> = {
-  'M-01': { x: 196, y: 188, ly: 78 },
-  'G-01': { x: 330, y: 188, ly: 72 },
-  'G-03': { x: 512, y: 188, ly: 72 },
-  'G-02': { x: 400, y: 236, ly: 300 },
-  'D-01': { x: 931, y: 168, ly: 78 }
-}
-const V_MECH: Record<string, Geom> = {
-  'M-01': { x: 92, y: 84, ly: 84, edge: 'right', lx: 168 },
-  'G-01': { x: 36, y: 176, ly: 176, edge: 'right', lx: 168 },
-  'G-02': { x: 92, y: 214, ly: 214, edge: 'right', lx: 168 },
-  'G-03': { x: 156, y: 248, ly: 248, edge: 'right', lx: 168 },
-  'D-01': { x: 132, y: 404, ly: 404, edge: 'right', lx: 168 }
+function measure() {
+  const el = stageEl.value
+  if (!el) return
+  const rect = el.getBoundingClientRect()
+  const w = Math.max(1, Math.round(rect.width))
+  const h = Math.max(1, Math.round(rect.height))
+  if (w !== size.value.w || h !== size.value.h) size.value = { w, h }
 }
 
-const box = computed(() => {
-  if (props.side === 'structure') return props.vertical ? '0 0 420 500' : '0 0 1040 430'
-  return props.vertical ? '0 0 340 460' : '0 0 1040 360'
+onMounted(() => {
+  measure()
+  if (!stageEl.value) return
+  observer = new ResizeObserver(() => measure())
+  observer.observe(stageEl.value)
 })
+onBeforeUnmount(() => observer?.disconnect())
 
 function textWidth(text: string) {
-  let width = 16
-  for (const char of text) width += char.charCodeAt(0) > 127 ? 11 : 6.3
-  return width
+  let width = 18
+  for (const char of text) width += char.charCodeAt(0) > 255 ? 12 : 6.8
+  return Math.ceil(width)
 }
 
-const marks = computed(() => {
-  const table = props.side === 'structure'
-    ? (props.vertical ? V_STRUCT : H_STRUCT)
-    : (props.vertical ? V_MECH : H_MECH)
-  return props.points.map(point => {
-    const geom = table[point.id]
-    const label = `${point.name} ${point.id} ${TONE_TEXT[point.status]}`
-    const w = textWidth(label)
-    const lx = geom.edge === 'left'
-      ? (geom.lx ?? geom.x) - w / 2
-      : geom.edge === 'right'
-        ? (geom.lx ?? geom.x) + w / 2
-        : (geom.lx ?? geom.x)
-    return { ...point, ...geom, lx, w, status: point.status as Exclude<Tone, 'na'> }
+function clampCenter(center: number, width: number, limit: number) {
+  return Math.min(Math.max(center, width / 2 + 2), Math.max(width / 2 + 2, limit - width / 2 - 2))
+}
+
+const STRUCT = [
+  { id: 'ML-07', t: 0.08, band: 'top', row: 2 },
+  { id: 'ML-03', t: 0.26, band: 'top', row: 1 },
+  { id: 'ML-01', t: 0.5, band: 'top', row: 0 },
+  { id: 'ML-05', t: 0.76, band: 'top', row: 1 },
+  { id: 'ML-10', t: 0.92, band: 'top', row: 2 },
+  { id: 'ML-08', t: 0.12, band: 'bottom', row: 2 },
+  { id: 'ML-04', t: 0.34, band: 'bottom', row: 1 },
+  { id: 'ML-02', t: 0.5, band: 'bottom', row: 0 },
+  { id: 'ML-06', t: 0.86, band: 'bottom', row: 2 },
+  { id: 'ML-09', t: 0.63, band: 'web', row: 0 }
+] as const
+
+const layout = computed(() => {
+  const w = size.value.w
+  const h = size.value.h
+  const rowH = 24
+  if (props.side === 'structure') {
+    const stationH = 26
+    const topReserve = 4 + rowH * 3
+    const bottomReserve = 6 + rowH * 3 + stationH
+    const beam = {
+      x: 30,
+      y: topReserve,
+      w: Math.max(80, w - 60),
+      h: Math.max(56, h - topReserve - bottomReserve)
+    }
+    const flange = Math.max(10, Math.round(beam.h * 0.08))
+    const trucks = [
+      { key: 'L', x: 6, y: beam.y - 12, w: 30, h: beam.h + 24 },
+      { key: 'R', x: w - 36, y: beam.y - 12, w: 30, h: beam.h + 24 }
+    ]
+    const stationY = Math.min(h - 16, beam.y + beam.h + 14 + rowH * 2 + 18)
+    const stations = [
+      { t: '0', x: beam.x },
+      { t: 'L/4', x: beam.x + beam.w * 0.25 },
+      { t: 'L/2', x: beam.x + beam.w * 0.5 },
+      { t: '3L/4', x: beam.x + beam.w * 0.75 },
+      { t: 'L', x: beam.x + beam.w }
+    ]
+    const webs = [0.25, 0.5, 0.75].map(t => beam.x + beam.w * t)
+    const byId = new Map(STRUCT.map(item => [item.id, item]))
+    const marks = props.points.flatMap(point => {
+      const spec = byId.get(point.id)
+      if (!spec) return []
+      const x = beam.x + beam.w * spec.t
+      const y = spec.band === 'top'
+        ? beam.y + flange / 2
+        : spec.band === 'bottom'
+          ? beam.y + beam.h - flange / 2
+          : beam.y + beam.h / 2
+      const label = `${point.name} ${point.id} ${TONE_TEXT[point.status]}`
+      const pillW = textWidth(label)
+      const ly = spec.band === 'top'
+        ? beam.y - 14 - spec.row * rowH
+        : spec.band === 'bottom'
+          ? beam.y + beam.h + 14 + spec.row * rowH
+          : y
+      const lx = spec.band === 'web'
+        ? clampCenter(x + pillW / 2 + 16, pillW, w)
+        : clampCenter(x, pillW, w)
+      return [{ ...point, x, y, lx, ly, w: pillW, status: point.status as Exclude<Tone, 'na'> }]
+    })
+    return { box: `0 0 ${w} ${h}`, beam, flange, trucks, stationY, stations, webs, parts: [], shaft: { x1: 0, y: 0, x2: 0 }, marks }
+  }
+
+  const topBand = 56
+  const botBand = 32
+  const gap = 8
+  const pad = 8
+  const fractions = [0.16, 0.16, 0.26, 0.24, 0.18]
+  const specs = [
+    { key: 'motor', label: '电机', lines: ['电机'] },
+    { key: 'couple', label: '联轴器', lines: ['联轴器', '制动器'] },
+    { key: 'reducer', label: '减速器', lines: ['减速器'] },
+    { key: 'drum', label: '卷筒', lines: ['卷筒'] },
+    { key: 'bearing', label: '轴承座', lines: ['轴承座'] }
+  ]
+  const inner = Math.max(40, w - pad * 2 - gap * (specs.length - 1))
+  let cursor = pad
+  const fullH = Math.max(72, h - topBand - botBand)
+  const parts = specs.map((spec, index) => {
+    const partW = inner * fractions[index]
+    const partH = spec.key === 'couple' ? fullH * 0.78 : fullH
+    const y = topBand + (fullH - partH) / 2
+    const labelShift = spec.key === 'reducer' ? -partH * 0.16 : spec.key === 'drum' ? partH * 0.18 : 0
+    const part = {
+      ...spec,
+      x: cursor,
+      y,
+      w: partW,
+      h: partH,
+      labelY: y + partH / 2 + labelShift - (spec.lines.length - 1) * 8,
+      wires: [] as number[]
+    }
+    cursor += partW + gap
+    if (spec.key === 'drum') {
+      part.wires = [0.28, 0.4, 0.52, 0.64].map(ratio => part.y + part.h * ratio)
+    }
+    return part
   })
+  const byKey = Object.fromEntries(parts.map(part => [part.key, part]))
+  const reducer = byKey.reducer
+  const motor = byKey.motor
+  const bearing = byKey.bearing
+  const places: Record<string, { x: number; y: number; ly: number }> = {
+    'M-01': { x: motor.x + motor.w * 0.62, y: motor.y + 42, ly: 14 },
+    'G-01': { x: reducer.x + reducer.w * 0.32, y: reducer.y + 42, ly: 38 },
+    'G-02': { x: reducer.x + reducer.w * 0.38, y: reducer.y + reducer.h - 36, ly: h - 16 },
+    'G-03': { x: reducer.x + reducer.w * 0.7, y: reducer.y + reducer.h * 0.66, ly: reducer.y + reducer.h * 0.66 - 28 },
+    'D-01': { x: bearing.x + bearing.w * 0.55, y: bearing.y + 42, ly: 14 }
+  }
+  const marks = props.points.flatMap(point => {
+    const place = places[point.id]
+    if (!place) return []
+    const label = `${point.name} ${point.id} ${TONE_TEXT[point.status]}`
+    const pillW = textWidth(label)
+    const ly = place.ly
+    return [{
+      ...point,
+      x: place.x,
+      y: place.y,
+      lx: clampCenter(place.x, pillW, w),
+      ly: Math.min(Math.max(ly, 12), h - 12),
+      w: pillW,
+      status: point.status as Exclude<Tone, 'na'>
+    }]
+  })
+  const shaftY = topBand + fullH / 2
+  return {
+    box: `0 0 ${w} ${h}`,
+    beam: { x: 0, y: 0, w: 0, h: 0 },
+    flange: 0,
+    trucks: [],
+    stationY: 0,
+    stations: [],
+    webs: [],
+    parts,
+    shaft: { x1: motor.x + motor.w, y: shaftY, x2: bearing.x, y2: shaftY },
+    marks
+  }
 })
 </script>

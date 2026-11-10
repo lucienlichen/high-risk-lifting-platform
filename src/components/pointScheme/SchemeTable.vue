@@ -1,5 +1,5 @@
 <template>
-  <div class="ps-rows">
+  <div ref="scroller" class="ps-rows">
     <div class="ps-row ps-row-hd"><span>编号</span><span>{{ nameLabel }}</span><span>类型</span><span>状态</span></div>
     <button v-for="row in rows" :key="row.id" type="button" class="ps-row" :class="{ on: row.id === selectedId }" :data-point="row.id" @click="$emit('select', row.id)">
       <span class="id">{{ row.id }}</span>
@@ -12,7 +12,24 @@
 </template>
 
 <script setup lang="ts">
+import { nextTick, onMounted, ref, watch } from 'vue'
 import { TONE_TEXT, type SchemePoint } from '@/mock/pointSchemeData'
-defineProps<{ rows: SchemePoint[]; selectedId: string; nameLabel: string }>()
+
+const props = defineProps<{ rows: SchemePoint[]; selectedId: string; nameLabel: string }>()
 defineEmits<{ select: [id: string] }>()
+
+const scroller = ref<HTMLElement | null>(null)
+
+function pinTop() {
+  const el = scroller.value
+  if (el) el.scrollTop = 0
+}
+
+onMounted(() => {
+  pinTop()
+  nextTick(pinTop)
+  requestAnimationFrame(pinTop)
+})
+
+watch(() => props.rows.map(row => row.id).join('|'), () => nextTick(pinTop))
 </script>

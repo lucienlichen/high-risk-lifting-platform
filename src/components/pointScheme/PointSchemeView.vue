@@ -226,12 +226,28 @@ function weightOption(): EChartsOption {
 function series(seed: number, count: number, base: number, amp: number) {
   return Array.from({ length: count }, (_, index) => Math.round((base + Math.sin((index + seed) / 2.2) * amp + ((index * 3 + seed) % 5) * amp * 0.15) * 10) / 10)
 }
+function axisStep(min: number, max: number) {
+  const span = Math.max(max - min, 1e-9)
+  const raw = span / 4
+  const pow = 10 ** Math.floor(Math.log10(raw))
+  const n = raw / pow
+  const nice = n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10
+  return nice * pow
+}
+
 function trendOption(values: number[], labels: string[], color: string, min: number, max: number, marks: { value: number; name: string; color: string }[] = []): EChartsOption {
   return {
     animation: false,
-    grid: { left: 32, right: 6, top: 16, bottom: 20 },
-    xAxis: { type: 'category', data: labels, axisLabel: { fontSize: 10, color: '#94a3b8', interval: 0 }, axisTick: { show: false }, axisLine: { lineStyle: { color: '#e6edf5' } } },
-    yAxis: { type: 'value', min, max, axisLabel: { fontSize: 10, color: '#94a3b8' }, splitLine: { lineStyle: { color: '#f1f5f9' } } },
+    grid: { left: 4, right: 8, top: 16, bottom: 4, containLabel: true },
+    xAxis: { type: 'category', data: labels, axisLabel: { fontSize: 10, color: '#94a3b8', interval: 0, hideOverlap: true }, axisTick: { show: false }, axisLine: { lineStyle: { color: '#e6edf5' } } },
+    yAxis: {
+      type: 'value',
+      min,
+      max,
+      interval: axisStep(min, max),
+      axisLabel: { fontSize: 10, color: '#94a3b8', hideOverlap: true },
+      splitLine: { lineStyle: { color: '#f1f5f9' } }
+    },
     series: [{
       type: 'line', data: values, smooth: 0.25, symbol: 'none', lineStyle: { width: 1.4, color },
       markLine: marks.length ? { symbol: 'none', data: marks.map(mark => ({ yAxis: mark.value, label: { formatter: mark.name, fontSize: 10, color: mark.color }, lineStyle: { type: 'dashed', color: mark.color } })) } : undefined
