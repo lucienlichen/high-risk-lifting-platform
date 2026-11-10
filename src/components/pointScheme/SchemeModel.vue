@@ -136,6 +136,22 @@ function clampCenter(center: number, width: number, limit: number) {
   return Math.min(Math.max(center, width / 2 + 2), Math.max(width / 2 + 2, limit - width / 2 - 2))
 }
 
+function packBand<T extends { t: number; pillW: number }>(items: T[], beamX: number, beamW: number, limit: number) {
+  const rights: number[] = []
+  return [...items].sort((a, b) => a.t - b.t).map(item => {
+    const lx = clampCenter(beamX + beamW * item.t, item.pillW, limit)
+    const left = lx - item.pillW / 2
+    let row = rights.findIndex(right => left >= right + 8)
+    if (row < 0) {
+      row = rights.length
+      rights.push(left + item.pillW)
+    } else {
+      rights[row] = Math.max(rights[row], left + item.pillW)
+    }
+    return { ...item, lx, row }
+  })
+}
+
 const STRUCT = [
   { id: 'ML-07', t: 0.08, band: 'top', row: 2 },
   { id: 'ML-03', t: 0.26, band: 'top', row: 1 },
@@ -154,21 +170,29 @@ const layout = computed(() => {
   const h = size.value.h
   const rowH = 24
   if (props.side === 'structure') {
-    const stationH = 26
-    const topReserve = 4 + rowH * 3
-    const bottomReserve = 6 + rowH * 3 + stationH
+    const stationH = 22
+    const beamX = 28
+    const beamW = Math.max(80, w - 56)
+    const prepared = props.points.flatMap(point => {
+      const spec = STRUCT.find(item => item.id === point.id)
+      if (!spec) return []
+      const label = `${point.name} ${point.id} ${TONE_TEXT[point.status]}`
+      return [{ point, band: spec.band, t: spec.t, pillW: textWidth(label), label }]
+    })
+    const placed = packBand(prepared, beamX, beamW, w)
+    const usedRows = Math.max(1, placed.reduce((max, item) => Math.max(max, item.row + 1), 0))
     const beam = {
-      x: 30,
-      y: topReserve,
-      w: Math.max(80, w - 60),
-      h: Math.max(56, h - topReserve - bottomReserve)
+      x: beamX,
+      y: 4,
+      w: beamW,
+      h: Math.max(72, h - 4 - stationH)
     }
-    const flange = Math.max(10, Math.round(beam.h * 0.08))
+    const flange = Math.max(8, Math.round(Math.min(18, beam.h * 0.08)))
     const trucks = [
-      { key: 'L', x: 6, y: beam.y - 12, w: 30, h: beam.h + 24 },
-      { key: 'R', x: w - 36, y: beam.y - 12, w: 30, h: beam.h + 24 }
+      { key: 'L', x: 4, y: beam.y, w: 28, h: beam.h },
+      { key: 'R', x: w - 32, y: beam.y, w: 28, h: beam.h }
     ]
-    const stationY = Math.min(h - 16, beam.y + beam.h + 14 + rowH * 2 + 18)
+    const stationY = Math.min(h - 12, beam.y + beam.h + 12)
     const stations = [
       { t: '0', x: beam.x },
       { t: 'L/4', x: beam.x + beam.w * 0.25 },
@@ -177,27 +201,22 @@ const layout = computed(() => {
       { t: 'L', x: beam.x + beam.w }
     ]
     const webs = [0.25, 0.5, 0.75].map(t => beam.x + beam.w * t)
-    const byId = new Map(STRUCT.map(item => [item.id, item]))
-    const marks = props.points.flatMap(point => {
-      const spec = byId.get(point.id)
-      if (!spec) return []
-      const x = beam.x + beam.w * spec.t
-      const y = spec.band === 'top'
-        ? beam.y + flange / 2
-        : spec.band === 'bottom'
-          ? beam.y + beam.h - flange / 2
-          : beam.y + beam.h / 2
-      const label = `${point.name} ${point.id} ${TONE_TEXT[point.status]}`
-      const pillW = textWidth(label)
-      const ly = spec.band === 'top'
-        ? beam.y - 14 - spec.row * rowH
-        : spec.band === 'bottom'
-          ? beam.y + beam.h + 14 + spec.row * rowH
-          : y
-      const lx = spec.band === 'web'
-        ? clampCenter(x + pillW / 2 + 16, pillW, w)
-        : clampCenter(x, pillW, w)
-      return [{ ...point, x, y, lx, ly, w: pillW, status: point.status as Exclude<Tone, 'na'> }]
+    const webTop = beam.y + flange + 4
+    const webBot = beam.y + beam.h - flange - 4
+    const block = usedRows * rowH
+    const start = webTop + Math.max(0, (webBot - webTop - block) / 2)
+    const marks = placed.map(item => {
+      const ly = start + item.row * rowH + rowH / 2
+      const onWeb = item.band === 'web'
+      const x = onWeb
+        ? Math.max(beam.x + 8, item.lx - item.pillW / 2 - 12)
+        : beam.x + beam.w * item.t
+      const y = onWeb
+        ? ly
+        : item.band === 'top'
+          ? beam.y + flange / 2
+          : beam.y + beam.h - flange / 2
+      return { ...item.point, x, y, lx: item.lx, ly, w: item.pillW, status: item.point.status as Exclude<Tone, 'na'> }
     })
     return { box: `0 0 ${w} ${h}`, beam, flange, trucks, stationY, stations, webs, parts: [], shaft: { x1: 0, y: 0, x2: 0 }, marks }
   }
@@ -245,7 +264,7 @@ const layout = computed(() => {
     'M-01': { x: motor.x + motor.w * 0.62, y: motor.y + 42, ly: 14 },
     'G-01': { x: reducer.x + reducer.w * 0.32, y: reducer.y + 42, ly: 38 },
     'G-02': { x: reducer.x + reducer.w * 0.38, y: reducer.y + reducer.h - 36, ly: h - 16 },
-    'G-03': { x: reducer.x + reducer.w * 0.7, y: reducer.y + reducer.h * 0.66, ly: reducer.y + reducer.h * 0.66 - 28 },
+    'G-03': { x: reducer.x + reducer.w * 0.78, y: reducer.y + reducer.h * 0.58, ly: reducer.y + reducer.h - 18 },
     'D-01': { x: bearing.x + bearing.w * 0.55, y: bearing.y + 42, ly: 14 }
   }
   const marks = props.points.flatMap(point => {

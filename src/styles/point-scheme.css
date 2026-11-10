@@ -1,8 +1,8 @@
-.ps-final { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(280px, 1fr) minmax(0, 2fr); gap: 8px; padding: 8px; }
+.ps-final { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(236px, 26%) minmax(0, 1fr); gap: 8px; padding: 8px; }
 .ps-final-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
-.ps-final-left .ps-table-wrap { flex: 0 1 36%; min-height: 0; }
-.ps-final-left .ps-model-wrap { flex: 1 1 64%; min-height: 180px; }
-.ps-final-right { min-width: 0; min-height: 0; display: grid; grid-template-rows: minmax(0, 1.05fr) minmax(0, 0.95fr); gap: 8px; }
+.ps-final-left .ps-table-wrap { flex: 1 1 54%; min-height: 0; }
+.ps-final-left .ps-model-wrap { flex: 1 1 46%; min-height: 196px; }
+.ps-final-right { min-width: 0; min-height: 0; display: grid; grid-template-rows: minmax(0, 1.28fr) minmax(0, 0.72fr); gap: 8px; }
 .ps-dtabs { display: flex; gap: 2px; padding: 4px 8px 0; border-bottom: 1px solid #e6edf5; flex-shrink: 0; }
 .ps-dtabs button { height: 30px; padding: 0 12px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: #475569; font-size: 13px; font-weight: 700; cursor: pointer; }
 .ps-dtabs button.on { color: #1677ff; border-bottom-color: #1677ff; }
