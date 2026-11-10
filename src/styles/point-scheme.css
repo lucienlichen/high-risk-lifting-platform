@@ -11,36 +11,36 @@
 .ps-mon-grid.cols-4, .ps-result-grid.cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .ps-mon-grid.cols-3, .ps-result-grid.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .ps-mon.span-2 { grid-column: span 2; }
-.ps-mon, .ps-result { border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; padding: 10px 12px; min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 8px; overflow: hidden; }
+.ps-mon, .ps-result { border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; padding: 8px 10px; min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 6px; overflow: hidden; }
 .ps-mon.is-warn, .ps-result.is-warn { background: #fffbeb; border-color: #fcd34d; }
 .ps-mon.is-alarm, .ps-result.is-alarm { background: #fef2f2; border-color: #fca5a5; }
-.ps-mon header, .ps-result header { display: flex; align-items: center; gap: 8px; flex: none; flex-wrap: nowrap; min-width: 0; }
-.ps-mon header b, .ps-result header b { flex: none; font-size: 15px; white-space: nowrap; }
+.ps-mon header, .ps-result header { display: flex; align-items: flex-start; gap: 8px; flex: none; flex-wrap: wrap; min-width: 0; }
+.ps-mon header b, .ps-result header b { flex: 1 1 8em; font-size: 15px; line-height: 20px; white-space: normal; }
 .ps-mon header span { margin-left: auto; color: #6b7280; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ps-mini-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); gap: 8px; }
 .ps-mini { background: #f9fafb; border: 1px solid #eef0f3; border-radius: 6px; padding: 6px 10px; min-width: 0; }
-.ps-mini span { display: block; color: #6b7280; font-size: 12px; }
+.ps-mini span { display: block; color: #6b7280; font-size: 12px; line-height: 16px; white-space: nowrap; }
 .ps-mini strong { font-size: 18px; font-weight: 700; line-height: 1.2; }
 .ps-mini strong.is-warn { color: #b45309; }
 .ps-mini strong.is-alarm { color: #c62828; }
 .ps-mini div { display: flex; align-items: baseline; gap: 4px; }
 .ps-mini em { font-style: normal; font-size: 12px; color: #6b7280; margin-left: 4px; font-weight: 400; }
-.ps-hero { display: block; font-size: 26px; font-weight: 700; line-height: 32px; }
+.ps-hero { display: block; font-size: 22px; font-weight: 700; line-height: 26px; }
 .ps-hero.is-warn { color: #b45309; }
 .ps-hero.is-alarm { color: #c62828; }
-.ps-result p { margin: 0; color: #374151; font-size: 13px; line-height: 18px; }
+.ps-result p { margin: 0; color: #374151; font-size: 12px; line-height: 16px; }
 .ps-grade { display: flex; gap: 3px; }
 .ps-grade i { flex: 1; text-align: center; font-style: normal; font-size: 11px; border-radius: 3px; padding: 2px 0; white-space: nowrap; background: #f3f4f6; color: #4b5563; }
 .ps-grade i.on { color: #fff; font-weight: 700; }
-.ps-facts { display: flex; flex-direction: column; gap: 4px; }
-.ps-fact { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; }
+.ps-facts { display: flex; flex-direction: column; gap: 2px; }
+.ps-fact { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; line-height: 16px; }
 .ps-fact span { color: #6b7280; }
 .ps-fact b { font-weight: 500; }
 .ps-basis { margin-top: auto; align-self: flex-start; font-size: 12px; color: #6b7280; background: none; padding: 0; }
 .ps-basis em { border: 1px solid #bfdbfe; background: #eff6ff; color: #1d4ed8; border-radius: 4px; padding: 1px 8px; margin-left: 4px; font-style: normal; }
-.ps-result { gap: 6px; }
-.ps-mon .ps-chart { flex: 1 1 auto; height: 108px; min-height: 64px; }
-.ps-result .ps-chart { flex: none; height: 52px; min-height: 0; }
+.ps-result { gap: 4px; }
+.ps-mon .ps-chart { flex: 1 1 auto; height: auto; min-height: 0; }
+.ps-result .ps-chart { flex: 1 1 auto; height: auto; min-height: 0; }
 .ps-chart-hd { flex-wrap: nowrap; }
 .ps-chart-hd b { white-space: nowrap; }
 
@@ -81,10 +81,10 @@
   white-space: nowrap;
 }
 .ps-dev { font-size: 15px; font-weight: 700; white-space: nowrap; }
-.ps-path { color: #6b7280; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ps-split { width: 1px; height: 22px; background: #e5e7eb; flex: none; }
+.ps-path { flex: 0 1 auto; color: #6b7280; font-size: 13px; white-space: nowrap; }
+.ps-vbar { flex: 0 0 1px; width: 1px; height: 22px; background: #e5e7eb; }
 .ps-cur-label { color: #6b7280; font-size: 13px; white-space: nowrap; }
-.ps-cur-name { font-size: 19px; font-weight: 700; white-space: nowrap; }
+.ps-cur-name { font-size: 16px; font-weight: 700; white-space: nowrap; }
 .ps-id {
   border: 1px solid #d1d5db;
   background: #fff;
@@ -167,13 +167,13 @@
 .ps-count, .ps-hint, .ps-cap, .ps-block-hd span, .ps-chart-hd span, .ps-time { color: #64748b; }
 .ps-hint { margin-left: auto; }
 .ps-block-hd em { margin-left: auto; color: #94a3b8; font-style: normal; }
-.ps-table-hd { flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; padding: 12px 16px 10px; border-bottom: 1px solid #f0f1f3; }
+.ps-table-hd { flex-shrink: 0; display: flex; flex-direction: column; gap: 6px; padding: 8px 12px 8px; border-bottom: 1px solid #f0f1f3; }
 .ps-table-hd-top, .ps-table-hd-bot { display: flex; align-items: center; gap: 12px; min-width: 0; }
-.ps-table-hd-top strong { white-space: nowrap; font-size: 18px; font-weight: 700; flex: none; }
+.ps-table-hd-top strong { white-space: nowrap; font-size: 16px; font-weight: 700; flex: none; }
 .ps-table-hd-top .ps-count { white-space: nowrap; font-size: 13px; color: #374151; }
 .ps-table-hd-bot .ps-check { flex: none; font-size: 12px; }
 .ps-search {
-  height: 32px;
+  height: 28px;
   width: 118px;
   min-width: 0;
   border: 1px solid #d1d5db;
@@ -282,20 +282,20 @@
 .ps-row {
   width: 100%;
   display: grid;
-  grid-template-columns: 70px minmax(0, 1fr) 56px 64px;
-  gap: 8px;
+  grid-template-columns: 64px minmax(0, 1fr) 44px 52px;
+  gap: 6px;
   align-items: center;
   text-align: left;
   border: 0;
   border-bottom: 1px solid #f0f1f3;
   background: #fff;
-  height: 34px;
-  padding: 0 12px;
-  font-size: 14px;
+  height: 30px;
+  padding: 0 10px;
+  font-size: 13px;
   cursor: pointer;
   box-sizing: border-box;
 }
-.ps-row-hd { height: 32px; color: #6b7280; font-size: 12px; cursor: default; position: sticky; top: 0; background: #f9fafb; }
+.ps-row-hd { height: 28px; color: #6b7280; font-size: 12px; cursor: default; position: sticky; top: 0; background: #f9fafb; }
 .ps-row.on { background: #e6f0ff; color: #0b4fc4; font-weight: 700; }
 .ps-row.on .name { color: #0b4fc4; font-weight: 700; }
 .ps-row .name, .ps-row .id { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

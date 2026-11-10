@@ -4,7 +4,7 @@
       <button type="button" class="ps-back" @click="$emit('back')">← 返回部件模型</button>
       <strong class="ps-dev">3G211-A2</strong>
       <span class="ps-path">{{ side === 'structure' ? '冶金桥式起重机 / 金属结构 / 桥架 / 单双主梁' : '冶金桥式起重机 / 起升机构 / 主起升机构 / 驱动装置' }}</span>
-      <span class="ps-split"></span>
+      <span class="ps-vbar"></span>
       <span class="ps-cur-label">当前点位</span>
       <strong class="ps-cur-name">{{ active.name }}</strong>
       <span class="ps-id">{{ active.id }}</span>
@@ -228,7 +228,7 @@ function weightOption(): EChartsOption {
 function trendOption(values: number[], labels: string[], color: string, min: number, max: number, marks: { value: number; name: string; color: string }[] = []): EChartsOption {
   return {
     animation: false,
-    grid: { left: 4, right: 8, top: 16, bottom: 4, containLabel: true },
+    grid: { left: 28, right: 6, top: 16, bottom: 18 },
     xAxis: { type: 'category', data: labels, axisLabel: { fontSize: 10, color: '#94a3b8', interval: 0, hideOverlap: true }, axisTick: { show: false }, axisLine: { lineStyle: { color: '#e6edf5' } } },
     yAxis: {
       type: 'value',
@@ -240,7 +240,14 @@ function trendOption(values: number[], labels: string[], color: string, min: num
     },
     series: [{
       type: 'line', data: values, smooth: 0.25, symbol: 'none', lineStyle: { width: 1.4, color },
-      markLine: marks.length ? { symbol: 'none', data: marks.map(mark => ({ yAxis: mark.value, label: { formatter: mark.name, fontSize: 10, color: mark.color }, lineStyle: { type: 'dashed', color: mark.color } })) } : undefined
+      markLine: marks.length ? {
+        symbol: 'none',
+        data: marks.map(mark => ({
+          yAxis: mark.value,
+          label: { formatter: mark.name, fontSize: 11, color: mark.color, position: 'insideEndTop', backgroundColor: 'rgba(255,255,255,0.92)', padding: [0, 3] },
+          lineStyle: { type: 'dashed', color: mark.color, width: 1.5 }
+        }))
+      } : undefined
     }]
   }
 }
