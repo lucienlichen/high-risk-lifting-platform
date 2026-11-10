@@ -305,7 +305,7 @@ const MonitorBoard = defineComponent({
             { value: 190, name: '预警 190', color: '#b45309' },
             { value: 215, name: '报警 215', color: '#c62828' }
           ]), 2),
-          monitor('疲劳损伤声发射监测数据', data.ae.st, '声发射传感器', [
+          monitor('声发射监测数据', data.ae.st, '声发射传感器', [
             { label: '撞击计数率', value: String(data.ae.rate), unit: '次/min', tone: data.ae.st === 'ok' ? undefined : data.ae.st },
             { label: '最大幅值', value: String(data.ae.amp), unit: 'dB' }
           ], '声发射幅值 · 近 24 小时', '单位 dB', trendOption(acoustic, xLabels(acoustic.length, ['昨日', '', '今日']), '#7c3aed', 0, 100, [
@@ -379,7 +379,7 @@ const ResultBoard = defineComponent({
           result('疲劳损伤程度诊断', data.ae.st, data.ae.st === 'ok' ? '未见加速演化' : '损伤演化加速', data.ae.st === 'ok' ? '声发射活动平稳，损伤处于稳定累积阶段' : '撞击计数率近两周持续上升，建议缩短巡检周期', [
             ['撞击计数率', `${data.ae.rate} 次/min`],
             ['累计能量', `${data.ae.en} mV·μs`]
-          ], null, '日撞击计数率 · 近 14 天', trendOption(hits, xLabels(hits.length, ['10-25', '11-01', '11-07']), '#7c3aed', 0, 30, [{ value: 12, name: '关注', color: '#b45309' }]), '疲劳损伤声发射监测数据'),
+          ], null, '日撞击计数率 · 近 14 天', trendOption(hits, xLabels(hits.length, ['10-25', '11-01', '11-07']), '#7c3aed', 0, 30, [{ value: 12, name: '关注', color: '#b45309' }]), '声发射监测数据'),
           result('裂纹判别', 'ok', '未发现裂纹', '涡流信号低于裂纹阈值 0.5 V', [
             ['涡流幅值', `${data.ec.amp} V`],
             ['最近判别', '11-07 15:00']
