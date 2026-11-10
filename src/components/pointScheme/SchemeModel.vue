@@ -2,18 +2,18 @@
   <div class="ps-stage" :class="{ vertical, mechanism: side === 'mechanism' }">
     <svg :viewBox="box" class="ps-svg" role="img" :aria-label="side === 'structure' ? '结构测点' : '机构测点'">
       <template v-if="side === 'structure' && !vertical">
-        <rect x="28" y="104" width="46" height="36" rx="2" class="truck" />
-        <rect x="966" y="104" width="46" height="36" rx="2" class="truck" />
-        <text x="51" y="126" text-anchor="middle" class="truck-tx">端梁</text>
-        <text x="989" y="126" text-anchor="middle" class="truck-tx">端梁</text>
-        <rect x="68" y="108" width="904" height="28" class="beam" />
-        <line x1="68" y1="108" x2="972" y2="108" class="flange" />
-        <line x1="68" y1="136" x2="972" y2="136" class="flange" />
+        <rect x="28" y="168" width="52" height="64" rx="3" class="truck" />
+        <rect x="960" y="168" width="52" height="64" rx="3" class="truck" />
+        <text x="54" y="206" text-anchor="middle" class="truck-tx">端梁</text>
+        <text x="986" y="206" text-anchor="middle" class="truck-tx">端梁</text>
+        <rect x="72" y="176" width="896" height="48" class="beam" />
+        <line x1="72" y1="176" x2="968" y2="176" class="flange" />
+        <line x1="72" y1="224" x2="968" y2="224" class="flange" />
         <g class="dim">
-          <line x1="78" y1="168" x2="962" y2="168" />
+          <line x1="84" y1="268" x2="956" y2="268" />
           <template v-for="mark in structStations" :key="mark.t">
-            <line :x1="mark.x" y1="162" :x2="mark.x" y2="174" />
-            <text :x="mark.x" y="188" text-anchor="middle">{{ mark.t }}</text>
+            <line :x1="mark.x" y1="260" :x2="mark.x" y2="276" />
+            <text :x="mark.x" y="294" text-anchor="middle">{{ mark.t }}</text>
           </template>
         </g>
       </template>
@@ -25,21 +25,21 @@
         <line x1="214" y1="28" x2="214" y2="472" class="flange" />
       </template>
       <template v-else-if="!vertical">
-        <line x1="188" y1="118" x2="900" y2="118" class="shaft" />
-        <rect x="36" y="78" width="150" height="80" rx="4" class="box" />
-        <text x="111" y="124" text-anchor="middle" class="box-tx">电机</text>
-        <rect x="196" y="102" width="34" height="32" class="box" />
-        <text x="213" y="152" text-anchor="middle" class="tiny">联轴器·制动器</text>
-        <rect x="268" y="62" width="230" height="112" rx="4" class="box" />
-        <text x="383" y="124" text-anchor="middle" class="box-tx">减速器</text>
-        <line x1="498" y1="150" x2="430" y2="150" class="shaft" />
-        <rect x="530" y="86" width="340" height="64" class="box" />
-        <line x1="548" y1="104" x2="852" y2="104" class="wire" />
-        <line x1="548" y1="118" x2="852" y2="118" class="wire" />
-        <line x1="548" y1="132" x2="852" y2="132" class="wire" />
-        <text x="700" y="122" text-anchor="middle" class="box-tx">卷筒</text>
-        <rect x="888" y="92" width="78" height="52" rx="3" class="box" />
-        <text x="927" y="122" text-anchor="middle" class="box-tx">轴承座</text>
+        <line x1="188" y1="188" x2="900" y2="188" class="shaft" />
+        <rect x="36" y="130" width="150" height="116" rx="4" class="box" />
+        <text x="111" y="196" text-anchor="middle" class="box-tx">电机</text>
+        <rect x="196" y="164" width="40" height="48" class="box" />
+        <text x="216" y="232" text-anchor="middle" class="tiny">联轴器·制动器</text>
+        <rect x="268" y="108" width="230" height="160" rx="4" class="box" />
+        <text x="383" y="196" text-anchor="middle" class="box-tx">减速器</text>
+        <line x1="430" y1="236" x2="498" y2="236" class="shaft" />
+        <rect x="530" y="148" width="340" height="80" class="box" />
+        <line x1="548" y1="170" x2="852" y2="170" class="wire" />
+        <line x1="548" y1="188" x2="852" y2="188" class="wire" />
+        <line x1="548" y1="206" x2="852" y2="206" class="wire" />
+        <text x="700" y="194" text-anchor="middle" class="box-tx">卷筒</text>
+        <rect x="888" y="156" width="86" height="64" rx="3" class="box" />
+        <text x="931" y="194" text-anchor="middle" class="box-tx">轴承座</text>
       </template>
       <template v-else>
         <line x1="92" y1="78" x2="92" y2="430" class="shaft" />
@@ -66,8 +66,8 @@
         :data-marker="mark.id"
         @click="$emit('select', mark.id)"
       >
-        <circle v-if="mark.id === selectedId" class="halo" :cx="mark.x" :cy="mark.y" r="9" />
-        <circle class="dot" :cx="mark.x" :cy="mark.y" r="5" />
+        <circle v-if="mark.id === selectedId" class="halo" :cx="mark.x" :cy="mark.y" r="12" />
+        <circle class="dot" :cx="mark.x" :cy="mark.y" r="7" />
         <rect class="pill" :x="mark.lx - mark.w / 2" :y="mark.ly - 9" :width="mark.w" height="18" rx="9" />
         <text class="pill-tx" :x="mark.lx" :y="mark.ly + 4" text-anchor="middle">
           {{ mark.name }} {{ mark.id }} <tspan class="st">{{ TONE_TEXT[mark.status] }}</tspan>
@@ -100,16 +100,16 @@ const structStations = [
 
 interface Geom { x: number; y: number; ly: number; edge?: 'left' | 'right'; lx?: number }
 const H_STRUCT: Record<string, Geom> = {
-  'ML-07': { x: 120, y: 112, ly: 78 },
-  'ML-03': { x: 300, y: 112, ly: 78 },
-  'ML-01': { x: 520, y: 112, ly: 78 },
-  'ML-05': { x: 740, y: 112, ly: 78 },
-  'ML-10': { x: 930, y: 112, ly: 78 },
-  'ML-08': { x: 200, y: 132, ly: 168 },
-  'ML-04': { x: 370, y: 132, ly: 168 },
-  'ML-02': { x: 520, y: 132, ly: 176 },
-  'ML-06': { x: 780, y: 132, ly: 168 },
-  'ML-09': { x: 610, y: 152, ly: 204, edge: 'right', lx: 640 }
+  'ML-07': { x: 130, y: 188, ly: 120 },
+  'ML-03': { x: 300, y: 188, ly: 120 },
+  'ML-01': { x: 520, y: 188, ly: 120 },
+  'ML-05': { x: 740, y: 188, ly: 120 },
+  'ML-10': { x: 920, y: 188, ly: 120 },
+  'ML-08': { x: 200, y: 214, ly: 330 },
+  'ML-04': { x: 370, y: 214, ly: 330 },
+  'ML-02': { x: 520, y: 214, ly: 360 },
+  'ML-06': { x: 780, y: 214, ly: 330 },
+  'ML-09': { x: 610, y: 248, ly: 390, edge: 'right', lx: 640 }
 }
 const V_STRUCT: Record<string, Geom> = {
   'ML-07': { x: 188, y: 72, ly: 72, edge: 'left', lx: 172 },
@@ -124,11 +124,11 @@ const V_STRUCT: Record<string, Geom> = {
   'ML-06': { x: 212, y: 416, ly: 416, edge: 'right', lx: 228 }
 }
 const H_MECH: Record<string, Geom> = {
-  'M-01': { x: 196, y: 118, ly: 56 },
-  'G-01': { x: 330, y: 118, ly: 40 },
-  'G-03': { x: 512, y: 118, ly: 40 },
-  'G-02': { x: 400, y: 150, ly: 190 },
-  'D-01': { x: 927, y: 100, ly: 52 }
+  'M-01': { x: 196, y: 188, ly: 78 },
+  'G-01': { x: 330, y: 188, ly: 72 },
+  'G-03': { x: 512, y: 188, ly: 72 },
+  'G-02': { x: 400, y: 236, ly: 300 },
+  'D-01': { x: 931, y: 168, ly: 78 }
 }
 const V_MECH: Record<string, Geom> = {
   'M-01': { x: 92, y: 84, ly: 84, edge: 'right', lx: 168 },
@@ -139,8 +139,8 @@ const V_MECH: Record<string, Geom> = {
 }
 
 const box = computed(() => {
-  if (props.side === 'structure') return props.vertical ? '0 0 420 500' : '0 0 1040 230'
-  return props.vertical ? '0 0 340 460' : '0 0 1040 220'
+  if (props.side === 'structure') return props.vertical ? '0 0 420 500' : '0 0 1040 430'
+  return props.vertical ? '0 0 340 460' : '0 0 1040 360'
 })
 
 function textWidth(text: string) {

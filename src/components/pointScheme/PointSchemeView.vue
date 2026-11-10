@@ -9,9 +9,6 @@
       <span class="ps-pill" :class="active.status">{{ TONE_TEXT[active.status] }}</span>
       <span class="ps-kind-tag">{{ active.measured ? '实测点' : '孪生点' }}</span>
       <div class="ps-switch">
-        <div class="ps-seg" role="tablist" aria-label="布局方案">
-          <button v-for="item in schemes" :key="item.id" type="button" :class="{ on: scheme === item.id }" @click="setScheme(item.id)">{{ item.name }}</button>
-        </div>
         <div class="ps-seg" role="tablist" aria-label="点位类型">
           <button type="button" :class="{ on: side === 'structure' }" @click="setSide('structure')">结构点位</button>
           <button type="button" :class="{ on: side === 'mechanism' }" @click="setSide('mechanism')">机构点位</button>
@@ -20,70 +17,43 @@
       </div>
     </header>
 
-    <div class="ps-body" :class="`is-${scheme}`">
-      <section v-if="scheme === 2" class="ps-side">
-        <div class="ps-side-hd">
-          <h2>{{ modelTitle(side) }}</h2>
-          <span class="ps-count">共 {{ points.length }} 个 · 报警 {{ counts.alarm }} · 异常 {{ counts.warn }}</span>
-        </div>
-        <div class="ps-tools">
-          <span class="ps-legend"><i class="dot solid"></i>实测点</span>
-          <span class="ps-legend"><i class="dot hollow"></i>孪生点</span>
-          <label class="ps-check"><input v-model="alarmOnly" type="checkbox"> 仅看报警/异常</label>
-          <input v-model="search" class="ps-search" type="search" placeholder="搜索点位" aria-label="搜索点位">
-        </div>
-        <SchemeModel class="ps-model" vertical :side="side" :points="points" :selected-id="active.id" :hidden-ids="hiddenIds" @select="selectPoint" />
-        <p class="ps-cap">{{ modelCaption(side, true) }}</p>
-        <div class="ps-table-cap">点位表（与上方模型联动）</div>
-        <SchemeTable class="ps-table" :rows="visiblePoints" :selected-id="active.id" name-label="名称" @select="selectPoint" />
-      </section>
-
-      <section v-else class="ps-top">
-        <div class="ps-table-wrap">
+    <div class="ps-final">
+      <div class="ps-final-left">
+        <section class="ps-table-wrap">
           <div class="ps-table-hd">
             <div class="ps-table-hd-top">
               <strong>点位表</strong>
-              <span class="ps-count">共 {{ points.length }} 个点位 · 报警 {{ counts.alarm }} · 异常 {{ counts.warn }}</span>
+              <span class="ps-count">共 {{ points.length }} 个 · 报警 {{ counts.alarm }} · 异常 {{ counts.warn }}</span>
             </div>
             <div class="ps-table-hd-bot">
-              <label class="ps-check"><input v-model="alarmOnly" type="checkbox"> 仅看报警/异常</label>
               <input v-model="search" class="ps-search" type="search" placeholder="搜索名称或编号" aria-label="搜索名称或编号">
+              <label class="ps-check"><input v-model="alarmOnly" type="checkbox"> 仅看报警/异常</label>
             </div>
           </div>
           <SchemeTable :rows="visiblePoints" :selected-id="active.id" name-label="名称" @select="selectPoint" />
-        </div>
-        <div class="ps-model-wrap">
+        </section>
+        <section class="ps-model-wrap">
           <div class="ps-tools">
-            <strong>{{ modelTitle(side) }}</strong>
-            <span class="ps-legend"><i class="dot solid"></i>实测点</span>
-            <span class="ps-legend"><i class="dot hollow"></i>孪生点</span>
-            <span class="ps-hint">点位表与模型联动：点表格行或模型标签都可切换点位</span>
+            <strong>{{ side === 'structure' ? '结构模型' : '机构模型' }}</strong>
+            <span class="ps-count">{{ side === 'structure' ? '主梁 · 立面示意' : '主起升 · 传动链示意' }}</span>
           </div>
           <SchemeModel :side="side" :points="points" :selected-id="active.id" :hidden-ids="hiddenIds" @select="selectPoint" />
-          <p class="ps-cap">{{ modelCaption(side, false) }}</p>
-        </div>
-      </section>
-
-      <template v-if="scheme === 1">
-        <DataNav :data-key="dataKey" wide hint="五类数据固定显示，未接入的标为“未关联”" @pick="pickData" />
-        <ServiceNav :side="side" :svc-key="svcKey" :tones="tones" wide hint="智能服务结果针对本点位；状态颜色与点位、部件报警一致" @pick="pickService" />
-        <section class="ps-detail">
-          <DataBody v-if="!showService" :side="side" :point="active" :data-key="dataKey" :expanded="expanded" @toggle="expanded = !expanded" />
-          <ServiceBody v-else :side="side" :point="active" :svc-key="svcKey" :scheme="scheme" @pick="pickService" />
+          <p class="ps-cap">{{ side === 'structure' ? '上翼缘点位在梁上沿，下翼缘在下沿，腹板在中部；实心为实测点，空心为孪生点' : '电机 → 联轴器 → 减速器 → 卷筒 → 卷筒轴承座；实心为实测点' }}</p>
         </section>
-      </template>
-
-      <div v-else class="ps-split" :class="{ stack: scheme === 2 }">
+      </div>
+      <div class="ps-final-right">
         <section class="ps-panel">
-          <DataNav :data-key="dataKey" hint="五类数据固定显示 · 默认安全监控" @pick="pickData" />
+          <div class="ps-dtabs" role="tablist" aria-label="监测数据">
+            <button v-for="tab in finalTabs" :key="tab.key" type="button" :class="{ on: dataKey === tab.key }" @click="pickData(tab.key)">{{ tab.name }}</button>
+          </div>
           <div class="ps-panel-bd">
-            <DataBody :side="side" :point="active" :data-key="dataKey" :expanded="expanded" :wrap="scheme === 3" @toggle="expanded = !expanded" />
+            <MonitorBoard v-if="dataKey === 'health'" :side="side" :point="active" />
+            <DataBody v-else :side="side" :point="active" :data-key="dataKey" :expanded="expanded" @toggle="expanded = !expanded" />
           </div>
         </section>
         <section class="ps-panel">
-          <ServiceNav :side="side" :svc-key="svcKey" :tones="tones" hint="默认显示全部服务概览 · 结果针对本点位" @pick="pickService" />
           <div class="ps-panel-bd">
-            <ServiceBody :side="side" :point="active" :svc-key="svcKey" :scheme="scheme" @pick="pickService" />
+            <ResultBoard :side="side" :point="active" />
           </div>
         </section>
       </div>
@@ -119,7 +89,14 @@ const schemes: { id: SchemeId; name: string }[] = [
 const scheme = ref<SchemeId>(1)
 const side = ref<Side>('structure')
 const selectedId = ref('ML-01')
-const dataKey = ref<DataKey>('safety')
+const dataKey = ref<DataKey>('health')
+const finalTabs: { key: DataKey; name: string }[] = [
+  { key: 'health', name: '健康监测' },
+  { key: 'safety', name: '安全监控' },
+  { key: 'risk', name: '风险监测' },
+  { key: 'inspect', name: '检验检测' },
+  { key: 'patrol', name: '日常点巡检' }
+]
 const svcKey = ref<SvcKey>('overview')
 const showService = ref(false)
 const expanded = ref(false)
@@ -183,7 +160,7 @@ function setSide(next: Side) {
   if (side.value === next) return
   side.value = next
   selectedId.value = defaultPointId(next)
-  dataKey.value = 'safety'
+  dataKey.value = 'health'
   svcKey.value = 'overview'
   showService.value = false
   expanded.value = false
@@ -244,6 +221,153 @@ function weightOption(): EChartsOption {
       markLine: { symbol: 'none', data: [{ yAxis: 50, label: { formatter: '额定起重量 50 t', fontSize: 10, color: '#fa8c16' }, lineStyle: { type: 'dashed', color: '#fa8c16' } }] }
     }]
   }
+}
+
+function series(seed: number, count: number, base: number, amp: number) {
+  return Array.from({ length: count }, (_, index) => Math.round((base + Math.sin((index + seed) / 2.2) * amp + ((index * 3 + seed) % 5) * amp * 0.15) * 10) / 10)
+}
+function trendOption(values: number[], labels: string[], color: string, min: number, max: number, marks: { value: number; name: string; color: string }[] = []): EChartsOption {
+  return {
+    animation: false,
+    grid: { left: 32, right: 6, top: 16, bottom: 20 },
+    xAxis: { type: 'category', data: labels, axisLabel: { fontSize: 10, color: '#94a3b8', interval: 0 }, axisTick: { show: false }, axisLine: { lineStyle: { color: '#e6edf5' } } },
+    yAxis: { type: 'value', min, max, axisLabel: { fontSize: 10, color: '#94a3b8' }, splitLine: { lineStyle: { color: '#f1f5f9' } } },
+    series: [{
+      type: 'line', data: values, smooth: 0.25, symbol: 'none', lineStyle: { width: 1.4, color },
+      markLine: marks.length ? { symbol: 'none', data: marks.map(mark => ({ yAxis: mark.value, label: { formatter: mark.name, fontSize: 10, color: mark.color }, lineStyle: { type: 'dashed', color: mark.color } })) } : undefined
+    }]
+  }
+}
+function num(base: number, point: SchemePoint, digits = 1) {
+  if (point.id === 'ML-01' || point.id === 'G-01') return base.toFixed(digits)
+  const factor = point.status === 'alarm' ? 1.35 : point.status === 'warn' ? 1.18 : 0.9
+  return (base * factor).toFixed(digits)
+}
+
+const MonitorBoard = defineComponent({
+  name: 'MonitorBoard',
+  props: { side: { type: String as PropType<Side>, required: true }, point: { type: Object as PropType<SchemePoint>, required: true } },
+  setup(props) {
+    const hour = ['14:30', '', '', '14:45', '', '', '15:00', '', '', '15:15', '', '', '15:30']
+    return () => {
+      const point = props.point
+      const tone = point.status
+      if (props.side === 'structure') {
+        const stress = Number(num(97.2, point))
+        return h('div', { class: 'ps-mon-grid cols-3' }, [
+          monitor('应力光纤监测数据', tone, '光纤光栅应变 · 50 Hz', [
+            ['实时应力', `${num(97.2, point)} MPa`],
+            ['今日最大', `${num(142.6, point)} MPa`],
+            ['今日最大应力幅', `${num(104.5, point)} MPa`],
+            ['今日应力循环', '146 次']
+          ], '应力时程 · 近 1 小时', '单位 MPa', trendOption(series(2, 13, stress, 18), hour, '#1677ff', 0, 240, [
+            { value: 215, name: '预警 215', color: '#fa8c16' },
+            { value: 230, name: '报警 230', color: '#f5222d' }
+          ])),
+          monitor('疲劳损伤声发射监测数据', tone, '声发射传感器', [
+            ['撞击计数率', `${num(3, point, 0)} 次/min`],
+            ['最大幅值', `${num(42, point, 0)} dB`]
+          ], '声发射幅值 · 近 24 小时', '单位 dB', trendOption(series(4, 8, 36, 6), ['昨日', '', '', '', '', '', '', '今日'], '#722ed1', 0, 100, [
+            { value: 60, name: '关注 60 dB', color: '#fa8c16' }
+          ])),
+          monitor('疲劳裂纹涡流监测数据', 'ok', '涡流传感器', [
+            ['涡流信号幅值', `${num(0.12, point, 2)} V`],
+            ['相位', '12 °']
+          ], '涡流幅值 · 近 7 天', '单位 V', trendOption(series(6, 7, 0.12, 0.03), ['11-01', '', '', '11-04', '', '', '11-07'], '#13c2c2', 0, 1, [
+            { value: 0.5, name: '裂纹阈值 0.5 V', color: '#f5222d' }
+          ]))
+        ])
+      }
+      return h('div', { class: 'ps-mon-grid cols-2' }, [
+        monitor('振动监测数据', tone, 'ICP 加速度传感器（径向）· 25.6 kHz', [
+          ['振动有效值', `${num(2.8, point)} mm/s`],
+          ['峰值加速度', `${num(1.2, point)} g`],
+          ['峭度', num(3.1, point)]
+        ], '振动有效值 · 近 1 小时', '单位 mm/s', trendOption(series(3, 13, Number(num(2.8, point)), 0.6), hour, '#1677ff', 0, 9, [
+          { value: 4.5, name: '预警 4.5', color: '#fa8c16' }
+        ])),
+        monitor('转速监测数据', 'ok', '电机编码器', [
+          ['转速', '985 r/min'],
+          ['波动', '±1.2 %']
+        ], '转速 · 近 1 小时', '单位 r/min', trendOption(series(1, 13, 980, 40), hour, '#1677ff', 0, 1200, []))
+      ])
+    }
+  }
+})
+
+function monitor(title: string, tone: SchemePoint['status'] | 'ok', sensor: string, stats: [string, string][], chart: string, unit: string, option: EChartsOption) {
+  return h('article', { class: 'ps-mon' }, [
+    h('header', [h('b', title), h('i', { class: ['ps-pill', tone] }, TONE_TEXT[tone]), h('span', sensor)]),
+    h('div', { class: 'ps-mini-metrics' }, stats.map(([label, value]) => h('div', { class: 'ps-mini' }, [h('span', label), h('strong', value)]))),
+    h('div', { class: 'ps-chart-hd' }, [h('b', chart), h('span', unit)]),
+    h('div', { class: 'ps-chart' }, [h(SchemeChart, { option })])
+  ])
+}
+
+const ResultBoard = defineComponent({
+  name: 'ResultBoard',
+  props: { side: { type: String as PropType<Side>, required: true }, point: { type: Object as PropType<SchemePoint>, required: true } },
+  setup(props) {
+    return () => {
+      const point = props.point
+      const tone = point.status
+      if (props.side === 'structure') {
+        const damage = point.id === 'ML-01' ? '0.42' : num(0.42, point, 2)
+        const hot = tone === 'alarm' ? '累积损伤超限' : tone === 'warn' ? '累积损伤接近限值' : 'I 级 健康 · 处置：正常运行'
+        return h('div', { class: 'ps-result-grid cols-4' }, [
+          result('疲劳累积损伤评估', tone, `D = ${damage}`, hot, [
+            ['已发生循环', '6.4×10⁵ 次'],
+            ['结果时间', '11-06 09:18']
+          ], grades(['I', 'II', 'III', 'IV', 'V'], tone === 'alarm' ? 2 : tone === 'warn' ? 1 : 0), '累积损伤度 D · 今年', trendOption(series(5, 8, Number(damage), 0.04), ['1月', '', '', '', '', '', '', '11月'], '#1677ff', 0, 1, [{ value: 0.8, name: 'II级', color: '#fa8c16' }]), '应力光纤监测数据'),
+          result('裂纹预测', tone, point.id === 'ML-01' ? '6.2 年' : `${num(6.2, point)} 年`, '预计裂纹萌生前的剩余寿命', [
+            ['剩余损伤度', point.id === 'ML-01' ? '0.58' : num(0.58, point, 2)],
+            ['剩余循环', '8.9×10⁵ 次']
+          ], grades(['>2 年', '1–2 年', '<1 年'], tone === 'alarm' ? 2 : tone === 'warn' ? 1 : 0), '剩余损伤度 · 今年', trendOption(series(7, 8, 0.5, 0.05), ['1月', '', '', '', '', '', '', '11月'], '#1677ff', 0, 1, []), '应力光纤监测数据'),
+          result('疲劳损伤程度诊断', tone, tone === 'ok' ? '未见加速演化' : '损伤活动增强', tone === 'ok' ? '声发射活动平稳，损伤处于稳定累积阶段' : '声发射计数抬升，需关注', [
+            ['撞击计数率', `${num(3, point, 0)} 次/min`],
+            ['累计能量', '1.2×10³ mV·μs']
+          ], null, '日撞击计数率 · 近 14 天', trendOption(series(8, 8, 3, 1.2), ['', '', '', '', '', '', '', '今日'], '#722ed1', 0, 12, [{ value: 8, name: '关注', color: '#fa8c16' }]), '疲劳损伤声发射监测数据'),
+          result('裂纹判别', 'ok', '未发现裂纹', '涡流信号低于裂纹阈值 0.5 V', [
+            ['涡流信号', `${num(0.12, point, 2)} V`],
+            ['最近判别', '11-07 15:00']
+          ], null, '涡流幅值 · 近 14 天', trendOption(series(9, 8, 0.12, 0.03), ['', '', '', '', '', '', '', '今日'], '#13c2c2', 0, 0.8, [{ value: 0.5, name: '阈值', color: '#f5222d' }]), '疲劳裂纹涡流监测数据')
+        ])
+      }
+      return h('div', { class: 'ps-result-grid cols-3' }, [
+        result('健康评估', tone, `峭度 ${num(3.1, point)}`, tone === 'ok' ? '特征值均在异常线以下，运行良好' : '特征值接近或超过异常线', [
+          ['振动烈度', `${num(2.6, point)} mm/s`],
+          ['有效值', `${num(2.8, point)} mm/s`]
+        ], null, '峭度 · 近 30 天', trendOption(series(4, 10, Number(num(3.1, point)), 0.3), ['', '', '', '', '', '', '', '', '', '今日'], '#722ed1', 0, 8, [
+          { value: 6, name: '危险', color: '#f5222d' },
+          { value: 4.5, name: '异常', color: '#fa8c16' }
+        ]), '振动监测数据'),
+        result('寿命预测', 'ok', '1860 天', '置信区间 1620–2050 天 · 约 5.1 年', [
+          ['状态阶段', 'A 正常'],
+          ['计算时间点', '11-06 09:00']
+        ], grades(['A 正常', 'B 早期', 'C 故障', 'D 失效'], 0), '有效值 · 算法入参（近 30 天）', trendOption(series(2, 10, 2.8, 0.25), ['', '', '', '', '', '', '', '', '', '今日'], '#1677ff', 0, 6, [{ value: 4.5, name: '预警', color: '#fa8c16' }]), '振动监测数据'),
+        result('故障诊断', tone, tone === 'ok' ? '状态 A 正常' : '特征频率升高', tone === 'ok' ? '各特征频率幅值正常' : '包络谱出现需关注峰值', [
+          ['BPFO 58.6 Hz', tone === 'ok' ? '0.08 g' : '0.21 g'],
+          ['啮合频率', '377 Hz']
+        ], null, 'FFT 频谱 · 0–1000 Hz', trendOption([0.02, 0.04, 0.9, 0.05, 0.08, 0.7, 0.04, 0.2, 0.03, 0.06], ['0', '', '', '', '500', '', '', '', '', '1000'], '#13c2c2', 0, 1, []), '振动 + 转速监测数据')
+      ])
+    }
+  }
+})
+
+function grades(labels: string[], on: number) {
+  return h('div', { class: 'ps-grade' }, labels.map((label, index) => h('i', { class: index === on ? 'on' : '' }, label)))
+}
+function result(title: string, tone: SchemePoint['status'] | 'ok', hero: string, line: string, stats: [string, string][], grade: ReturnType<typeof h> | null, chart: string, option: EChartsOption, basis: string) {
+  return h('article', { class: 'ps-result' }, [
+    h('header', [h('b', title), h('i', { class: ['ps-pill', tone] }, TONE_TEXT[tone])]),
+    h('strong', { class: 'ps-hero' }, hero),
+    h('p', line),
+    h('div', { class: 'ps-mini-metrics' }, stats.map(([label, value]) => h('div', { class: 'ps-mini' }, [h('span', label), h('strong', value)]))),
+    grade,
+    h('div', { class: 'ps-chart-hd' }, [h('b', chart)]),
+    h('div', { class: 'ps-chart' }, [h(SchemeChart, { option })]),
+    h('span', { class: 'ps-basis' }, `依据 ${basis}`)
+  ])
 }
 
 const DataNav = defineComponent({

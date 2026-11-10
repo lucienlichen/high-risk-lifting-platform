@@ -155,7 +155,7 @@
 
 
 .l2-panel {
-  background: var(--parts-color-16);
+  background: #fff;
   border: 1px solid var(--parts-color-17);
   border-radius: var(--radius-sm);
   padding: 0;

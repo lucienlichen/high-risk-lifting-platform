@@ -1,3 +1,31 @@
+.ps-final { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(280px, 1fr) minmax(0, 2fr); gap: 8px; padding: 8px; }
+.ps-final-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+.ps-final-left .ps-table-wrap { flex: 0 1 36%; min-height: 0; }
+.ps-final-left .ps-model-wrap { flex: 1 1 64%; min-height: 180px; }
+.ps-final-right { min-width: 0; min-height: 0; display: grid; grid-template-rows: minmax(0, 1.05fr) minmax(0, 0.95fr); gap: 8px; }
+.ps-dtabs { display: flex; gap: 2px; padding: 4px 8px 0; border-bottom: 1px solid #e6edf5; flex-shrink: 0; }
+.ps-dtabs button { height: 30px; padding: 0 12px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: #475569; font-size: 13px; font-weight: 700; cursor: pointer; }
+.ps-dtabs button.on { color: #1677ff; border-bottom-color: #1677ff; }
+.ps-mon-grid, .ps-result-grid { display: grid; gap: 8px; min-height: 0; height: 100%; }
+.ps-mon-grid.cols-3, .ps-result-grid.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.ps-mon-grid.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.ps-result-grid.cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.ps-mon, .ps-result { border: 1px solid #e6edf5; border-radius: 8px; background: #fff; padding: 8px; min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 4px; overflow: auto; }
+.ps-mon header, .ps-result header { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.ps-mon header b, .ps-result header b { font-size: 13px; }
+.ps-mon header span { margin-left: auto; color: #94a3b8; font-size: 11px; }
+.ps-mini-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); gap: 6px; }
+.ps-mini { background: #f8fafc; border-radius: 6px; padding: 4px 6px; min-width: 0; }
+.ps-mini span { display: block; color: #64748b; font-size: 11px; }
+.ps-mini strong, .ps-hero { display: block; font-size: 16px; line-height: 1.25; }
+.ps-hero { font-size: 22px; }
+.ps-result p { margin: 0; color: #475569; font-size: 12px; }
+.ps-grade { display: flex; gap: 4px; }
+.ps-grade i { flex: 1; text-align: center; font-style: normal; font-size: 11px; font-weight: 700; border-radius: 4px; background: #f1f5f9; color: #64748b; padding: 3px 0; }
+.ps-grade i.on { background: #52c41a; color: #fff; }
+.ps-basis { margin-top: auto; align-self: flex-start; font-size: 11px; color: #0958d9; background: #e6f4ff; border-radius: 4px; padding: 1px 6px; }
+.ps-mon .ps-chart, .ps-result .ps-chart { flex: 1; min-height: 78px; height: auto; }
+
 .ps-page {
   flex: 1;
   min-height: 0;
