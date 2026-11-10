@@ -83,10 +83,14 @@
       >
         <circle v-if="mark.id === selectedId" class="halo" :cx="mark.x" :cy="mark.y" r="13" />
         <circle class="dot" :cx="mark.x" :cy="mark.y" r="8" />
-        <rect class="pill" :x="mark.lx - mark.w / 2" :y="mark.ly - 11" :width="mark.w" height="22" rx="11" />
-        <text class="pill-tx" :x="mark.lx" :y="mark.ly" text-anchor="middle" dominant-baseline="central">
-          {{ mark.name }} {{ mark.id }} <tspan class="st">{{ TONE_TEXT[mark.status] }}</tspan>
-        </text>
+        <g class="tag short">
+          <rect class="pill" :x="mark.sx - mark.sw / 2" :y="mark.sy - 10" :width="mark.sw" height="20" rx="10" />
+          <text class="pill-tx" :x="mark.sx" :y="mark.sy" text-anchor="middle" dominant-baseline="central">{{ mark.id }}</text>
+        </g>
+        <g class="tag full">
+          <rect class="pill" :x="mark.fx - mark.fw / 2" :y="mark.fy - 11" :width="mark.fw" height="22" rx="11" />
+          <text class="pill-tx" :x="mark.fx" :y="mark.fy" text-anchor="middle" dominant-baseline="central">{{ mark.name }} {{ mark.id }}</text>
+        </g>
       </g>
     </svg>
   </div>
@@ -94,7 +98,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { TONE_TEXT, type SchemePoint, type Side, type Tone } from '@/mock/pointSchemeData'
+import { type SchemePoint, type Side, type Tone } from '@/mock/pointSchemeData'
 
 const props = defineProps<{
   side: Side
@@ -126,9 +130,9 @@ onMounted(() => {
 })
 onBeforeUnmount(() => observer?.disconnect())
 
-function textWidth(text: string) {
-  let width = 18
-  for (const char of text) width += char.charCodeAt(0) > 255 ? 12 : 6.8
+function textWidth(text: string, pad = 14) {
+  let width = pad
+  for (const char of text) width += char.charCodeAt(0) > 255 ? 12 : 6.6
   return Math.ceil(width)
 }
 
@@ -136,20 +140,24 @@ function clampCenter(center: number, width: number, limit: number) {
   return Math.min(Math.max(center, width / 2 + 2), Math.max(width / 2 + 2, limit - width / 2 - 2))
 }
 
-function packBand<T extends { t: number; pillW: number }>(items: T[], beamX: number, beamW: number, limit: number) {
-  const rights: number[] = []
-  return [...items].sort((a, b) => a.t - b.t).map(item => {
-    const lx = clampCenter(beamX + beamW * item.t, item.pillW, limit)
-    const left = lx - item.pillW / 2
-    let row = rights.findIndex(right => left >= right + 8)
-    if (row < 0) {
-      row = rights.length
-      rights.push(left + item.pillW)
-    } else {
-      rights[row] = Math.max(rights[row], left + item.pillW)
-    }
-    return { ...item, lx, row }
-  })
+function spread<T extends { lx: number; w: number }>(items: T[], limit: number) {
+  const sorted = [...items].sort((a, b) => a.lx - b.lx)
+  for (let i = 1; i < sorted.length; i += 1) {
+    const prev = sorted[i - 1]
+    const min = prev.lx + prev.w / 2 + 4 + sorted[i].w / 2
+    if (sorted[i].lx < min) sorted[i].lx = min
+  }
+  const last = sorted[sorted.length - 1]
+  if (last) {
+    const overflow = last.lx + last.w / 2 + 2 - limit
+    if (overflow > 0) sorted.forEach(item => { item.lx -= overflow })
+  }
+  const first = sorted[0]
+  if (first) {
+    const under = first.w / 2 + 2 - first.lx
+    if (under > 0) sorted.forEach(item => { item.lx += under })
+  }
+  return sorted
 }
 
 const STRUCT = [
@@ -168,31 +176,21 @@ const STRUCT = [
 const layout = computed(() => {
   const w = size.value.w
   const h = size.value.h
-  const rowH = 24
   if (props.side === 'structure') {
-    const stationH = 22
     const beamX = 28
     const beamW = Math.max(80, w - 56)
-    const prepared = props.points.flatMap(point => {
-      const spec = STRUCT.find(item => item.id === point.id)
-      if (!spec) return []
-      const label = `${point.name} ${point.id} ${TONE_TEXT[point.status]}`
-      return [{ point, band: spec.band, t: spec.t, pillW: textWidth(label), label }]
-    })
-    const placed = packBand(prepared, beamX, beamW, w)
-    const usedRows = Math.max(1, placed.reduce((max, item) => Math.max(max, item.row + 1), 0))
     const beam = {
       x: beamX,
-      y: 4,
+      y: 48,
       w: beamW,
-      h: Math.max(72, h - 4 - stationH)
+      h: Math.max(64, h - 48 - 78)
     }
-    const flange = Math.max(8, Math.round(Math.min(18, beam.h * 0.08)))
+    const flange = Math.max(8, Math.round(Math.min(16, beam.h * 0.1)))
     const trucks = [
-      { key: 'L', x: 4, y: beam.y, w: 28, h: beam.h },
-      { key: 'R', x: w - 32, y: beam.y, w: 28, h: beam.h }
+      { key: 'L', x: 4, y: beam.y, w: 26, h: beam.h },
+      { key: 'R', x: w - 30, y: beam.y, w: 26, h: beam.h }
     ]
-    const stationY = Math.min(h - 12, beam.y + beam.h + 12)
+    const stationY = h - 22
     const stations = [
       { t: '0', x: beam.x },
       { t: 'L/4', x: beam.x + beam.w * 0.25 },
@@ -201,28 +199,69 @@ const layout = computed(() => {
       { t: 'L', x: beam.x + beam.w }
     ]
     const webs = [0.25, 0.5, 0.75].map(t => beam.x + beam.w * t)
-    const webTop = beam.y + flange + 4
-    const webBot = beam.y + beam.h - flange - 4
-    const block = usedRows * rowH
-    const start = webTop + Math.max(0, (webBot - webTop - block) / 2)
-    const marks = placed.map(item => {
-      const ly = start + item.row * rowH + rowH / 2
-      const onWeb = item.band === 'web'
-      const x = onWeb
-        ? Math.max(beam.x + 8, item.lx - item.pillW / 2 - 12)
-        : beam.x + beam.w * item.t
-      const y = onWeb
-        ? ly
-        : item.band === 'top'
-          ? beam.y + flange / 2
-          : beam.y + beam.h - flange / 2
-      return { ...item.point, x, y, lx: item.lx, ly, w: item.pillW, status: item.point.status as Exclude<Tone, 'na'> }
+    const flank = props.points.flatMap(point => {
+      const spec = STRUCT.find(item => item.id === point.id)
+      if (!spec || spec.band === 'web') return []
+      const sw = textWidth(point.id, 12)
+      const fw = textWidth(`${point.name} ${point.id}`)
+      const anchor = beam.x + beam.w * spec.t
+      return [{
+        point,
+        band: spec.band,
+        sx: clampCenter(anchor, sw, w),
+        sw,
+        fx: clampCenter(anchor, fw, w),
+        fw,
+        lx: anchor,
+        w: sw
+      }]
     })
+    spread(flank.filter(item => item.band === 'top').map(item => ({ lx: item.sx, w: item.sw, item })), w)
+      .forEach(entry => { entry.item.sx = clampCenter(entry.lx, entry.item.sw, w) })
+    spread(flank.filter(item => item.band === 'bottom').map(item => ({ lx: item.sx, w: item.sw, item })), w)
+      .forEach(entry => { entry.item.sx = clampCenter(entry.lx, entry.item.sw, w) })
+    const marks = flank.map(item => {
+      const y = item.band === 'top' ? beam.y + flange / 2 : beam.y + beam.h - flange / 2
+      const sy = item.band === 'top' ? beam.y - 12 : beam.y + beam.h + 14
+      const fy = item.band === 'top' ? 13 : h - 36
+      return {
+        ...item.point,
+        x: item.lx,
+        y,
+        sx: item.sx,
+        sy,
+        sw: item.sw,
+        fx: clampCenter(item.lx, item.fw, w),
+        fy,
+        fw: item.fw,
+        status: item.point.status as Exclude<Tone, 'na'>
+      }
+    })
+    const webPoint = props.points.find(point => STRUCT.find(item => item.id === point.id)?.band === 'web')
+    if (webPoint) {
+      const spec = STRUCT.find(item => item.id === webPoint.id)!
+      const sw = textWidth(webPoint.id, 12)
+      const fw = textWidth(`${webPoint.name} ${webPoint.id}`)
+      const x = beam.x + beam.w * spec.t
+      const y = beam.y + beam.h / 2
+      marks.push({
+        ...webPoint,
+        x,
+        y,
+        sx: clampCenter(x + sw / 2 + 14, sw, w),
+        sy: y,
+        sw,
+        fx: clampCenter(x + fw / 2 + 14, fw, w),
+        fy: y,
+        fw,
+        status: webPoint.status as Exclude<Tone, 'na'>
+      })
+    }
     return { box: `0 0 ${w} ${h}`, beam, flange, trucks, stationY, stations, webs, parts: [], shaft: { x1: 0, y: 0, x2: 0 }, marks }
   }
 
-  const topBand = 56
-  const botBand = 32
+  const topBand = 50
+  const botBand = 46
   const gap = 8
   const pad = 8
   const fractions = [0.16, 0.16, 0.26, 0.24, 0.18]
@@ -260,29 +299,36 @@ const layout = computed(() => {
   const reducer = byKey.reducer
   const motor = byKey.motor
   const bearing = byKey.bearing
-  const places: Record<string, { x: number; y: number; ly: number }> = {
-    'M-01': { x: motor.x + motor.w * 0.62, y: motor.y + 42, ly: 14 },
-    'G-01': { x: reducer.x + reducer.w * 0.32, y: reducer.y + 42, ly: 38 },
-    'G-02': { x: reducer.x + reducer.w * 0.38, y: reducer.y + reducer.h - 36, ly: h - 16 },
-    'G-03': { x: reducer.x + reducer.w * 0.78, y: reducer.y + reducer.h * 0.58, ly: reducer.y + reducer.h - 18 },
-    'D-01': { x: bearing.x + bearing.w * 0.55, y: bearing.y + 42, ly: 14 }
+  const places: Record<string, { x: number; y: number; edge: 'top' | 'bottom' }> = {
+    'M-01': { x: motor.x + motor.w * 0.55, y: motor.y + 28, edge: 'top' },
+    'G-01': { x: reducer.x + reducer.w * 0.4, y: reducer.y + 28, edge: 'top' },
+    'G-02': { x: reducer.x + reducer.w * 0.28, y: reducer.y + reducer.h - 28, edge: 'bottom' },
+    'G-03': { x: reducer.x + reducer.w * 0.72, y: reducer.y + reducer.h * 0.62, edge: 'bottom' },
+    'D-01': { x: bearing.x + bearing.w * 0.5, y: bearing.y + 28, edge: 'top' }
   }
-  const marks = props.points.flatMap(point => {
+  const draft = props.points.flatMap(point => {
     const place = places[point.id]
     if (!place) return []
-    const label = `${point.name} ${point.id} ${TONE_TEXT[point.status]}`
-    const pillW = textWidth(label)
-    const ly = place.ly
-    return [{
-      ...point,
-      x: place.x,
-      y: place.y,
-      lx: clampCenter(place.x, pillW, w),
-      ly: Math.min(Math.max(ly, 12), h - 12),
-      w: pillW,
-      status: point.status as Exclude<Tone, 'na'>
-    }]
+    const sw = textWidth(point.id, 12)
+    const fw = textWidth(`${point.name} ${point.id}`)
+    return [{ point, ...place, sw, fw, sx: clampCenter(place.x, sw, w) }]
   })
+  for (const edge of ['top', 'bottom'] as const) {
+    spread(draft.filter(item => item.edge === edge).map(item => ({ lx: item.sx, w: item.sw, item })), w)
+      .forEach(entry => { entry.item.sx = clampCenter(entry.lx, entry.item.sw, w) })
+  }
+  const marks = draft.map(item => ({
+    ...item.point,
+    x: item.x,
+    y: item.y,
+    sx: item.sx,
+    sy: item.edge === 'top' ? 34 : h - 34,
+    sw: item.sw,
+    fx: clampCenter(item.x, item.fw, w),
+    fy: item.edge === 'top' ? 13 : h - 13,
+    fw: item.fw,
+    status: item.point.status as Exclude<Tone, 'na'>
+  }))
   const shaftY = topBand + fullH / 2
   return {
     box: `0 0 ${w} ${h}`,

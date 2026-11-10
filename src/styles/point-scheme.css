@@ -2,7 +2,7 @@
 .ps-final-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
 .ps-final-left .ps-table-wrap { flex: 1 1 54%; min-height: 0; }
 .ps-final-left .ps-model-wrap { flex: 1 1 46%; min-height: 196px; }
-.ps-final-right { min-width: 0; min-height: 0; display: grid; grid-template-rows: minmax(0, 1.28fr) minmax(0, 0.72fr); gap: 8px; }
+.ps-final-right { min-width: 0; min-height: 0; display: grid; grid-template-rows: minmax(0, 0.45fr) minmax(0, 0.55fr); gap: 8px; }
 .ps-dtabs { display: flex; gap: 2px; padding: 4px 8px 0; border-bottom: 1px solid #e6edf5; flex-shrink: 0; }
 .ps-dtabs button { height: 30px; padding: 0 12px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: #475569; font-size: 13px; font-weight: 700; cursor: pointer; }
 .ps-dtabs button.on { color: #1677ff; border-bottom-color: #1677ff; }
@@ -194,7 +194,18 @@
 .ps-svg .halo { fill: none; stroke: #1677ff; stroke-width: 2; }
 .ps-svg .pill { fill: #fff; stroke: #d5deea; }
 .ps-svg .mk.on .pill { fill: #1677ff; stroke: #1677ff; }
+.ps-svg .tag.full { opacity: 0; pointer-events: none; }
+.ps-svg .mk.on .tag.full,
+.ps-svg .mk:hover .tag.full { opacity: 1; }
+.ps-svg .mk.on .tag.short,
+.ps-svg .mk:hover .tag.short { opacity: 0; }
 .ps-svg .pill-tx { font-size: 12px; fill: #334155; }
+.ps-svg .mk.ok .tag.short .pill { stroke: #b7eb8f; }
+.ps-svg .mk.warn .tag.short .pill { stroke: #ffd591; }
+.ps-svg .mk.alarm .tag.short .pill { stroke: #ffa39e; }
+.ps-svg .mk.ok .tag.short .pill-tx { fill: #389e0d; }
+.ps-svg .mk.warn .tag.short .pill-tx { fill: #d46b08; }
+.ps-svg .mk.alarm .tag.short .pill-tx { fill: #cf1322; }
 .ps-svg .mk.ok .st { fill: #389e0d; }
 .ps-svg .mk.warn .st { fill: #d46b08; }
 .ps-svg .mk.alarm .st { fill: #cf1322; }
@@ -236,7 +247,7 @@
 .ps-tag em b { font-weight: 700; color: var(--ps-st); }
 .ps-tag.on em { background: #1677ff; border-color: #1677ff; color: #fff; }
 .ps-tag.on em b { color: #fff; }
-.ps-cap { margin: 0; padding: 0 8px 4px; font-size: 11px; }
+.ps-model-wrap .ps-cap { flex: 0 0 auto; margin: 0; padding: 2px 8px 6px; font-size: 11px; line-height: 16px; white-space: normal; overflow: visible; }
 .ps-table-cap { padding: 6px 8px 4px; font-weight: 700; }
 .ps-rows { flex: 1; min-height: 0; overflow-x: hidden; overflow-y: auto; overflow-anchor: none; justify-content: flex-start; }
 .ps-row {

@@ -38,7 +38,7 @@
             <span class="ps-count">{{ side === 'structure' ? '主梁 · 立面示意' : '主起升 · 传动链示意' }}</span>
           </div>
           <SchemeModel :side="side" :points="points" :selected-id="active.id" :hidden-ids="hiddenIds" @select="selectPoint" />
-          <p class="ps-cap">{{ side === 'structure' ? '上翼缘点位在梁上沿，下翼缘在下沿，腹板在中部；实心为实测点，空心为孪生点' : '电机 → 联轴器 → 减速器 → 卷筒 → 卷筒轴承座；实心为实测点' }}</p>
+          <p class="ps-cap">{{ side === 'structure' ? '上翼缘在梁上方，下翼缘在梁下方，腹板在侧边。实心为实测点，空心为孪生点。' : '电机 → 联轴器 → 减速器 → 卷筒 → 轴承座。实心为实测点。' }}</p>
         </section>
       </div>
       <div class="ps-final-right">
