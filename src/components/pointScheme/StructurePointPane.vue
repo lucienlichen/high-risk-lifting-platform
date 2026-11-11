@@ -5,7 +5,7 @@
         <div class="ps-struct-hd">
           <div class="ps-struct-hd-top">
             <strong>点位表</strong>
-            <span>共 10 个 · 实时监测 6 · 数字孪生生成 4 · <em class="a">报警 0</em> · <em class="w">异常 0</em></span>
+            <span>共 {{ summary.total }} 个 · 实时监测 {{ summary.live }} · 数字孪生生成 {{ summary.twin }} · <em class="a">报警 {{ summary.alarm }}</em> · <em class="w">异常 {{ summary.warn }}</em></span>
           </div>
           <div class="ps-struct-hd-bot">
             <input v-model="query" type="search" placeholder="搜索名称或编号" aria-label="搜索名称或编号">
@@ -22,7 +22,7 @@
                 <button v-for="row in group.rows" :key="row.id" type="button" class="row" :class="{ sel: row.id === pointId }" @click="$emit('select', row.id)" @mouseenter="hoverId = row.id" @mouseleave="hoverId = ''">
                   <span>{{ row.id }}</span>
                   <span class="nm">{{ row.name }}</span>
-                  <span class="chip">正常</span>
+                  <span class="chip" :class="row.tone">{{ row.toneText }}</span>
                 </button>
               </div>
             </div>
@@ -164,7 +164,7 @@
           </div>
         </div>
         <div class="mbody" @wheel.prevent="onModalWheel" @mousedown="onDragStart">
-          <svg :viewBox="`${view.x} ${view.y} ${view.w} ${view.h}`" preserveAspectRatio="xMidYMid meet" @click="onModalClick" v-html="modalMarkup"></svg>
+          <svg class="ps-crane" :viewBox="`${view.x} ${view.y} ${view.w} ${view.h}`" preserveAspectRatio="xMidYMid meet" @click="onModalClick" v-html="modalMarkup"></svg>
           <div class="mtitle">
             <b>H: 前拉杆</b>
             <div>等效应力</div>
@@ -173,7 +173,7 @@
             <div>Time: 2026-11-11 15:30</div>
             <p>数字孪生示意图 · 非有限元计算结果 · 当前点位 {{ point.id }} {{ point.name }}</p>
           </div>
-          <svg class="mleg" viewBox="0 0 170 430" v-html="modalLegend"></svg>
+          <svg class="mleg" viewBox="0 0 120 210" v-html="modalLegend"></svg>
           <div class="mscale"><i></i><i class="w"></i><i></i><i class="w"></i><b>0</b><b>2e+04</b><b>4e+04</b><b>6e+04</b><b>8e+04 (mm)</b></div>
           <svg class="maxis" viewBox="0 0 110 100">
             <line x1="40" y1="70" x2="96" y2="70" stroke="#dc2626" stroke-width="3" />
@@ -221,14 +221,29 @@ const point = computed(() => structPoint(props.pointId))
 const zoomText = computed(() => `${Math.round(view0.w / view.value.w * 100)}%`)
 const cloudHtml = computed(() => cloudSvg(props.pointId))
 const modalMarkup = computed(() => modalCrane(props.pointId))
-const modalLegend = computed(() => legendMarkup(4, 8, 410, 14))
+const modalLegend = computed(() => legendMarkup(2, 6, 188, 12))
+
+function withTone<T extends { id: string }>(point: T) {
+  return { ...point, tone: 'ok', toneText: '正常' }
+}
+
+const summary = computed(() => {
+  const rows = STRUCT_PTS.map(withTone)
+  return {
+    total: rows.length,
+    live: rows.filter(item => item.live).length,
+    twin: rows.filter(item => !item.live).length,
+    alarm: rows.filter(item => item.tone === 'alarm').length,
+    warn: rows.filter(item => item.tone === 'warn').length
+  }
+})
 
 const groups = computed(() => {
   const text = query.value.trim()
   const match = (id: string, name: string) => !text || id.includes(text.toUpperCase()) || name.includes(text)
   return [
-    { key: 'live', cls: 'g1', title: '实时监测<br>点位', rows: STRUCT_PTS.filter(item => item.live && match(item.id, item.name)) },
-    { key: 'twin', cls: 'g2', title: '数字孪生<br>生成点位', rows: STRUCT_PTS.filter(item => !item.live && match(item.id, item.name)) }
+    { key: 'live', cls: 'g1', title: '实时监测<br>点位', rows: STRUCT_PTS.filter(item => item.live && match(item.id, item.name)).map(withTone) },
+    { key: 'twin', cls: 'g2', title: '数字孪生<br>生成点位', rows: STRUCT_PTS.filter(item => !item.live && match(item.id, item.name)).map(withTone) }
   ].filter(group => group.rows.length)
 })
 
