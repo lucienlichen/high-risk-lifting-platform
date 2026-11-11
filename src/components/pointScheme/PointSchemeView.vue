@@ -8,8 +8,8 @@
       <span class="ps-cur-label">当前点位</span>
       <strong class="ps-cur-name">{{ active.name }}</strong>
       <span class="ps-id">{{ active.id }}</span>
-      <span class="ps-pill" :class="active.status">{{ TONE_TEXT[active.status] }}</span>
-      <span class="ps-kind-tag">{{ active.measured ? '实测点' : '孪生点' }}</span>
+      <span class="ps-pill" :class="side === 'structure' ? 'ok' : active.status">{{ side === 'structure' ? '正常' : TONE_TEXT[active.status] }}</span>
+      <span class="ps-kind-tag" :class="{ live: side === 'structure' && active.measured, twin: side === 'structure' && !active.measured }">{{ side === 'structure' ? (active.measured ? '实时监测点' : '数字孪生生成点') : (active.measured ? '实测点' : '孪生点') }}</span>
       <div class="ps-switch">
         <div class="ps-seg" role="tablist" aria-label="点位类型">
           <button type="button" :class="{ on: side === 'structure' }" @click="setSide('structure')">结构点位</button>
@@ -19,7 +19,8 @@
       </div>
     </header>
 
-    <div class="ps-final">
+    <StructurePointPane v-if="side === 'structure'" :point-id="active.id" @select="selectPoint" />
+    <div v-else class="ps-final">
       <div class="ps-final-left">
         <section class="ps-table-wrap">
           <div class="ps-table-hd">
@@ -70,6 +71,7 @@ import { useRoute, useRouter } from 'vue-router'
 import SchemeChart from '@/components/pointScheme/SchemeChart.vue'
 import SchemeModel from '@/components/pointScheme/SchemeModel.vue'
 import SchemeTable from '@/components/pointScheme/SchemeTable.vue'
+import StructurePointPane from '@/components/pointScheme/StructurePointPane.vue'
 import {
   DATA_TABS, TONE_TEXT, WEIGHT_AXIS, WEIGHT_SERIES,
   cardOrder, conditionCards, cycleHead, cyclesFor, defaultPointId, healthStats,
