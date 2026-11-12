@@ -140,3 +140,85 @@ export function shiftDate(offset: number) {
 export function dateLabel(date: string) {
   return `${date.slice(5)}${today(date) ? ' 今天' : ''}`
 }
+
+export interface DutySeries {
+  height: [number, number][]
+  load: [number, number][]
+  trolley: [number, number][]
+}
+
+/** 整机共享工况。只按日期种子生成作业循环，与测点无关。 */
+export function dutyDay(date: string): DutySeries {
+  const random = rng(hash(`${date}duty`))
+  const windows = shifts(random)
+  const end = today(date) ? STRUCT_NOW : 1440
+  let height = 12 + random() * 4
+  let load = 0
+  let trolley = 4 + random() * 18
+  const events: { m: number; h: number; load: number; tro: number }[] = [{ m: 0, h: height, load, tro: trolley }]
+  const push = (minute: number) => { events.push({ m: minute, h: height, load, tro: trolley }) }
+  windows.forEach(([start, stop]) => {
+    let cursor = start + 4 + Math.floor(random() * 10)
+    while (cursor + 14 < stop) {
+      const pick = 1.8 + random() * 24
+      const drop = 1.8 + random() * 24
+      const loft = 12 + random() * 5
+      const low = 0.5 + random() * 1.2
+      const weight = 14 + random() * 30
+      const move = 2 + Math.floor(random() * 2)
+      const hoist = 2 + Math.floor(random() * 2)
+      let minute = cursor
+      push(minute)
+      minute += move
+      trolley = pick
+      push(minute)
+      minute += hoist
+      height = low
+      push(minute)
+      minute += 0.5
+      load = weight
+      push(minute)
+      minute += hoist + 1
+      height = loft
+      push(minute)
+      minute += move + 1
+      trolley = drop
+      push(minute)
+      minute += hoist
+      height = low
+      push(minute)
+      minute += 0.5
+      load = 0
+      push(minute)
+      minute += hoist
+      height = loft
+      push(minute)
+      cursor = minute + 4 + Math.floor(random() * 12)
+    }
+  })
+  const series: DutySeries = { height: [], load: [], trolley: [] }
+  let index = 0
+  for (let minute = 0; minute <= end; minute += 1) {
+    while (index + 1 < events.length && events[index + 1].m <= minute) index += 1
+    const left = events[index]
+    const right = events[Math.min(index + 1, events.length - 1)]
+    const span = right.m - left.m
+    const ratio = span === 0 ? 0 : Math.max(0, Math.min(1, (minute - left.m) / span))
+    series.height.push([minute, left.h + (right.h - left.h) * ratio])
+    series.load.push([minute, left.load + (right.load - left.load) * ratio])
+    series.trolley.push([minute, left.tro + (right.tro - left.tro) * ratio])
+  }
+  return series
+}
+
+/** GB/T 28264 八项开关量示意。红点两项沿用示意稿，不是现网设备状态。 */
+export const STRUCT_STATUS = [
+  { name: '起升机构制动器的开闭', ok: true, text: '闭合' },
+  { name: '抗风防滑', ok: false, text: '报警' },
+  { name: '联锁保护', ok: true, text: '正常' },
+  { name: '门限位', ok: true, text: '正常' },
+  { name: '机构之间的运行联锁', ok: true, text: '正常' },
+  { name: '同一或不同一轨道运行机构安全信号', ok: false, text: '异常' },
+  { name: '供电电缆卷筒', ok: true, text: '正常' },
+  { name: '超速保护', ok: true, text: '正常' }
+] as const

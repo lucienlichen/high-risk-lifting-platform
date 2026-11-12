@@ -420,7 +420,23 @@
 .ps-struct-menu span { margin-left: auto; align-self: center; font-size: 12px; color: #6b7280; }
 .ps-struct-sec.svc { padding-top: 12px; }
 .ps-struct-note { margin: 0; color: #6b7280; font-size: 13px; }
+.ps-struct-empty-tab { flex: 1; margin: 0; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 15px; }
 .ps-struct-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.ps-struct-safety { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
+.ps-struct-grid3 { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.ps-share { display: inline-flex; align-items: center; height: 18px; padding: 0 6px; border-radius: 4px; border: 1px solid #bfdbfe; background: #eff6ff; color: #1d4ed8; font-size: 11px; font-weight: 500; margin-left: 0; }
+.ps-struct-stbar { flex: none; border: 1px solid #e5e7eb; border-radius: 8px; padding: 7px 14px 8px; background: #fafbfc; }
+.ps-struct-stbar .hd { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+.ps-struct-stbar .hd .t { font-size: 14px; font-weight: 700; }
+.ps-struct-stgrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px 18px; }
+.ps-struct-stit { display: flex; align-items: center; gap: 8px; min-height: 24px; font-size: 13px; color: #374151; min-width: 0; }
+.ps-struct-stit .name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ps-struct-sval { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; flex: none; white-space: nowrap; }
+.ps-struct-sval i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: none; }
+.ps-struct-sval.ok { color: #15803d; }
+.ps-struct-sval.ok i { background: #22c55e; }
+.ps-struct-sval.bad { color: #dc2626; }
+.ps-struct-sval.bad i { background: #ef4444; }
 .ps-struct-box { min-width: 0; min-height: 0; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 14px 12px; display: flex; flex-direction: column; gap: 8px; background: #fff; }
 .ps-struct-box.span2 { grid-column: span 2; }
 .ps-struct-box .bh { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; min-height: 30px; }
@@ -428,13 +444,15 @@
 .ps-struct-box .t, .ps-struct-box .sh { text-align: center; font-weight: 700; }
 .ps-struct-box .t { font-size: 16px; }
 .ps-struct-box .sh { font-size: 17px; }
-.ps-struct-box .d { font-size: 13px; color: #374151; }
+.ps-struct-box .d { font-size: 13px; color: #374151; white-space: nowrap; }
+.ps-struct-box .d b { font-weight: 700; color: #111827; }
+.ps-struct-box .d .t { margin-left: 10px; }
 .ps-struct-box .r { justify-self: end; display: flex; align-items: center; gap: 6px; font-size: 12px; color: #6b7280; }
 .ps-struct-box select { height: 28px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; }
 .ps-struct-box select:disabled { color: #9ca3af; background: #f9fafb; }
 .ps-struct-box .tabs { display: flex; align-items: center; gap: 8px; }
 .ps-struct-box .tabs span { margin-left: auto; font-size: 12px; color: #6b7280; }
-.ps-struct-box .tabs span.left { margin-left: 0; }
+.ps-struct-box .tabs span.left, .ps-struct-box .tabs .ps-share, .ps-struct-box .tabs .u { margin-left: 0; }
 .ps-struct-box .seg { display: flex; border: 1px solid #d1d5db; border-radius: 6px; overflow: hidden; }
 .ps-struct-box .seg button { height: 26px; padding: 0 12px; border: 0; background: #fff; color: #374151; font-size: 12px; cursor: pointer; }
 .ps-struct-box .seg button.on { background: #1677ff; color: #fff; font-weight: 700; }

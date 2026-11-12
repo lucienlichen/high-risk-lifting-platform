@@ -62,15 +62,14 @@
     <div class="ps-struct-right">
       <section class="ps-struct-card ps-struct-sec data">
         <nav class="ps-struct-menu">
-          <button type="button" class="on">健康监测</button>
-          <button type="button" class="ok" @click="note = '安全监控三图明天再讨论，本次未做'">安全监控</button>
-          <button type="button" @click="note = '该数据类别本次未展开'">风险监测</button>
-          <button type="button" @click="note = '该数据类别本次未展开'">检验检测</button>
-          <button type="button" @click="note = '该数据类别本次未展开'">日常点巡检</button>
+          <button type="button" :class="menuClass('health')" @click="dataMenu = 'health'">健康监测</button>
+          <button type="button" :class="menuClass('safety')" @click="dataMenu = 'safety'">安全监控</button>
+          <button type="button" :class="menuClass('risk')" @click="dataMenu = 'risk'">风险监测</button>
+          <button type="button" :class="menuClass('inspect')" @click="dataMenu = 'inspect'">检验检测</button>
+          <button type="button" :class="menuClass('patrol')" @click="dataMenu = 'patrol'">日常点巡检</button>
           <span>监测数据</span>
         </nav>
-        <p v-if="note" class="ps-struct-note">{{ note }}</p>
-        <div class="ps-struct-grid">
+        <div v-if="dataMenu === 'health'" class="ps-struct-grid">
           <article class="ps-struct-box span2">
             <div class="bh">
               <span class="d"><b>{{ stressTab === 'cloud' ? '2026-11-11' : stressDate }}</b></span>
@@ -111,6 +110,50 @@
             <div class="chart"><SchemeChart :option="ecOption" /></div>
           </article>
         </div>
+        <div v-else-if="dataMenu === 'safety'" class="ps-struct-safety">
+          <div class="ps-struct-grid3">
+            <article class="ps-struct-box">
+              <div class="bh side">
+                <span class="d"><b>{{ heightDate }}</b><span class="t">起升高度</span></span>
+                <span class="r">历史数据
+                  <select v-model="heightDate"><option v-for="date in dates" :key="date" :value="date">{{ dateLabel(date) }}</option></select>
+                </span>
+              </div>
+              <div class="tabs"><span class="ps-share">整机共享工况</span><span class="u">单位 m</span></div>
+              <div class="chart"><SchemeChart :option="heightOption" /></div>
+            </article>
+            <article class="ps-struct-box">
+              <div class="bh side">
+                <span class="d"><b>{{ loadDate }}</b><span class="t">起升载荷</span></span>
+                <span class="r">历史数据
+                  <select v-model="loadDate"><option v-for="date in dates" :key="date" :value="date">{{ dateLabel(date) }}</option></select>
+                </span>
+              </div>
+              <div class="tabs"><span class="ps-share">整机共享工况</span><span class="u">单位 t</span></div>
+              <div class="chart"><SchemeChart :option="loadOption" /></div>
+            </article>
+            <article class="ps-struct-box">
+              <div class="bh side">
+                <span class="d"><b>{{ trolleyDate }}</b><span class="t">小车位置</span></span>
+                <span class="r">历史数据
+                  <select v-model="trolleyDate"><option v-for="date in dates" :key="date" :value="date">{{ dateLabel(date) }}</option></select>
+                </span>
+              </div>
+              <div class="tabs"><span class="ps-share">整机共享工况</span><span class="u">单位 m</span></div>
+              <div class="chart"><SchemeChart :option="trolleyOption" /></div>
+            </article>
+          </div>
+          <div class="ps-struct-stbar">
+            <div class="hd"><span class="t">状态监控</span><span class="ps-share">整机共享</span></div>
+            <div class="ps-struct-stgrid">
+              <div v-for="item in statusItems" :key="item.name" class="ps-struct-stit" :title="item.name">
+                <span class="name">{{ item.name }}</span>
+                <span class="ps-struct-sval" :class="item.ok ? 'ok' : 'bad'"><i></i>{{ item.text }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p v-else class="ps-struct-empty-tab">该页签示意本次未做</p>
       </section>
       <section class="ps-struct-card ps-struct-sec svc">
         <div class="ps-struct-grid">
@@ -194,7 +237,7 @@ import type { EChartsOption } from 'echarts'
 import SchemeChart from '@/components/pointScheme/SchemeChart.vue'
 import { cloudSvg, legendMarkup, modalCrane } from '@/components/pointScheme/stressCloud'
 import {
-  STRUCT_DATES, STRUCT_NOW, STRUCT_PTS, aeDay, aeWeek, dateLabel, dSeries, ecDay, lSeries, shiftDate, stressDay, structPoint
+  STRUCT_DATES, STRUCT_NOW, STRUCT_PTS, STRUCT_STATUS, aeDay, aeWeek, dateLabel, dSeries, dutyDay, ecDay, lSeries, shiftDate, stressDay, structPoint
 } from '@/components/pointScheme/structureMock'
 
 const props = defineProps<{ pointId: string }>()
@@ -203,11 +246,16 @@ const emit = defineEmits<{ select: [id: string] }>()
 const query = ref('')
 const alarmOnly = ref(false)
 const hoverId = ref('')
-const note = ref('')
+type DataMenu = 'health' | 'safety' | 'risk' | 'inspect' | 'patrol'
+const dataMenu = ref<DataMenu>('health')
 const stressTab = ref<'ts' | 'cloud'>('ts')
 const stressDate = ref(STRUCT_DATES[0])
 const aeDate = ref(STRUCT_DATES[0])
 const ecDate = ref(STRUCT_DATES[0])
+const heightDate = ref(STRUCT_DATES[0])
+const loadDate = ref(STRUCT_DATES[0])
+const trolleyDate = ref(STRUCT_DATES[0])
+const statusItems = STRUCT_STATUS
 const zoom = ref(7)
 const modal = ref(false)
 const dates = STRUCT_DATES
@@ -284,6 +332,65 @@ function dayOption(pairs: [number, number][], color: string, max: number, date: 
   }
 }
 
+function menuClass(key: DataMenu) {
+  if (dataMenu.value === key) return 'on'
+  return key === 'health' || key === 'safety' ? 'ok' : ''
+}
+
+function dutyOption(pairs: [number, number][], color: string, max: number, interval: number, date: string, label: string, unit: string, digits: number): EChartsOption {
+  const isToday = date === STRUCT_DATES[0]
+  return {
+    animation: false,
+    grid: { left: 42, right: 12, top: 18, bottom: 24 },
+    tooltip: {
+      trigger: 'axis',
+      confine: true,
+      formatter: (items: unknown) => {
+        const row = (items as { value: [number, number] }[])[0]
+        if (!row) return ''
+        const minute = Math.round(row.value[0])
+        const clock = `${Math.floor(minute / 60)}:${String(minute % 60).padStart(2, '0')}`
+        return `${date.slice(5)} ${clock}<br>${label} ${row.value[1].toFixed(digits)} ${unit}`
+      }
+    },
+    xAxis: {
+      type: 'value', min: 0, max: 1440, interval: 240,
+      axisLabel: { formatter: (value: number) => `${Math.round(value / 60)}:00`, fontSize: 11, color: '#6b7280' },
+      axisLine: { lineStyle: { color: '#d1d5db' } },
+      splitLine: { show: false }
+    },
+    yAxis: {
+      type: 'value', min: 0, max, interval,
+      axisLabel: { fontSize: 11, color: '#6b7280' },
+      axisLine: { lineStyle: { color: '#d1d5db' } },
+      splitLine: { lineStyle: { color: '#eef0f3' } }
+    },
+    series: [{
+      type: 'line',
+      data: pairs,
+      symbol: 'none',
+      lineStyle: { width: 1.5, color },
+      itemStyle: { color },
+      areaStyle: { color, opacity: 0.08 },
+      markLine: isToday ? {
+        symbol: 'none',
+        silent: true,
+        data: [{
+          xAxis: STRUCT_NOW,
+          label: { formatter: '当前 15:30', fontSize: 11, color: '#1677ff', position: 'insideEndTop', rotate: 0 },
+          lineStyle: { type: 'dashed', color: '#1677ff', width: 1 }
+        }]
+      } : undefined
+    }]
+  }
+}
+
+const heightSeries = computed(() => dutyDay(heightDate.value))
+const loadSeries = computed(() => dutyDay(loadDate.value))
+const trolleySeries = computed(() => dutyDay(trolleyDate.value))
+const heightOption = computed(() => dutyOption(heightSeries.value.height, '#1677ff', 20, 5, heightDate.value, '起升高度', 'm', 2))
+const loadOption = computed(() => dutyOption(loadSeries.value.load, '#d97706', 50, 10, loadDate.value, '起升载荷', 't', 1))
+const trolleyOption = computed(() => dutyOption(trolleySeries.value.trolley, '#0d9488', 28, 10, trolleyDate.value, '小车位置', 'm', 2))
 const stressOption = computed(() => dayOption(stressDay(point.value, stressDate.value), '#1677ff', 200, stressDate.value))
 const aeOption = computed(() => dayOption(aeDay(point.value, aeDate.value), '#7c3aed', 80, aeDate.value, true, false, [0, 6, 12, 18, 24]))
 const ecOption = computed(() => dayOption(ecDay(point.value, ecDate.value), '#0d9488', 0.3, ecDate.value, false, true, [0, 6, 12, 18, 24]))
