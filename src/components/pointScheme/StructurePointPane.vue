@@ -113,7 +113,6 @@
         </div>
       </section>
       <section class="ps-struct-card ps-struct-sec svc">
-        <nav class="ps-struct-menu is-tail" aria-label="服务说明"><span>四项服务同屏展示</span></nav>
         <div class="ps-struct-grid">
           <article class="ps-struct-box">
             <div class="sh">疲劳累积损伤评估</div>
