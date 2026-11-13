@@ -72,6 +72,7 @@
 .lg-warn { background: var(--color-warning-bg); border-color: var(--parts-color-4); }
 .lg-ok { background: var(--color-success-bg); border-color: var(--parts-color-5); }
 .lg-off { background: var(--parts-color-6); border-color: var(--parts-color-7); border-style: dashed; }
+.lg-all { background: linear-gradient(90deg, #0f2340, #1d4ed8); border-color: #0f2340; }
 
 
 .cols-5 {
@@ -548,6 +549,15 @@
   transition: box-shadow 0.25s, outline 0.25s;
 }
 .l2-title, .node-card.click-l3 { cursor: pointer; }
+.whole { flex: none; margin: 0 8px 8px; height: 50px; border-radius: 6px; border: 0; cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 0 14px 0 12px; color: #fff; background: linear-gradient(90deg, #0f2340 0%, #16407a 100%); box-shadow: inset 0 -2px 0 #1677ff; text-align: left; font-family: inherit; position: relative; }
+.whole:hover { background: linear-gradient(90deg, #132c52 0%, #1d4ed8 100%); }
+.whole .ic { width: 26px; height: 26px; flex: none; border-radius: 5px; background: rgba(255,255,255,.14); display: flex; align-items: center; justify-content: center; }
+.whole .tx { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.whole .tx b { font-size: 15px; letter-spacing: 1px; white-space: nowrap; }
+.whole .tx small { font-size: 11px; color: #bcd0ea; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.whole .tag { flex: none; font-size: 11px; line-height: 18px; padding: 0 6px; border-radius: 9px; border: 1px solid rgba(255,255,255,.4); color: #dbe7f7; }
+.whole .go { flex: none; font-size: 18px; color: #93c5fd; }
+.whole .st { position: absolute; left: 0; top: 6px; bottom: 6px; width: 3px; border-radius: 0 2px 2px 0; }
 
 .agg-badge {
   display: inline-block; margin-left: 6px;

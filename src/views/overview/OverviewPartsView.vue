@@ -16,7 +16,7 @@
     </DeviceStrip>
 
     <div v-if="card && scheme === 'legacy'" class="parts-scroll">
-      <div class="legend-row"><span v-for="status in legend" :key="status"><i class="lg" :class="`lg-${status}`"></i>{{ statusLabels[status] }}</span><em>五列专业 · 分组聚合 / 结构点位 · 颜色取下级最差</em></div>
+      <div class="legend-row"><span v-for="status in legend" :key="status"><i class="lg" :class="`lg-${status}`"></i>{{ statusLabels[status] }}</span><span><i class="lg lg-all"></i>专业整体（新增入口）</span><em>五列专业 · 分组聚合 / 结构点位 · 颜色取下级最差 · 底部「整体」进入专业级详情</em></div>
       <div class="cols-5">
         <section v-for="column in columns" :key="column.name" class="spec-col" :class="{ 'is-focus': focused === column.name, 'is-dim': focused && focused !== column.name }">
           <button type="button" class="col-head col-focus" :class="`is-${worstStatus(column.groups.flatMap(g => g.nodes))}`" @click="focusColumn(column.name)">{{ column.name }}</button>
@@ -29,6 +29,13 @@
               </div>
             </div>
           </div>
+          <button type="button" class="whole" :title="`进入${column.name}整体详情`" @click="openOverall(column.name)">
+            <span class="st" :style="{ background: stripeColor(column) }"></span>
+            <span class="ic" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.4"><rect x="1.5" y="1.5" width="5" height="5" rx="1"/><rect x="9.5" y="1.5" width="5" height="5" rx="1"/><rect x="1.5" y="9.5" width="5" height="5" rx="1"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/></svg></span>
+            <span class="tx"><b>{{ column.name }}整体</b><small>{{ overallMeta(column.name).hint }}</small></span>
+            <span class="tag">{{ overallMeta(column.name).kind }}</span>
+            <span class="go">›</span>
+          </button>
         </section>
       </div>
     </div>
@@ -116,6 +123,23 @@ const pointCounts = computed(() => {
   })))
   return map
 })
+const overallCatalog: Record<string, { id: string; kind: string; hint: string }> = {
+  金属结构: { id: 'metal', kind: '结构', hint: '桥架 · 小车架 全部点位汇总' },
+  起升机构: { id: 'hoist', kind: '机构', hint: '主副起升 · 卷筒钢丝绳 · 吊具' },
+  运行机构: { id: 'travel', kind: '机构', hint: '大车运行 · 小车运行' },
+  电气系统: { id: 'electric', kind: '机构', hint: '供电 · 控制 · 照明与信号' },
+  安全防护装置: { id: 'safety', kind: '机构', hint: '限位 · 超载 · 防碰撞' }
+}
+const stripeColors: Record<PointStatus, string> = { alarm: '#f5222d', warn: '#fa8c16', ok: '#52c41a', off: '#94a3b8', twin: '#94a3b8' }
+function overallMeta(name: string) { return overallCatalog[name] || { id: 'metal', kind: '机构', hint: '专业全部测点汇总' } }
+function stripeColor(column: PartColumn) { return stripeColors[worstStatus(column.groups.flatMap(group => group.nodes))] }
+function openOverall(name: string) {
+  router.push({
+    name: 'overviewOverall',
+    params: { id: card.value!.id },
+    query: { ...query.value, prof: overallMeta(name).id, menu: 'health' }
+  })
+}
 function open(specialty: string, part: string, aggregate: boolean) {
   router.push({
     name: 'overviewPoint',

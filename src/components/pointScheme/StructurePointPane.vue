@@ -71,9 +71,8 @@
         </nav>
         <div v-if="dataMenu === 'health'" class="ps-struct-grid">
           <article class="ps-struct-box span2">
-            <div class="bh">
-              <span class="d"><b>{{ stressTab === 'cloud' ? '2026-11-11' : stressDate }}</b></span>
-              <span class="t">应力光纤监测数据</span>
+            <div class="bh side">
+              <span class="d"><span class="bt">应力光纤监测数据</span><b>{{ stressTab === 'cloud' ? '2026-11-11' : stressDate }}</b></span>
               <span class="r">历史数据
                 <select v-model="stressDate" :disabled="stressTab === 'cloud'">
                   <option v-for="date in dates" :key="date" :value="date">{{ dateLabel(date) }}</option>
@@ -94,18 +93,18 @@
             </div>
           </article>
           <article class="ps-struct-box">
+            <div class="bh side titleline"><span class="bt">声发射监测数据</span></div>
             <div class="bh side"><span class="d"><b>{{ aeDate }}</b></span><span class="r">历史数据
               <select v-model="aeDate"><option v-for="date in dates" :key="date" :value="date">{{ dateLabel(date) }}</option></select>
             </span></div>
-            <div class="sh">声发射监测数据</div>
             <div class="tabs"><span>每次撞击幅值 · 单位 dB</span></div>
             <div class="chart"><SchemeChart :option="aeOption" /></div>
           </article>
           <article class="ps-struct-box">
+            <div class="bh side titleline"><span class="bt">疲劳裂纹涡流监测数据</span></div>
             <div class="bh side"><span class="d"><b>{{ ecDate }}</b></span><span class="r">历史数据
               <select v-model="ecDate"><option v-for="date in dates" :key="date" :value="date">{{ dateLabel(date) }}</option></select>
             </span></div>
-            <div class="sh">疲劳裂纹涡流监测数据</div>
             <div class="tabs"><span>涡流信号幅值 · 单位 V</span></div>
             <div class="chart"><SchemeChart :option="ecOption" /></div>
           </article>
@@ -114,7 +113,7 @@
           <div class="ps-struct-grid3">
             <article class="ps-struct-box">
               <div class="bh side">
-                <span class="d"><b>{{ heightDate }}</b><span class="t">起升高度</span></span>
+                <span class="d"><span class="bt">起升高度</span><b>{{ heightDate }}</b></span>
                 <span class="r">历史数据
                   <select v-model="heightDate"><option v-for="date in dates" :key="date" :value="date">{{ dateLabel(date) }}</option></select>
                 </span>
@@ -124,7 +123,7 @@
             </article>
             <article class="ps-struct-box">
               <div class="bh side">
-                <span class="d"><b>{{ loadDate }}</b><span class="t">起升载荷</span></span>
+                <span class="d"><span class="bt">起升载荷</span><b>{{ loadDate }}</b></span>
                 <span class="r">历史数据
                   <select v-model="loadDate"><option v-for="date in dates" :key="date" :value="date">{{ dateLabel(date) }}</option></select>
                 </span>
@@ -134,7 +133,7 @@
             </article>
             <article class="ps-struct-box">
               <div class="bh side">
-                <span class="d"><b>{{ trolleyDate }}</b><span class="t">小车位置</span></span>
+                <span class="d"><span class="bt">小车位置</span><b>{{ trolleyDate }}</b></span>
                 <span class="r">历史数据
                   <select v-model="trolleyDate"><option v-for="date in dates" :key="date" :value="date">{{ dateLabel(date) }}</option></select>
                 </span>
@@ -143,53 +142,49 @@
               <div class="chart"><SchemeChart :option="trolleyOption" /></div>
             </article>
           </div>
-          <div class="ps-struct-stbar">
-            <div class="hd"><span class="t">状态监控</span><span class="ps-share">整机共享</span></div>
-            <div class="ps-struct-stgrid">
-              <div v-for="item in statusItems" :key="item.name" class="ps-struct-stit" :title="item.name">
-                <span class="name">{{ item.name }}</span>
-                <span class="ps-struct-sval" :class="item.ok ? 'ok' : 'bad'"><i></i>{{ item.text }}</span>
-              </div>
-            </div>
-          </div>
         </div>
         <p v-else class="ps-struct-empty-tab">该页签示意本次未做</p>
       </section>
       <section class="ps-struct-card ps-struct-sec svc">
+        <template v-if="dataMenu !== 'safety'">
+        <nav class="ps-svcmenu" aria-label="服务">
+          <button type="button">健康评估</button>
+          <button type="button">裂纹预测</button>
+          <button type="button">损伤程度诊断</button>
+          <button type="button">裂纹判别</button>
+        </nav>
         <div class="ps-struct-grid">
           <article class="ps-struct-box">
-            <div class="sh">疲劳累积损伤评估</div>
-            <div class="tabs"><span class="left">累积损伤度 D · 按天</span></div>
+            <div class="tabs"><span class="left">疲劳损伤度 D · 按天</span></div>
             <div class="chart"><SchemeChart :option="damageOption" /></div>
             <div class="concl"><div class="big">疲劳损伤度 D = {{ point.D.toFixed(2) }}</div><div class="line2">点位健康状态：<b>健康</b></div></div>
             <div class="basis">依据<em>应力光纤监测数据</em></div>
           </article>
           <article class="ps-struct-box">
-            <div class="sh">裂纹预测</div>
-            <div class="tabs"><span class="left">剩余寿命 · 按天</span>
+            <div class="tabs"><span class="left">裂纹萌生寿命 · 按天</span>
               <div class="zoom">
                 <button v-for="days in [7, 14, 30]" :key="days" type="button" :class="{ on: zoom === days }" @click="zoom = days">{{ days }}天</button>
               </div>
             </div>
             <div class="chart" title="滚轮可缩放天数" @wheel.prevent="onLifeWheel"><SchemeChart :option="lifeOption" /></div>
-            <div class="concl"><div class="big">今日剩余寿命 {{ point.L.toFixed(1) }} 年</div><div class="line2 muted">预计裂纹萌生前的剩余寿命</div></div>
+            <div class="concl"><div class="big">裂纹萌生寿命 {{ point.L.toFixed(1) }} 年</div></div>
             <div class="basis">依据<em>应力光纤监测数据</em></div>
           </article>
           <article class="ps-struct-box">
-            <div class="sh">损伤程度诊断</div>
             <div class="tabs"><span class="left">声发射幅值 · 近 7 天（每小时最大）</span></div>
             <div class="chart"><SchemeChart :option="aeWeekOption" /></div>
-            <div class="concl"><p class="qual">当前点位声发射信号不明显，幅值均低于 40 dB 阈值，<b>暂未见明显活性缺陷</b>，暂无损伤扩展迹象。</p></div>
+            <div class="concl"><p class="qual">当前点位声发射信号不明显，<b>暂未见明显的活性缺陷</b></p></div>
             <div class="basis">依据<em>声发射监测数据</em></div>
           </article>
           <article class="ps-struct-box">
-            <div class="sh">裂纹判别</div>
             <div class="tabs"><span class="left">涡流阻抗平面（相位图）</span></div>
             <div class="chart phase" v-html="phaseSvg"></div>
             <div class="concl"><div class="big ok">该位置未发现裂纹</div></div>
             <div class="basis">依据<em>疲劳裂纹涡流监测数据</em></div>
           </article>
         </div>
+        </template>
+        <div v-else class="ps-svc-tbd"><b>安全监控对应服务（待定）</b><span>服务内容待确认</span></div>
       </section>
     </div>
     <div v-if="modal" class="ps-cloud-mask" @click.self="closeModal">
@@ -237,7 +232,7 @@ import type { EChartsOption } from 'echarts'
 import SchemeChart from '@/components/pointScheme/SchemeChart.vue'
 import { cloudSvg, legendMarkup, modalCrane } from '@/components/pointScheme/stressCloud'
 import {
-  STRUCT_DATES, STRUCT_NOW, STRUCT_PTS, STRUCT_STATUS, aeDay, aeWeek, dateLabel, dSeries, dutyDay, ecDay, lSeries, shiftDate, stressDay, structPoint
+  STRUCT_DATES, STRUCT_NOW, STRUCT_PTS, aeDay, aeWeek, dateLabel, dSeries, dutyDay, ecDay, lSeries, shiftDate, stressDay, structPoint
 } from '@/components/pointScheme/structureMock'
 
 const props = defineProps<{ pointId: string }>()
@@ -255,7 +250,6 @@ const ecDate = ref(STRUCT_DATES[0])
 const heightDate = ref(STRUCT_DATES[0])
 const loadDate = ref(STRUCT_DATES[0])
 const trolleyDate = ref(STRUCT_DATES[0])
-const statusItems = STRUCT_STATUS
 const zoom = ref(7)
 const modal = ref(false)
 const dates = STRUCT_DATES
@@ -409,11 +403,14 @@ const damageOption = computed(() => {
 const lifeOption = computed(() => {
   const pairs = lSeries(point.value, zoom.value)
   const step = zoom.value <= 8 ? 2 : zoom.value <= 16 ? 4 : 7
+  const min = Math.floor((point.value.L - 0.02) * 100) / 100
+  const max = Math.ceil((Math.max(...pairs.map(item => item[1])) + 0.01) * 100) / 100
   return {
     animation: false,
     grid: { left: 46, right: 12, top: 12, bottom: 28 },
+    tooltip: { trigger: 'axis', formatter: (items: unknown) => { const row = (items as { value: [number, number] }[])[0]; return row ? `${shiftDate(Math.round(row.value[0]))}<br>裂纹萌生寿命 ${row.value[1].toFixed(2)} 年` : '' } },
     xAxis: { type: 'value', min: -(zoom.value - 1), max: 0, interval: step, axisLabel: { formatter: (value: number) => shiftDate(Math.round(value)), fontSize: 11, color: '#6b7280' } },
-    yAxis: { type: 'value', scale: true, axisLabel: { fontSize: 11, color: '#6b7280', formatter: (value: number) => value.toFixed(2) }, splitLine: { lineStyle: { color: '#eef0f3' } } },
+    yAxis: { type: 'value', min, max, interval: max - min <= 0.08 ? 0.02 : undefined, axisLabel: { fontSize: 11, color: '#6b7280', formatter: (value: number) => value.toFixed(2) }, splitLine: { lineStyle: { color: '#eef0f3' } } },
     series: [{ type: 'line', data: pairs, symbol: 'none', lineStyle: { width: 2, color: '#0d9488' }, areaStyle: { color: '#0d9488', opacity: 0.08 } }]
   } as EChartsOption
 })

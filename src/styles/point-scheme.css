@@ -446,7 +446,15 @@
 .ps-struct-box .sh { font-size: 17px; }
 .ps-struct-box .d { font-size: 13px; color: #374151; white-space: nowrap; }
 .ps-struct-box .d b { font-weight: 700; color: #111827; }
-.ps-struct-box .d .t { margin-left: 10px; }
+.ps-struct-box .d .t, .ps-struct-box .d .bt { margin-left: 0; }
+.ps-struct-box .d .bt + b { margin-left: 10px; }
+.ps-struct-box .bt { font-size: 16px; font-weight: 700; white-space: nowrap; }
+.ps-struct-box .bh.titleline { min-height: 24px; }
+.ps-svcmenu { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; border-bottom: 1px solid #e5e7eb; flex: none; }
+.ps-svcmenu button { height: 44px; font-size: 18px; font-weight: 700; border: 0; border-bottom: 3px solid #1677ff; background: none; color: #1677ff; padding: 0; margin-bottom: -1px; cursor: default; }
+.ps-svc-tbd { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 8px; border: 1.5px dashed #cbd5e1; border-radius: 8px; background: #f8fafc; color: #64748b; }
+.ps-svc-tbd b { font-size: 20px; color: #334155; }
+.ps-svc-tbd span { font-size: 13px; }
 .ps-struct-box .r { justify-self: end; display: flex; align-items: center; gap: 6px; font-size: 12px; color: #6b7280; }
 .ps-struct-box select { height: 28px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; }
 .ps-struct-box select:disabled { color: #9ca3af; background: #f9fafb; }
