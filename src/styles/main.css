@@ -277,6 +277,16 @@ body {
 /* ========================================
    Main Body
    ======================================== */
+.platform-layout.is-point-compact { --header-height: 42px; }
+.top-bar.is-compact { padding: 0 12px; box-shadow: none; }
+.top-bar.is-compact .platform-logo { height: 26px; }
+.top-bar.is-compact .platform-title h1 { font-size: 15px; letter-spacing: 0.4px; font-weight: 650; }
+.top-bar.is-compact .top-nav-entry { height: 24px; padding: 0 8px; font-size: 12px; }
+.top-bar.is-compact .current-time { font-size: 12px; }
+.top-bar.is-compact .user-info { padding: 0 4px; gap: 6px; }
+.top-bar.is-compact .user-avatar { width: 22px; height: 22px; font-size: 11px; }
+.top-bar.is-compact .user-name { font-size: 12px; }
+
 .main-body {
   display: flex;
   height: 100vh;

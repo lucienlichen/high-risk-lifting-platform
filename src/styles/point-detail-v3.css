@@ -221,11 +221,38 @@
 }
 .pd-svc-main { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 12px; font-weight: 700; }
 .pd-svc-sub { font-size: 11px; color: var(--color-text-muted); line-height: 1.35; }
-.pd-svc.is-live { background: var(--color-success-bg); border-color: var(--color-success); }
-.pd-svc.is-off { background: var(--color-standby-bg); color: var(--color-standby); }
-.pd-svc.is-off .pd-svc-main { color: var(--color-standby); }
-.pd-svc.is-on { border-color: var(--color-primary); box-shadow: inset 0 0 0 1px var(--color-primary); background: var(--color-info-bg); }
-.pd-svc.is-on .pd-svc-main { color: var(--color-primary-hover); }
+.pd-svc.is-alarm {
+  --pd-tone: var(--color-danger);
+  background: color-mix(in srgb, var(--pd-tone) 16%, var(--color-card-bg));
+  border-color: var(--pd-tone);
+}
+.pd-svc.is-warn {
+  --pd-tone: var(--color-warning);
+  background: color-mix(in srgb, var(--pd-tone) 18%, var(--color-card-bg));
+  border-color: var(--pd-tone);
+}
+.pd-svc.is-ok {
+  --pd-tone: var(--color-success);
+  background: color-mix(in srgb, var(--pd-tone) 16%, var(--color-card-bg));
+  border-color: var(--pd-tone);
+}
+.pd-svc.is-na {
+  --pd-tone: var(--color-standby);
+  background: var(--color-standby-bg);
+  border-color: var(--pd-tone);
+  color: var(--color-text-secondary);
+}
+.pd-svc.is-na .pd-svc-main { color: var(--color-text-secondary); }
+.pd-svc.is-on {
+  background: color-mix(in srgb, var(--pd-tone, var(--color-border)) 30%, var(--color-card-bg));
+  border-color: var(--pd-tone, var(--color-border));
+  box-shadow: inset 4px 0 0 var(--pd-tone, var(--color-border)), inset 0 0 0 1px var(--pd-tone, var(--color-border));
+}
+.pd-svc:focus { outline: none; }
+.pd-svc:focus-visible {
+  outline: 2px solid var(--pd-tone, var(--color-border));
+  outline-offset: 1px;
+}
 .pd-svc-tags { display: flex; gap: 4px; }
 .pd-svc-tags em { font-style: normal; font-size: 10px; font-weight: 700; color: var(--color-warning); background: var(--color-warning-bg); border-radius: 4px; padding: 0 4px; }
 

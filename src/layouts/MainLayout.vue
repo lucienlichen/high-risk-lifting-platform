@@ -1,8 +1,8 @@
 <template>
-  <div class="platform-layout">
+  <div class="platform-layout" :class="{ 'is-point-compact': pointCompact }">
 
     <!-- ─── Top Header Bar ─── -->
-    <header class="top-bar">
+    <header class="top-bar" :class="{ 'is-compact': pointCompact }">
       <div class="top-bar-left">
         <!-- Platform logo mark -->
         <div class="platform-logo" title="返回首页" @click="router.push(landingLocation())">
@@ -23,7 +23,7 @@
       <div class="top-bar-right">
         <span class="current-time">{{ currentTime }}</span>
 
-        <div class="top-bar-search-wrap">
+        <div v-if="!pointCompact" class="top-bar-search-wrap">
           <el-input
             v-model="searchVal"
             size="small"
@@ -37,7 +37,7 @@
           </el-input>
         </div>
 
-        <div class="notification-btn" title="消息通知">
+        <div v-if="!pointCompact" class="notification-btn" title="消息通知">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
             <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
@@ -110,6 +110,7 @@ const searchVal    = ref('')
 const currentTime  = ref('')
 const currentScene = computed(() => store.currentScene)
 const showTopHierarchy = computed(() => route.name === 'scene')
+const pointCompact = computed(() => route.name === 'overviewPoint')
 const activeServiceKey = computed(() => store.activeService as ServiceKey | null)
 const activeServiceMeta = computed(() =>
   activeServiceKey.value ? flatServices.find(service => service.key === activeServiceKey.value) : null
