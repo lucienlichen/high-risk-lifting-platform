@@ -74,7 +74,7 @@
         >
           <div class="top">
             <span class="name">{{ card.name }}</span>
-            <span class="spd-status" :class="card.badgeTone">{{ card.badge }}</span>
+            <span class="spd-status" :class="[card.badgeTone, card.badge.length > 8 ? 'is-long' : '']">{{ card.badge }}</span>
           </div>
           <div class="spd-kpis">
             <div v-for="kpi in card.kpis" :key="kpi.label" class="spd-kpi">
@@ -134,7 +134,7 @@
               <div class="spd-qrow"><label for="spd-from">开始</label><input id="spd-from" v-model="draftFrom" type="datetime-local" :disabled="modal === 'eddy'"></div>
               <div class="spd-qrow"><label for="spd-to">结束</label><input id="spd-to" v-model="draftTo" type="datetime-local" :disabled="modal === 'eddy'"></div>
               <div class="spd-qact"><button type="button" :disabled="modal === 'eddy'" @click="runQuery">查询</button></div>
-              <div class="spd-hint">{{ modal === 'eddy' ? '待接入，时间查询不可用。' : queryHint }}</div>
+              <div class="spd-hint">{{ modal === 'eddy' ? '本示意不提供裂纹长度或大小曲线，时间查询不适用。' : queryHint }}</div>
             </div>
           </aside>
           <div class="spd-mmain">
@@ -153,9 +153,9 @@
                 </button>
               </div>
             </template>
-            <div v-else-if="evidence.kind === 'pending'" class="spd-pending">
-              <b>涡流监测待接入</b>
-              <span>本能力为柔性涡流阵列，用于判别裂纹长度与大小。暂无裂纹长度、大小或阻抗平面可查，不提供伪装检测曲线，也不提供报警记录。</span>
+            <div v-else-if="evidence.kind === 'note'" class="spd-eddy-note">
+              <b>该位置未发现裂纹</b>
+              <span>本能力为柔性涡流阵列，用于判别裂纹长度与大小。本示意不给出裂纹长度、大小，也不绘制阻抗平面或相位曲线。</span>
             </div>
             <template v-else>
               <article v-for="chart in evidence.charts" :key="chart.key" class="spd-chartblock">

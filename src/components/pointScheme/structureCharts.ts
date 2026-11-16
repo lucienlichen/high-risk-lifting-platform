@@ -12,7 +12,7 @@ export interface EvidenceChart {
 }
 
 export interface EvidencePack {
-  kind: 'charts' | 'list' | 'pending' | 'redirect'
+  kind: 'charts' | 'list' | 'note' | 'redirect'
   charts: EvidenceChart[]
   recordsTitle: string
   records: DemoRecord[]
@@ -108,7 +108,7 @@ function chart(key: string, title: string, desc: string, series: DemoSeries, col
 export function evidenceFor(svc: SvcId, point: StructurePoint, from: string, to: string, view: ModalView, alarm: AlarmRecord | null): EvidencePack {
   const query: SeriesQuery = { view, alarm, modal: svc }
   if (view === 'alarm' && !alarm) return { kind: 'list', charts: [], recordsTitle: '', records: [] }
-  if (svc === 'eddy') return { kind: 'pending', charts: [], recordsTitle: '', records: [] }
+  if (svc === 'eddy') return { kind: 'note', charts: [], recordsTitle: '', records: [] }
   if (view === 'alarm' && alarm && svc !== 'ae') return { kind: 'redirect', charts: [], recordsTitle: '', records: [] }
   if (svc === 'health') {
     const damage = damageSeries(point)

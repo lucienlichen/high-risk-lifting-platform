@@ -117,7 +117,7 @@ export const SERVICES: { id: SvcId; name: string; basis: string }[] = [
   { id: 'health', name: '健康评估', basis: '应力监测数据（演示）' },
   { id: 'crack', name: '裂纹预测', basis: '应力监测数据（演示）' },
   { id: 'ae', name: '损伤活性诊断', basis: '声发射监测数据（演示）' },
-  { id: 'eddy', name: '裂纹判别', basis: '涡流监测（待接入）' }
+  { id: 'eddy', name: '裂纹判别', basis: '涡流监测数据（演示）' }
 ]
 
 export function structurePoint(id: string) {
@@ -207,6 +207,9 @@ export function crackConclusion(point: StructurePoint) {
   return { text: `剩余年限 ${point.L.toFixed(1)} 年，剩余损伤度 ${remain.toFixed(2)}`, years: point.L, remain, cycles: remainCycles(point) }
 }
 
+export const AE_QUIET = '当前点位声发射信号不明显，暂未见明显的活性缺陷'
+export const EDDY_CLEAR = '该位置未发现裂纹'
+
 export function aeConclusion(point: StructurePoint) {
   const event = lastAeEvent(point)
   const lastLabel = event ? fmtDT(parseDT(event.from), false) : ''
@@ -215,14 +218,14 @@ export function aeConclusion(point: StructurePoint) {
   if (point.aeActive) {
     return { text: `存在活跃扩展迹象，最近一次活性事件 ${lastLabel}`, bad: true, lastLabel, days, count, event }
   }
-  return { text: `暂未见活跃扩展，近${days}日无活性事件`, bad: false, lastLabel, days, count, event }
+  return { text: AE_QUIET, bad: false, lastLabel, days, count, event }
 }
 
 export function serviceConclusion(svc: SvcId, point: StructurePoint) {
   if (svc === 'health') return healthConclusion(point).text
   if (svc === 'crack') return crackConclusion(point).text
   if (svc === 'ae') return aeConclusion(point).text
-  return '柔性涡流阵列待接入，暂无法判别裂纹长度与大小'
+  return EDDY_CLEAR
 }
 
 export function serviceCards(point: StructurePoint): ServiceCardModel[] {
@@ -268,7 +271,7 @@ export function serviceCards(point: StructurePoint): ServiceCardModel[] {
       return {
         id: service.id,
         name: service.name,
-        badge: conclusion.bad ? '存在活跃扩展' : '暂未见活跃扩展',
+        badge: conclusion.bad ? '存在活跃扩展迹象' : AE_QUIET,
         badgeTone: conclusion.bad ? 'warn' : 'ok',
         kpis: [
           { label: '最近活性事件', value: conclusion.lastLabel ? conclusion.lastLabel.slice(5) : '无', small: true },
@@ -283,15 +286,15 @@ export function serviceCards(point: StructurePoint): ServiceCardModel[] {
     return {
       id: service.id,
       name: service.name,
-      badge: '待接入',
-      badgeTone: 'pending',
+      badge: '未发现裂纹',
+      badgeTone: 'ok',
       kpis: [
         { label: '监测方式', value: '柔性涡流阵列', small: true },
-        { label: '接入状态', value: '未接入', small: true }
+        { label: '判别结果', value: '未发现裂纹', small: true }
       ],
-      conclusion: '柔性涡流阵列待接入，暂无法判别裂纹长度与大小',
+      conclusion: EDDY_CLEAR,
       abnormal: false,
-      pending: true,
+      pending: false,
       basis: service.basis
     }
   })
@@ -332,11 +335,11 @@ export function modalConclusion(svc: SvcId, point: StructurePoint, view: ModalVi
       body = alarm.title
       sub = `${alarm.note}　回看时段：${fmtRange(alarm.from, alarm.to)}（${TZ}）。40 dB 仅为示意阈值，不是规范。活性结论不映射为损伤度或全局报警。`
     } else {
-      sub = '依据声发射演示数据，判断是否存在活跃扩展迹象。40 dB 仅为示意阈值，不是规范。活性结论不映射为损伤度或全局报警。'
+      sub = '依据声发射演示数据。图中 40 dB 仅为示意阈值，不是规范，也不写入本结论。活性结论不映射为损伤度或全局报警。'
     }
   } else {
-    body = '柔性涡流阵列待接入，暂无法判别裂纹长度与大小。'
-    sub = '本能力为柔性涡流阵列，用于判别裂纹长度与大小。没有真实涡流数据，本服务不展示伪装的检测曲线，时间查询不可用。'
+    body = EDDY_CLEAR
+    sub = '本能力为柔性涡流阵列，用于判别裂纹长度与大小。本示意不给出裂纹长度或大小，也不绘制阻抗平面或相位曲线。'
   }
   return { head, body, sub, basis: SERVICES.find(item => item.id === svc)?.basis || '' }
 }
