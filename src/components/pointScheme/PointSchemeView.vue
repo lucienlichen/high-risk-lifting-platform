@@ -6,16 +6,17 @@
       <span class="ps-path">{{ side === 'structure' ? '冶金桥式起重机 / 金属结构 / 桥架 / 单双主梁' : '冶金桥式起重机 / 起升机构 / 主起升机构 / 驱动装置' }}</span>
       <span class="ps-vbar"></span>
       <span class="ps-cur-label">当前点位</span>
-      <strong class="ps-cur-name">{{ active.name }}</strong>
       <span class="ps-id">{{ active.id }}</span>
-      <span class="ps-pill" :class="side === 'structure' ? 'ok' : active.status">{{ side === 'structure' ? '正常' : TONE_TEXT[active.status] }}</span>
-      <span class="ps-kind-tag" :class="{ live: side === 'structure' && active.measured, twin: side === 'structure' && !active.measured }">{{ side === 'structure' ? (active.measured ? '实时监测点' : '数字孪生生成点') : (active.measured ? '实测点' : '孪生点') }}</span>
+      <strong class="ps-cur-name">{{ active.name }}</strong>
+      <span class="ps-pill" :class="active.status">{{ TONE_TEXT[active.status] }}</span>
+      <span v-if="side === 'mechanism'" class="ps-kind-tag" :class="{ live: active.measured, twin: !active.measured }">{{ active.measured ? '实测点' : '孪生点' }}</span>
       <div class="ps-switch">
+        <span v-if="side === 'structure'" class="ps-until">截至 2026-11-16 04:00（America/Araguaina，UTC-3）</span>
         <div class="ps-seg" role="tablist" aria-label="点位类型">
           <button type="button" :class="{ on: side === 'structure' }" @click="setSide('structure')">结构点位</button>
           <button type="button" :class="{ on: side === 'mechanism' }" @click="setSide('mechanism')">机构点位</button>
         </div>
-        <span class="ps-time">数据更新 2026-11-07 15:30</span>
+        <span v-if="side === 'mechanism'" class="ps-time">数据更新 2026-11-07 15:30</span>
       </div>
     </header>
 
@@ -29,19 +30,19 @@
               <span class="ps-count">共 {{ points.length }} 个 · <em class="a">报警 {{ counts.alarm }}</em> · <em class="w">异常 {{ counts.warn }}</em></span>
             </div>
             <div class="ps-table-hd-bot">
-              <input v-model="search" class="ps-search" type="search" placeholder="搜索名称或编号" aria-label="搜索名称或编号">
-              <label class="ps-check"><input v-model="alarmOnly" type="checkbox"> 仅看报警/异常</label>
+              <input v-model="search" class="ps-search" type="search" placeholder="搜索编号或位置" aria-label="搜索编号或位置">
+              <label class="ps-check"><input v-model="alarmOnly" type="checkbox"> 仅看异常/报警</label>
             </div>
           </div>
-          <SchemeTable :rows="visiblePoints" :selected-id="active.id" name-label="名称" @select="selectPoint" />
+          <SchemeTable :rows="visiblePoints" :selected-id="active.id" @select="selectPoint" />
         </section>
         <section class="ps-model-wrap">
           <div class="ps-tools">
-            <strong>{{ side === 'structure' ? '结构模型' : '机构模型' }}</strong>
-            <span class="ps-count">{{ side === 'structure' ? '单双主梁 · 立面示意' : '主起升机构 · 传动链示意' }}</span>
+            <strong>机构模型</strong>
+            <span class="ps-count">主起升机构 · 传动链示意</span>
           </div>
           <SchemeModel :side="side" :points="points" :selected-id="active.id" :hidden-ids="hiddenIds" @select="selectPoint" />
-          <p class="ps-cap">{{ side === 'structure' ? '上翼缘点位在梁上沿，下翼缘在下沿，腹板在中部；实心为实测点，空心为孪生点' : '电机 → 联轴器 → 减速器 → 卷筒 → 卷筒轴承座；实心为实测点' }}</p>
+          <p class="ps-cap">电机 → 联轴器 → 减速器 → 卷筒 → 卷筒轴承座；实心为实测点</p>
         </section>
       </div>
       <div class="ps-final-right">
@@ -72,6 +73,7 @@ import SchemeChart from '@/components/pointScheme/SchemeChart.vue'
 import SchemeModel from '@/components/pointScheme/SchemeModel.vue'
 import SchemeTable from '@/components/pointScheme/SchemeTable.vue'
 import StructurePointPane from '@/components/pointScheme/StructurePointPane.vue'
+import { STRUCTURE_POINTS } from '@/mock/structurePointDetail'
 import {
   DATA_TABS, TONE_TEXT, WEIGHT_AXIS, WEIGHT_SERIES,
   cardOrder, conditionCards, cycleHead, cyclesFor, defaultPointId, healthStats,
@@ -107,7 +109,9 @@ const expanded = ref(false)
 const alarmOnly = ref(false)
 const search = ref('')
 
-const points = computed(() => pointsOf(side.value))
+const points = computed(() => side.value === 'structure'
+  ? STRUCTURE_POINTS.map(point => ({ id: point.id, name: point.loc, measured: true, status: point.status }))
+  : pointsOf('mechanism'))
 const active = computed(() => points.value.find(item => item.id === selectedId.value) || points.value[0])
 const counts = computed(() => ({
   alarm: points.value.filter(item => item.status === 'alarm').length,
