@@ -29,13 +29,7 @@
               </div>
             </div>
           </div>
-          <button type="button" class="whole" :title="`进入${column.name}整体详情`" @click="openOverall(column.name)">
-            <span class="st" :style="{ background: stripeColor(column) }"></span>
-            <span class="ic" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.4"><rect x="1.5" y="1.5" width="5" height="5" rx="1"/><rect x="9.5" y="1.5" width="5" height="5" rx="1"/><rect x="1.5" y="9.5" width="5" height="5" rx="1"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/></svg></span>
-            <span class="tx"><b>{{ column.name }}整体</b><small>{{ overallMeta(column.name).hint }}</small></span>
-            <span class="tag">{{ overallMeta(column.name).kind }}</span>
-            <span class="go">›</span>
-          </button>
+          <button type="button" class="whole" :class="`is-${worstStatus(column.groups.flatMap(group => group.nodes))}`" :title="`进入${column.name}整体详情`" @click="openOverall(column.name)">{{ column.name }}整体</button>
         </section>
       </div>
     </div>
@@ -123,21 +117,18 @@ const pointCounts = computed(() => {
   })))
   return map
 })
-const overallCatalog: Record<string, { id: string; kind: string; hint: string }> = {
-  金属结构: { id: 'metal', kind: '结构', hint: '桥架 · 小车架 全部点位汇总' },
-  起升机构: { id: 'hoist', kind: '机构', hint: '主副起升 · 卷筒钢丝绳 · 吊具' },
-  运行机构: { id: 'travel', kind: '机构', hint: '大车运行 · 小车运行' },
-  电气系统: { id: 'electric', kind: '机构', hint: '供电 · 控制 · 照明与信号' },
-  安全防护装置: { id: 'safety', kind: '机构', hint: '限位 · 超载 · 防碰撞' }
+const overallIds: Record<string, string> = {
+  金属结构: 'metal',
+  起升机构: 'hoist',
+  运行机构: 'travel',
+  电气系统: 'electric',
+  安全防护装置: 'safety'
 }
-const stripeColors: Record<PointStatus, string> = { alarm: '#f5222d', warn: '#fa8c16', ok: '#52c41a', off: '#94a3b8', twin: '#94a3b8' }
-function overallMeta(name: string) { return overallCatalog[name] || { id: 'metal', kind: '机构', hint: '专业全部测点汇总' } }
-function stripeColor(column: PartColumn) { return stripeColors[worstStatus(column.groups.flatMap(group => group.nodes))] }
 function openOverall(name: string) {
   router.push({
     name: 'overviewOverall',
     params: { id: card.value!.id },
-    query: { ...query.value, prof: overallMeta(name).id, menu: 'health' }
+    query: { ...query.value, prof: overallIds[name] || 'metal', menu: 'health' }
   })
 }
 function open(specialty: string, part: string, aggregate: boolean) {

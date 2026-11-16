@@ -1,19 +1,19 @@
 .ov-overall { flex: 1; min-height: 0; display: flex; flex-direction: column; background: #eef2f7; color: #111827; }
 .ov-overall button, .ov-overall input, .ov-overall select { font-family: inherit; }
-.ov-sub { height: 50px; flex: none; background: #fff; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; gap: 12px; padding: 0 24px; font-size: 14px; }
-.ov-sub .back { display: inline-flex; align-items: center; height: 30px; padding: 0 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; color: #1677ff; background: #fff; cursor: pointer; }
-.ov-sub .code { font-size: 15px; }
-.ov-sub .muted { color: #6b7280; font-size: 12px; }
-.ov-sub .sep { height: 22px; width: 1px; background: #e5e7eb; }
-.ov-sub .overall-tag { border: 1px solid #bfdbfe; background: #eff6ff; border-radius: 4px; color: #1d4ed8; padding: 1px 8px; font-size: 12px; }
-.ov-sub .subtail { margin-left: auto; display: flex; gap: 20px; align-items: center; font-size: 12px; color: #6b7280; }
-.ov-sub .profsel { display: inline-flex; align-items: center; gap: 6px; color: #374151; }
-.ov-sub select { height: 28px; border: 1px solid #d1d5db; border-radius: 6px; padding: 0 6px; font-size: 13px; background: #fff; }
-.ov-menu { display: flex; align-items: flex-end; gap: 4px; border-bottom: 1px solid #e5e7eb; flex: none; height: 54px; background: #fff; padding: 0 24px; }
-.ov-menu button { height: 50px; padding: 0 28px; font-size: 18px; font-weight: 700; border: 0; background: none; cursor: pointer; margin-bottom: -1px; border-bottom: 3px solid transparent; color: #374151; }
-.ov-menu button.on { border-bottom-color: #1677ff; color: #1677ff; }
-.ov-menu .tail { margin-left: auto; align-self: center; font-size: 12px; color: #6b7280; }
-.ov-main { flex: 1; min-height: 0; display: grid; grid-template-columns: 700px 680px minmax(0, 1fr); gap: 12px; padding: 14px 16px 16px; }
+.ov-overall > .ov-sub { height: 50px; flex: none; background: #fff; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; gap: 12px; padding: 0 24px; font-size: 14px; margin: 0; color: #111827; }
+.ov-overall > .ov-sub .back { display: inline-flex; align-items: center; height: 30px; padding: 0 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; color: #1677ff; background: #fff; cursor: pointer; }
+.ov-overall > .ov-sub .code { font-size: 15px; }
+.ov-overall > .ov-sub .muted { color: #6b7280; font-size: 12px; }
+.ov-overall > .ov-sub .sep { height: 22px; width: 1px; background: #e5e7eb; }
+.ov-overall > .ov-sub .overall-tag { border: 1px solid #bfdbfe; background: #eff6ff; border-radius: 4px; color: #1d4ed8; padding: 1px 8px; font-size: 12px; }
+.ov-overall > .ov-sub .subtail { margin-left: auto; display: flex; gap: 20px; align-items: center; font-size: 12px; color: #6b7280; }
+.ov-overall > .ov-sub .profsel { display: inline-flex; align-items: center; gap: 6px; color: #374151; }
+.ov-overall > .ov-sub select { height: 28px; border: 1px solid #d1d5db; border-radius: 6px; padding: 0 6px; font-size: 13px; background: #fff; }
+.ov-overall > .ov-menu { display: flex; align-items: flex-end; gap: 4px; border-bottom: 1px solid #e5e7eb; flex: none; height: 54px; background: #fff; padding: 0 24px; }
+.ov-overall > .ov-menu button { height: 50px; padding: 0 28px; font-size: 18px; font-weight: 700; border: 0; background: none; cursor: pointer; margin-bottom: -1px; border-bottom: 3px solid transparent; color: #374151; }
+.ov-overall > .ov-menu button.on { border-bottom-color: #1677ff; color: #1677ff; }
+.ov-overall > .ov-menu .tail { margin-left: auto; align-self: center; font-size: 12px; color: #6b7280; }
+.ov-overall > .ov-main { flex: 1; min-height: 0; min-width: 0; display: grid; grid-template-columns: 700px 680px minmax(0, 1fr); gap: 12px; padding: 14px 16px 16px; overflow: auto; }
 .ov-overall .panel { min-width: 0; min-height: 0; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; display: flex; flex-direction: column; overflow: hidden; }
 .ov-overall .panelhead { height: 48px; padding: 0 14px; border-bottom: 1px solid #edf0f4; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex: none; font-size: 16px; }
 .ov-overall .toolbar { height: 44px; display: flex; align-items: center; gap: 14px; flex: none; padding: 0 14px; border-bottom: 1px solid #edf0f4; }
@@ -87,5 +87,5 @@
 .ov-overall .diag-body { font-size: 13px; color: #475569; line-height: 22px; }
 .ov-overall .diag-foot { margin-top: auto; font-size: 11px; color: #94a3b8; }
 @media (max-width: 1600px) {
-  .ov-main { grid-template-columns: minmax(420px, 37%) minmax(360px, 35%) minmax(280px, 1fr); }
+  .ov-overall > .ov-main { grid-template-columns: minmax(420px, 37%) minmax(360px, 35%) minmax(280px, 1fr); }
 }
