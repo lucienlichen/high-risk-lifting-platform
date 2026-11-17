@@ -21,47 +21,7 @@
     </header>
 
     <StructurePointPane v-if="side === 'structure'" :point-id="active.id" @select="selectPoint" />
-    <div v-else class="ps-final">
-      <div class="ps-final-left">
-        <section class="ps-table-wrap">
-          <div class="ps-table-hd">
-            <div class="ps-table-hd-top">
-              <strong>点位表</strong>
-              <span class="ps-count">共 {{ points.length }} 个 · <em class="a">报警 {{ counts.alarm }}</em> · <em class="w">异常 {{ counts.warn }}</em></span>
-            </div>
-            <div class="ps-table-hd-bot">
-              <input v-model="search" class="ps-search" type="search" placeholder="搜索编号或位置" aria-label="搜索编号或位置">
-              <label class="ps-check"><input v-model="alarmOnly" type="checkbox"> 仅看异常/报警</label>
-            </div>
-          </div>
-          <SchemeTable :rows="visiblePoints" :selected-id="active.id" @select="selectPoint" />
-        </section>
-        <section class="ps-model-wrap">
-          <div class="ps-tools">
-            <strong>机构模型</strong>
-            <span class="ps-count">主起升机构 · 传动链示意</span>
-          </div>
-          <SchemeModel :side="side" :points="points" :selected-id="active.id" :hidden-ids="hiddenIds" @select="selectPoint" />
-          <p class="ps-cap">电机 → 联轴器 → 减速器 → 卷筒 → 卷筒轴承座；实心为实测点</p>
-        </section>
-      </div>
-      <div class="ps-final-right">
-        <section class="ps-panel">
-          <div class="ps-dtabs" role="tablist" aria-label="监测数据">
-            <button v-for="tab in finalTabs" :key="tab.key" type="button" :class="{ on: dataKey === tab.key, na: !tab.live }" @click="pickData(tab.key)">{{ tab.name }}</button>
-          </div>
-          <div class="ps-panel-bd">
-            <MonitorBoard v-if="dataKey === 'health'" :side="side" :point="active" />
-            <DataBody v-else :side="side" :point="active" :data-key="dataKey" :expanded="expanded" @toggle="expanded = !expanded" />
-          </div>
-        </section>
-        <section class="ps-panel">
-          <div class="ps-panel-bd">
-            <ResultBoard :side="side" :point="active" />
-          </div>
-        </section>
-      </div>
-    </div>
+    <MechanismPointPane v-else :point-id="active.id" @select="selectPoint" />
   </div>
 </template>
 
@@ -72,6 +32,7 @@ import { useRoute, useRouter } from 'vue-router'
 import SchemeChart from '@/components/pointScheme/SchemeChart.vue'
 import SchemeModel from '@/components/pointScheme/SchemeModel.vue'
 import SchemeTable from '@/components/pointScheme/SchemeTable.vue'
+import MechanismPointPane from '@/components/pointScheme/MechanismPointPane.vue'
 import StructurePointPane from '@/components/pointScheme/StructurePointPane.vue'
 import { STRUCTURE_POINTS } from '@/mock/structurePointDetail'
 import {
