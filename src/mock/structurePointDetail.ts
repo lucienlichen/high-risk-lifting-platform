@@ -495,3 +495,183 @@ export function lifeSeries(point: StructurePoint): DemoSeries {
   }
   return { x, y, recs, unit: '年', name: '剩余年限' }
 }
+
+/** 算法 PPT 第3、4页的年度 / 月度 / 自定义窗口。默认今年至演示时刻 2026-11-16。 */
+export type ServiceGrain = 'year' | 'month' | 'custom'
+export const SERVICE_FROM = '2026-01-01'
+export const SERVICE_TO = '2026-11-16'
+const END_DOY = 320
+
+export interface ServiceBucket {
+  label: string
+  load: number
+  stressMax: number
+  stressMin: number
+  cycles: number
+  damage: number
+  remainCycles: number
+  remainDamage: number
+}
+
+export interface RankRow {
+  id: string
+  loc: string
+  beam: Beam
+  value: string
+  grade: string
+  tone: GradeKey | ''
+}
+
+function dayOfYear(iso: string) {
+  const [year, month, day] = iso.slice(0, 10).split('-').map(Number)
+  const start = Date.UTC(year, 0, 1)
+  const current = Date.UTC(year, month - 1, day)
+  return Math.round((current - start) / 86400000) + 1
+}
+
+function occurredTotal(point: StructurePoint) {
+  return 86000 + (hash(point.id + 'occ') % 140000)
+}
+
+export function spectrumCoefficient(point: StructurePoint) {
+  return Number((0.42 + (hash(point.id + 'spec') % 28) / 100).toFixed(2))
+}
+
+function snapshot(point: StructurePoint, doy: number) {
+  const fraction = Math.min(1, Math.max(0.02, doy / END_DOY))
+  const atEnd = doy >= END_DOY
+  const damage = atEnd ? point.D : Number((point.D * fraction).toFixed(4))
+  const cycles = Math.round(occurredTotal(point) * (atEnd ? 1 : fraction))
+  const stressMax = Number((point.s * (0.9 + 0.16 * Math.sin(doy / 9))).toFixed(1))
+  const stressMin = Number((point.s * (0.3 + 0.06 * Math.sin(doy / 13))).toFixed(1))
+  const load = Number((18 + 10 * (0.5 + 0.5 * Math.sin(doy / 11)) + (hash('load' + doy) % 4) * 0.2).toFixed(1))
+  return {
+    load,
+    stressMax,
+    stressMin: Math.min(stressMin, stressMax - 1),
+    cycles,
+    damage,
+    remainCycles: remainCycles(point) + (occurredTotal(point) - cycles),
+    remainDamage: Number((1 - damage).toFixed(4))
+  }
+}
+
+function monthEnds() {
+  return [
+    ['1月', '2026-01-31'], ['2月', '2026-02-28'], ['3月', '2026-03-31'], ['4月', '2026-04-30'],
+    ['5月', '2026-05-31'], ['6月', '2026-06-30'], ['7月', '2026-07-31'], ['8月', '2026-08-31'],
+    ['9月', '2026-09-30'], ['10月', '2026-10-31'], ['11月', '2026-11-16']
+  ] as const
+}
+
+function bucketAt(point: StructurePoint, label: string, iso: string, stressMode: 'end' | 'max', fromIso?: string): ServiceBucket {
+  const end = snapshot(point, Math.min(END_DOY, dayOfYear(iso)))
+  if (stressMode === 'end') return { label, ...end }
+  const startIso = fromIso || iso.slice(0, 8) + '01'
+  let stressMax = 0
+  let stressMin = 999
+  let load = 0
+  for (let day = dayOfYear(startIso); day <= Math.min(END_DOY, dayOfYear(iso)); day += 1) {
+    const sample = snapshot(point, day)
+    stressMax = Math.max(stressMax, sample.stressMax)
+    stressMin = Math.min(stressMin, sample.stressMin)
+    load = Math.max(load, sample.load)
+  }
+  return { label, ...end, stressMax: Number(stressMax.toFixed(1)), stressMin: Number(stressMin.toFixed(1)), load: Number(load.toFixed(1)) }
+}
+
+export function serviceBuckets(point: StructurePoint, grain: ServiceGrain, from = SERVICE_FROM, to = SERVICE_TO): ServiceBucket[] {
+  if (grain === 'month') {
+    return Array.from({ length: 16 }, (_, index) => {
+      const day = String(index + 1).padStart(2, '0')
+      return bucketAt(point, `11-${day}`, `2026-11-${day}`, 'end')
+    })
+  }
+  if (grain === 'custom') {
+    const start = from.slice(0, 10)
+    const end = to.slice(0, 10)
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end) || start >= end) return []
+    if (start < '2026-01-01' || end > SERVICE_TO) return []
+    const span = dayOfYear(end) - dayOfYear(start)
+    if (span <= 45) {
+      const rows: ServiceBucket[] = []
+      for (let day = dayOfYear(start); day <= dayOfYear(end); day += 1) {
+        const date = new Date(Date.UTC(2026, 0, day))
+        const iso = date.toISOString().slice(0, 10)
+        rows.push(bucketAt(point, iso.slice(5), iso, 'end'))
+      }
+      return rows
+    }
+    return monthEnds()
+      .filter(([, iso]) => iso >= start && iso <= end)
+      .map(([label, iso]) => bucketAt(point, label, iso, 'max', iso.slice(0, 8) + '01'))
+  }
+  return monthEnds().map(([label, iso], index) => {
+    const fromIso = index === 0 ? '2026-01-01' : nextDay(monthEnds()[index - 1][1])
+    return bucketAt(point, label, iso, 'max', fromIso)
+  })
+}
+
+function nextDay(iso: string) {
+  const [year, month, day] = iso.split('-').map(Number)
+  const date = new Date(Date.UTC(year, month - 1, day + 1))
+  return date.toISOString().slice(0, 10)
+}
+
+export function healthTable(point: StructurePoint, buckets: ServiceBucket[]) {
+  const last = buckets[buckets.length - 1]
+  const damage = last ? last.damage : point.D
+  const grade = gradeOf(point.D)
+  const peers = STRUCTURE_POINTS.filter(item => item.beam === point.beam)
+  const worst = peers.reduce((best, item) => item.D > best.D ? item : best)
+  return {
+    source: '统一点（演示）',
+    stressMax: buckets.length ? Math.max(...buckets.map(item => item.stressMax)).toFixed(1) : '—',
+    stressMin: buckets.length ? Math.min(...buckets.map(item => item.stressMin)).toFixed(1) : '—',
+    spectrum: spectrumCoefficient(point).toFixed(2),
+    cycles: last ? last.cycles.toLocaleString('zh-CN') : '—',
+    windowDamage: Number(damage).toFixed(2),
+    damage: point.D.toFixed(2),
+    health: grade.name,
+    healthTone: grade.key,
+    component: point.beam,
+    componentHealth: gradeOf(worst.D).name,
+    componentTone: gradeOf(worst.D).key
+  }
+}
+
+export function crackTable(point: StructurePoint, buckets: ServiceBucket[]) {
+  const last = buckets[buckets.length - 1]
+  const color = lifeColor(point.L)
+  return {
+    remainDamage: remainDamage(point).toFixed(2),
+    windowRemainDamage: last ? last.remainDamage.toFixed(2) : remainDamage(point).toFixed(2),
+    remainCycles: (last ? last.remainCycles : remainCycles(point)).toLocaleString('zh-CN'),
+    years: point.L.toFixed(1),
+    yearTone: color.tone
+  }
+}
+
+export function healthRanks(): { points: RankRow[]; components: RankRow[] } {
+  const points = [...STRUCTURE_POINTS].sort((a, b) => b.D - a.D).map(point => {
+    const grade = gradeOf(point.D)
+    return { id: point.id, loc: point.loc, beam: point.beam, value: point.D.toFixed(2), grade: grade.name, tone: grade.key }
+  })
+  const components = (['A梁', 'B梁'] as const).map(beam => {
+    const worst = STRUCTURE_POINTS.filter(point => point.beam === beam).reduce((best, point) => point.D > best.D ? point : best)
+    const grade = gradeOf(worst.D)
+    return { id: worst.id, loc: beam, beam, value: worst.D.toFixed(2), grade: grade.name, tone: grade.key }
+  }).sort((a, b) => Number(b.value) - Number(a.value))
+  return { points, components }
+}
+
+export function crackRanks(): { points: RankRow[]; components: RankRow[] } {
+  const points = [...STRUCTURE_POINTS].sort((a, b) => a.L - b.L).map(point => ({
+    id: point.id, loc: point.loc, beam: point.beam, value: `${point.L.toFixed(1)} 年`, grade: `${remainDamage(point).toFixed(2)}`, tone: '' as const
+  }))
+  const components = (['A梁', 'B梁'] as const).map(beam => {
+    const shortest = STRUCTURE_POINTS.filter(point => point.beam === beam).reduce((best, point) => point.L < best.L ? point : best)
+    return { id: shortest.id, loc: beam, beam, value: `${shortest.L.toFixed(1)} 年`, grade: shortest.id, tone: '' as const }
+  }).sort((a, b) => Number.parseFloat(a.value) - Number.parseFloat(b.value))
+  return { points, components }
+}

@@ -92,95 +92,262 @@
           </div>
           <div v-if="card.note" class="spd-ex">{{ card.note }}</div>
           <div class="spd-concl">{{ card.conclusion }}</div>
-          <div class="spd-go">查看图表与记录</div>
+          <div class="spd-go">查看详情</div>
         </button>
       </aside>
     </div>
 
     <div v-if="toast" class="spd-toast" role="status">{{ toast }}</div>
 
-    <div v-if="modal" class="spd-mask" @click.self="closeModal">
-      <div class="spd-modal" role="dialog" aria-modal="true" :aria-labelledby="'spd-title'" @click.stop>
-        <div class="spd-mhd">
-          <span id="spd-title" class="mt">{{ serviceName(modal) }}</span>
-          <span class="ms">{{ active.id }}　{{ active.loc }}　全局状态 {{ statusName(active.status) }}　·　演示数据</span>
+    <div v-if="drawer" class="spd-drawer-mask" @click.self="closeDrawer">
+      <aside class="spd-drawer" role="dialog" aria-modal="true" :aria-labelledby="'spd-drawer-title'" @click.stop>
+        <header class="spd-dhd">
+          <div class="spd-dhd-copy">
+            <strong id="spd-drawer-title">{{ serviceName(drawer) }}</strong>
+            <span>{{ active.id }}　{{ active.loc }}　全局状态 {{ statusName(active.status) }}　·　演示数据</span>
+          </div>
           <label>切点
             <select :value="active.id" aria-label="切换点位" @change="onPointChange">
               <option v-for="point in points" :key="point.id" :value="point.id">{{ point.id }}　{{ point.loc }}</option>
             </select>
           </label>
-          <button ref="closeBtn" type="button" class="spd-x" title="关闭（Esc）" @click="closeModal">✕</button>
-        </div>
-        <div class="spd-banner" :class="banner.kind">
-          <div v-html="banner.html"></div>
-          <button v-if="banner.action === 'now'" type="button" class="backnow" @click="returnCurrent">返回当前</button>
-          <button v-else-if="banner.action === 'reset'" type="button" class="resetq" @click="resetRange">恢复当前时段</button>
-        </div>
-        <div class="spd-mtabs">
-          <button type="button" :class="{ on: view === 'current' }" @click="returnCurrent">当前</button>
-          <button type="button" :class="{ on: view === 'alarm' }" @click="showAlarmTab">报警记录</button>
-        </div>
-        <div class="spd-mbody">
-          <aside class="spd-mside">
-            <div class="spd-conclbox">
-              <div class="k">{{ copy.head }}</div>
-              <div class="v">{{ copy.body }}</div>
-              <div v-if="copy.sub" class="s">{{ copy.sub }}</div>
+          <button ref="drawerClose" type="button" class="spd-x" title="关闭（Esc）" @click="closeDrawer">✕</button>
+        </header>
+        <div class="spd-drawer-body">
+          <template v-if="drawer === 'health' || drawer === 'crack'">
+            <p class="spd-scope">范围是当前选中点位。结构模型用页面中部的双梁示意，点位序号已标注，这里不再另做模型。下方排序把 16 个演示点按 A梁 / B梁 归类，便于对照算法 PPT 的测点与部件排序，不是新的整机页面。</p>
+            <div class="spd-grain" role="group" aria-label="时间范围">
+              <button type="button" :class="{ on: grain === 'year' }" @click="setGrain('year')">年度</button>
+              <button type="button" :class="{ on: grain === 'month' }" @click="setGrain('month')">月度</button>
+              <button type="button" :class="{ on: grain === 'custom' }" @click="grain = 'custom'">自定义</button>
+              <span>{{ grainLabel }}</span>
             </div>
-            <div class="spd-hint">依据：{{ copy.basis }}</div>
-            <div class="spd-qbox">
+            <div v-if="grain === 'custom'" class="spd-custom">
+              <label>开始 <input v-model="customFrom" type="date" min="2026-01-01" max="2026-11-16"></label>
+              <label>结束 <input v-model="customTo" type="date" min="2026-01-01" max="2026-11-16"></label>
+              <button type="button" @click="applyCustom">查询</button>
+              <span>{{ rangeHint }}</span>
+            </div>
+            <p v-if="!buckets.length" class="spd-empty">该窗口没有可展示的演示曲线。</p>
+            <template v-else-if="drawer === 'health'">
+              <div class="spd-conclbox">
+                <div class="k">当前结论（演示）</div>
+                <div class="v">D={{ active.D.toFixed(2) }}，{{ health.health }}</div>
+                <div class="s">会议口径：D＜0.7 健康，0.7≤D＜1 亚健康，D≥1 分级待核。不采用算法 PPT 第3页旧五级表，也不把亚健康写成报警。健康状态不改变全局状态。</div>
+              </div>
+              <div class="spd-scrollx">
+                <table class="spd-grid">
+                  <thead>
+                    <tr>
+                      <th>来源</th><th>序号</th><th>名称</th><th>最大应力幅</th><th>最小应力幅</th><th>应力谱系数</th><th>已发生循环次数</th><th>窗口期末损伤度</th><th>当前损伤度 D</th><th>点位健康状态</th><th>部件</th><th>部件健康状态</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>{{ health.source }}</td><td>{{ active.id }}</td><td>{{ active.loc }}</td>
+                      <td>{{ health.stressMax }} MPa</td><td>{{ health.stressMin }} MPa</td><td>{{ health.spectrum }}</td>
+                      <td>{{ health.cycles }}</td><td>{{ health.windowDamage }}</td><td>{{ health.damage }}</td>
+                      <td><span class="spd-status" :class="health.healthTone">{{ health.health }}</span></td>
+                      <td>{{ health.component }}</td>
+                      <td><span class="spd-status" :class="health.componentTone">{{ health.componentHealth }}</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p class="spd-scope">应力谱系数是本点演示常数。来源列为「统一点」，因为当前演示点已不再区分实测与孪生。曲线随年度 / 月度 / 自定义窗口变化；当前损伤度和排序用截至 2026-11-16 的结果。</p>
+              <div class="spd-chart-grid">
+                <article class="spd-chartblock">
+                  <div class="spd-ctitle">载荷谱历程<span class="spd-demo">演示数据</span></div>
+                  <div class="spd-cdesc">整机载荷历程，按所选粒度取区间最大载荷，单位 t。不是本点位独有测值。</div>
+                  <SchemeChart class="spd-cg" :option="loadOption" />
+                </article>
+                <article class="spd-chartblock">
+                  <div class="spd-ctitle">应力幅<span class="spd-demo">演示数据</span></div>
+                  <div class="spd-cdesc">{{ grain === 'month' ? '月度逐日应力幅。' : '年度或自定义长窗口按月取最大值。' }} 单位 MPa。</div>
+                  <SchemeChart class="spd-cg" :option="stressOption" />
+                </article>
+                <article class="spd-chartblock">
+                  <div class="spd-ctitle">循环次数<span class="spd-demo">演示数据</span></div>
+                  <div class="spd-cdesc">已发生循环次数的累积值。</div>
+                  <SchemeChart class="spd-cg" :option="cycleOption" />
+                </article>
+                <article class="spd-chartblock">
+                  <div class="spd-ctitle">累积损伤度<span class="spd-demo">演示数据</span></div>
+                  <div class="spd-cdesc">累积损伤度 D。0.7 只是阅读参考，不是报警线。</div>
+                  <SchemeChart class="spd-cg" :option="damageOption" />
+                </article>
+              </div>
+              <div class="spd-rank">
+                <section>
+                  <h3>结构部件健康状态排序</h3>
+                  <table class="spd-grid">
+                    <thead><tr><th>部件</th><th>代表点</th><th>当前 D</th><th>健康状态</th></tr></thead>
+                    <tbody>
+                      <tr v-for="row in healthRank.components" :key="row.loc" :class="{ hit: row.beam === active.beam }">
+                        <td>{{ row.loc }}</td><td>{{ row.id }}</td><td>{{ row.value }}</td><td><span class="spd-status" :class="row.tone">{{ row.grade }}</span></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </section>
+                <section>
+                  <h3>点位健康状态排序</h3>
+                  <table class="spd-grid">
+                    <thead><tr><th>序号</th><th>名称</th><th>部件</th><th>当前 D</th><th>健康状态</th></tr></thead>
+                    <tbody>
+                      <tr v-for="row in healthRank.points" :key="row.id" :class="{ hit: row.id === active.id }">
+                        <td>{{ row.id }}</td><td>{{ row.loc }}</td><td>{{ row.beam }}</td><td>{{ row.value }}</td><td><span class="spd-status" :class="row.tone">{{ row.grade }}</span></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </section>
+              </div>
+            </template>
+            <template v-else>
+              <div class="spd-conclbox">
+                <div class="k">当前结论（演示）</div>
+                <div class="v">剩余年限 {{ active.L.toFixed(1) }} 年，剩余损伤度 {{ crack.remainDamage }}</div>
+                <div class="s">主结果仍是剩余年限。＜1 年红、＜2 年橙来自算法 PPT 第4页的示例配色，不表示全局报警。剩余年限不画成曲线。</div>
+              </div>
+              <div class="spd-scrollx">
+                <table class="spd-grid">
+                  <thead><tr><th>序号</th><th>名称</th><th>剩余损伤度</th><th>剩余循环次数</th><th>剩余年限</th></tr></thead>
+                  <tbody>
+                    <tr>
+                      <td>{{ active.id }}</td><td>{{ active.loc }}</td><td>{{ crack.remainDamage }}</td><td>{{ crack.remainCycles }}</td>
+                      <td :class="crack.yearTone">{{ crack.years }} 年</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p class="spd-scope">窗口期末剩余损伤度 {{ crack.windowRemainDamage }}。当前剩余年限和剩余损伤度与右侧卡片一致，不随窗口改写成另一套结果。曲线给出剩余循环次数，以及剩余损伤度的期末累积值。</p>
+              <div class="spd-chart-grid">
+                <article class="spd-chartblock">
+                  <div class="spd-ctitle">剩余循环次数<span class="spd-demo">演示数据</span></div>
+                  <div class="spd-cdesc">所选窗口内的剩余循环次数。</div>
+                  <SchemeChart class="spd-cg" :option="remainCycleOption" />
+                </article>
+                <article class="spd-chartblock">
+                  <div class="spd-ctitle">剩余损伤度<span class="spd-demo">演示数据</span></div>
+                  <div class="spd-cdesc">年度、月度或自定义窗口的期末剩余损伤度，不是剩余年限曲线。</div>
+                  <SchemeChart class="spd-cg" :option="remainDamageOption" />
+                </article>
+              </div>
+              <div class="spd-rank">
+                <section>
+                  <h3>结构部件剩余年限排序</h3>
+                  <table class="spd-grid">
+                    <thead><tr><th>部件</th><th>最短点</th><th>剩余年限</th></tr></thead>
+                    <tbody>
+                      <tr v-for="row in crackRank.components" :key="row.loc" :class="{ hit: row.beam === active.beam }">
+                        <td>{{ row.loc }}</td><td>{{ row.grade }}</td><td>{{ row.value }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </section>
+                <section>
+                  <h3>点位剩余年限排序</h3>
+                  <table class="spd-grid">
+                    <thead><tr><th>序号</th><th>名称</th><th>部件</th><th>剩余年限</th><th>剩余损伤度</th></tr></thead>
+                    <tbody>
+                      <tr v-for="row in crackRank.points" :key="row.id" :class="{ hit: row.id === active.id }">
+                        <td>{{ row.id }}</td><td>{{ row.loc }}</td><td>{{ row.beam }}</td><td>{{ row.value }}</td><td>{{ row.grade }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </section>
+              </div>
+            </template>
+          </template>
+          <template v-else-if="drawer === 'ae'">
+            <div class="spd-conclbox">
+              <div class="k">当前结论（演示）</div>
+              <div class="v">{{ aeText }}</div>
+              <div class="s">{{ aeSub }}</div>
+            </div>
+            <div class="spd-kpis spd-drawer-kpis">
+              <div class="spd-kpi"><span class="lab">最近活性事件</span><span class="val sm">{{ aeLast }}</span></div>
+              <div class="spd-kpi"><span class="lab">近 14 日事件</span><span class="val">{{ aeCount }} 次</span></div>
+            </div>
+            <div class="spd-eddy-note">
+              <b>所附 PPT 未规定本服务的曲线</b>
+              <span>算法 PPT 与中期汇报只说明光纤声发射用于焊缝裂纹监测，没有规定幅值、撞击或谱图。这里不补画声发射曲线，结论里也不写 40 dB。</span>
+            </div>
+          </template>
+          <template v-else>
+            <div class="spd-conclbox">
+              <div class="k">当前结论（演示）</div>
+              <div class="v">该位置未发现裂纹</div>
+              <div class="s">本能力为柔性涡流阵列，用于判别裂纹长度与大小。依据：涡流监测数据（演示）。</div>
+            </div>
+            <div class="spd-kpis spd-drawer-kpis">
+              <div class="spd-kpi"><span class="lab">监测方式</span><span class="val sm">柔性涡流阵列</span></div>
+              <div class="spd-kpi"><span class="lab">判别结果</span><span class="val sm">未发现裂纹</span></div>
+            </div>
+            <div class="spd-eddy-note">
+              <b>不给出裂纹长度或大小</b>
+              <span>中期汇报第8、10页只说明柔性涡流阵列的布设位置，没有规定阻抗、相位或裂纹尺寸曲线。本抽屉不编造这些图，也不把结果写成待接入。</span>
+            </div>
+          </template>
+        </div>
+      </aside>
+    </div>
+
+    <div v-if="alarmOpen" class="spd-mask" @click.self="closeAlarms">
+      <div class="spd-modal" role="dialog" aria-modal="true" aria-labelledby="spd-alarm-title" @click.stop>
+        <div class="spd-mhd">
+          <span id="spd-alarm-title" class="mt">报警记录</span>
+          <span class="ms">独立于服务详情　·　演示数据　·　共 {{ alarms.length }} 条</span>
+          <button ref="alarmClose" type="button" class="spd-x" title="关闭（Esc）" @click="closeAlarms">✕</button>
+        </div>
+        <div class="spd-banner" :class="alarmId ? 'alarm' : 'current'">
+          <div v-if="selectedAlarm"><strong>正在回看报警记录 {{ selectedAlarm.id }}</strong>　时段 {{ fmtRange(alarmFrom, alarmTo) }}（{{ tz }}）　点位 {{ selectedAlarm.pid }}。这是历史证据，不是当前服务结果。</div>
+          <div v-else><strong>报警记录</strong>　请选择一条声发射事件，查看该时段的演示证据。这些事件不由损伤度阈值生成，也不会写进服务抽屉。</div>
+          <button v-if="alarmId" type="button" class="backnow" @click="returnCurrent">返回当前</button>
+        </div>
+        <div class="spd-mbody spd-alarm-body">
+          <aside class="spd-mside">
+            <div class="spd-alist">
+              <button v-for="alarm in alarms" :key="alarm.id" type="button" class="spd-aitem" :class="{ on: alarm.id === alarmId }" @click="selectAlarm(alarm.id)">
+                <div class="t"><span class="id">{{ alarm.id }}</span><span class="spd-status" :class="alarm.level">{{ statusName(alarm.level) }}</span></div>
+                <div class="d">{{ alarm.title }}</div>
+                <div class="m">{{ alarm.pid }}　{{ pointLoc(alarm.pid) }}　·　{{ fmtRange(alarm.from, alarm.to) }}（{{ tz }}）</div>
+              </button>
+            </div>
+            <div v-if="selectedAlarm" class="spd-qbox">
               <div class="k">时间范围查询</div>
-              <div class="spd-hint">时区：{{ tz }}。查询只过滤本弹窗内的演示曲线和记录。</div>
-              <div class="spd-qrow"><label for="spd-from">开始</label><input id="spd-from" v-model="draftFrom" type="datetime-local" :disabled="modal === 'eddy'"></div>
-              <div class="spd-qrow"><label for="spd-to">结束</label><input id="spd-to" v-model="draftTo" type="datetime-local" :disabled="modal === 'eddy'"></div>
-              <div class="spd-qact"><button type="button" :disabled="modal === 'eddy'" @click="runQuery">查询</button></div>
-              <div class="spd-hint">{{ modal === 'eddy' ? '本示意不提供裂纹长度或大小曲线，时间查询不适用。' : queryHint }}</div>
+              <div class="spd-hint">只过滤本弹窗里的报警证据曲线和记录，不影响服务抽屉。</div>
+              <div class="spd-qrow"><label for="alarm-from">开始</label><input id="alarm-from" v-model="alarmDraftFrom" type="datetime-local"></div>
+              <div class="spd-qrow"><label for="alarm-to">结束</label><input id="alarm-to" v-model="alarmDraftTo" type="datetime-local"></div>
+              <div class="spd-qact"><button type="button" @click="runAlarmQuery">查询</button></div>
+              <div class="spd-hint">{{ alarmHint }}</div>
             </div>
           </aside>
           <div class="spd-mmain">
-            <template v-if="evidence.kind === 'list' || evidence.kind === 'redirect'">
-              <div v-if="evidence.kind === 'redirect'" class="spd-pending">
-                <b>该报警记录对应「损伤活性诊断」</b>
-                <span>健康评估与裂纹预测不把损伤度阈值记为报警。可打开损伤活性诊断回看该时段。</span>
-                <button type="button" class="spd-jump" @click="modal = 'ae'">打开损伤活性诊断回看</button>
-              </div>
-              <p class="spd-hint">报警记录是独立事件。本示意仅列出损伤活性诊断（声发射）异常事件，不会把损伤度 D 的阈值写成报警。点击一条记录后，会定位到该点位、打开对应服务，并回看该时段数据。</p>
-              <div class="spd-alist">
-                <button v-for="alarm in alarms" :key="alarm.id" type="button" class="spd-aitem" :class="{ on: alarm.id === alarmId }" @click="selectAlarm(alarm.id)">
-                  <div class="t"><span class="id">{{ alarm.id }}</span><span class="spd-status" :class="alarm.level">{{ statusName(alarm.level) }}</span></div>
-                  <div class="d">{{ alarm.title }}</div>
-                  <div class="m">{{ alarm.pid }}　{{ pointLoc(alarm.pid) }}　·　损伤活性诊断　·　{{ fmtRange(alarm.from, alarm.to) }}（{{ tz }}）</div>
-                </button>
-              </div>
-            </template>
-            <div v-else-if="evidence.kind === 'note'" class="spd-eddy-note">
-              <b>该位置未发现裂纹</b>
-              <span>本能力为柔性涡流阵列，用于判别裂纹长度与大小。本示意不给出裂纹长度、大小，也不绘制阻抗平面或相位曲线。</span>
+            <div v-if="!selectedAlarm" class="spd-eddy-note">
+              <b>选择一条报警记录</b>
+              <span>回看后可以看到该时段的声发射幅值演示证据。服务抽屉里没有报警记录入口。</span>
             </div>
-            <template v-else>
-              <article v-for="chart in evidence.charts" :key="chart.key" class="spd-chartblock">
-                <div class="spd-ctitle">{{ chart.title }}<span class="spd-demo">演示数据</span></div>
-                <div class="spd-cdesc">{{ chart.desc }}</div>
-                <SchemeChart class="spd-cg" :option="chart.option" />
+            <template v-else-if="alarmPack.option">
+              <article class="spd-chartblock">
+                <div class="spd-ctitle">声发射幅值证据<span class="spd-demo">演示数据</span></div>
+                <div class="spd-cdesc">{{ selectedAlarm.note }} 40 dB 只是示意阈值，不是规范，也不写入损伤活性诊断结论。</div>
+                <SchemeChart class="spd-cg" :option="alarmPack.option" />
               </article>
               <div class="spd-rec">
-                <div class="rh"><span>{{ evidence.recordsTitle }}</span><span>演示数据</span></div>
-                <div v-if="!evidence.records.length" class="spd-empty">该时段没有可展示的记录</div>
-                <div v-else class="scroll">
+                <div class="rh"><span>对应记录 · 按小时最大幅值</span><span>演示数据</span></div>
+                <div class="scroll">
                   <table>
                     <thead><tr><th>时间（{{ tz }}）</th><th>项目</th><th>数值</th><th>说明</th></tr></thead>
                     <tbody>
-                      <tr v-for="(row, index) in evidence.records" :key="index" :class="{ hit: row.hit }">
-                        <td>{{ fmtDT(row.t) }}</td>
-                        <td>{{ row.item }}</td>
-                        <td>{{ row.val }}</td>
-                        <td>{{ recordNote(row) }}</td>
+                      <tr v-for="(row, index) in alarmPack.series.recs" :key="index" :class="{ hit: row.hit }">
+                        <td>{{ fmtDT(row.t) }}</td><td>{{ row.item }}</td><td>{{ row.val }}</td><td>{{ recordNote(row) }}</td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
               </div>
             </template>
+            <p v-else class="spd-empty">该时段没有可展示的证据曲线。</p>
           </div>
         </div>
       </div>
@@ -192,31 +359,38 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import SchemeChart from '@/components/pointScheme/SchemeChart.vue'
 import StructureCraneModel from '@/components/pointScheme/StructureCraneModel.vue'
-import { evidenceFor, recordNote } from '@/components/pointScheme/structureCharts'
+import { alarmEvidence, categoryOption, recordNote } from '@/components/pointScheme/structureCharts'
 import {
-  ALARMS, CUR_FROM, CUR_TO, SERVICES, STRUCTURE_POINTS, TZ,
-  DEMO_AS_OF, fmtDT, fmtRange, groupedPoints, modalConclusion, parseDT, pointSummary, serviceCards, statusName, structurePoint,
-  type ModalView, type ModelMode, type SvcId
+  ALARMS, SERVICE_FROM, SERVICE_TO, SERVICES, STRUCTURE_POINTS, TZ,
+  aeConclusion, crackRanks, crackTable, fmtDT, fmtRange, groupedPoints, healthRanks, healthTable,
+  parseDT, pointSummary, serviceBuckets, serviceCards, statusName, structurePoint,
+  type ServiceGrain, type SvcId, type ModelMode
 } from '@/mock/structurePointDetail'
 
 const props = defineProps<{ pointId: string }>()
 const emit = defineEmits<{ select: [id: string] }>()
 
 const crane = ref<{ applyHover: (id: string | null) => void } | null>(null)
-const closeBtn = ref<HTMLButtonElement | null>(null)
+const drawerClose = ref<HTMLButtonElement | null>(null)
+const alarmClose = ref<HTMLButtonElement | null>(null)
 const activeId = ref(props.pointId)
 const query = ref('')
 const onlyBad = ref(false)
 const modelMode = ref<ModelMode>('model')
-const modal = ref<SvcId | null>(null)
-const view = ref<ModalView>('current')
+const drawer = ref<SvcId | null>(null)
+const alarmOpen = ref(false)
 const alarmId = ref<string | null>(null)
-const tFrom = ref(CUR_FROM)
-const tTo = ref(CUR_TO)
-const draftFrom = ref(CUR_FROM)
-const draftTo = ref(CUR_TO)
-const queried = ref(false)
-const queryHint = ref('')
+const alarmFrom = ref('')
+const alarmTo = ref('')
+const alarmDraftFrom = ref('')
+const alarmDraftTo = ref('')
+const alarmHint = ref('')
+const grain = ref<ServiceGrain>('year')
+const customFrom = ref(SERVICE_FROM)
+const customTo = ref(SERVICE_TO)
+const appliedFrom = ref(SERVICE_FROM)
+const appliedTo = ref(SERVICE_TO)
+const rangeHint = ref('')
 const toast = ref('')
 let toastTimer = 0
 
@@ -224,29 +398,48 @@ const points = STRUCTURE_POINTS
 const alarms = ALARMS
 const tz = TZ
 const summary = pointSummary()
+const healthRank = healthRanks()
+const crackRank = crackRanks()
 const active = computed(() => structurePoint(activeId.value))
 const groups = computed(() => groupedPoints(query.value, onlyBad.value))
 const cards = computed(() => serviceCards(active.value))
 const selectedAlarm = computed(() => alarms.find(item => item.id === alarmId.value) || null)
-const copy = computed(() => modal.value ? modalConclusion(modal.value, active.value, view.value, selectedAlarm.value) : { head: '', body: '', sub: '', basis: '' })
-const evidence = computed(() => evidenceFor(modal.value || 'health', active.value, tFrom.value, tTo.value, view.value, selectedAlarm.value))
-const banner = computed(() => {
-  if (view.value === 'alarm' && selectedAlarm.value) {
-    const alarm = selectedAlarm.value
-    return {
-      kind: 'alarm',
-      action: 'now' as const,
-      html: `<strong>正在回看报警记录 ${alarm.id}</strong>　时段 ${fmtRange(alarm.from, alarm.to)}（${TZ}）　点位 ${alarm.pid} · 损伤活性诊断。此为历史上下文，不是当前数据。`
-    }
-  }
-  if (view.value === 'alarm') {
-    return { kind: 'alarm', action: '' as const, html: '<strong>报警记录</strong>　请选择一条独立事件回看对应时段数据。列表中的事件来自损伤活性诊断，<strong>不是</strong>由损伤度阈值生成。' }
-  }
-  if (queried.value && (tFrom.value !== CUR_FROM || tTo.value !== CUR_TO)) {
-    return { kind: 'query', action: 'reset' as const, html: `<strong>当前查看 · 自选时段</strong>　查询范围 ${fmtRange(tFrom.value, tTo.value)}（${TZ}）。这不是报警回看。` }
-  }
-  return { kind: 'current', action: '' as const, html: `<strong>正在查看当前数据</strong>　演示数据截至 ${DEMO_AS_OF}。默认窗口 ${fmtRange(CUR_FROM, CUR_TO)}（${TZ}）。` }
+const buckets = computed(() => serviceBuckets(active.value, grain.value, appliedFrom.value, appliedTo.value))
+const labels = computed(() => buckets.value.map(item => item.label))
+const health = computed(() => healthTable(active.value, buckets.value))
+const crack = computed(() => crackTable(active.value, buckets.value))
+const grainLabel = computed(() => grain.value === 'year' ? '缺省：2026-01-01 至 2026-11-16，按月' : grain.value === 'month' ? '2026-11-01 至 2026-11-16，按日' : `${appliedFrom.value} 至 ${appliedTo.value}`)
+const loadOption = computed(() => categoryOption(labels.value, buckets.value.map(item => item.load), '#1677ff', '载荷', 't', 1))
+const stressOption = computed(() => categoryOption(labels.value, buckets.value.map(item => item.stressMax), '#0f766e', '应力幅', 'MPa', 1))
+const cycleOption = computed(() => categoryOption(labels.value, buckets.value.map(item => item.cycles), '#1677ff', '累计循环次数', '次', 0, { min: 0 }))
+const damageOption = computed(() => categoryOption(labels.value, buckets.value.map(item => item.damage), '#7c3aed', '累积损伤度 D', '', 2, {
+  min: 0,
+  max: Math.max(0.85, ...buckets.value.map(item => item.damage)),
+  mark: { value: 0.7, label: '0.7 阅读参考', color: '#6d28d9' }
+}))
+const remainCycleOption = computed(() => categoryOption(labels.value, buckets.value.map(item => item.remainCycles), '#0d9488', '剩余循环次数', '次', 0, { min: 0 }))
+const remainDamageOption = computed(() => categoryOption(labels.value, buckets.value.map(item => item.remainDamage), '#7c3aed', '剩余损伤度', '', 2, { min: 0, max: 1 }))
+const aeInfo = computed(() => aeConclusion(active.value))
+const aeText = computed(() => aeInfo.value.text)
+const aeLast = computed(() => aeInfo.value.lastLabel ? aeInfo.value.lastLabel.slice(5) : '无')
+const aeCount = computed(() => aeInfo.value.count)
+const aeSub = computed(() => active.value.aeActive
+  ? '这是声发射活性的演示发现，只说明该点当前有活跃扩展迹象，并给出最近一次事件时间。不改损伤度，也不另设正式等级。'
+  : '该句只描述当前声发射现象，不引用幅值门槛，也不把现象映射成损伤度或全局状态。')
+const alarmPack = computed(() => selectedAlarm.value && alarmFrom.value && alarmTo.value
+  ? alarmEvidence(structurePoint(selectedAlarm.value.pid), alarmFrom.value, alarmTo.value, selectedAlarm.value)
+  : { series: { recs: [] }, option: null })
+
+watch(() => props.pointId, id => {
+  if (!id || id === activeId.value) return
+  activeId.value = structurePoint(id).id
 })
+watch([alarmFrom, alarmTo], () => {
+  alarmDraftFrom.value = alarmFrom.value
+  alarmDraftTo.value = alarmTo.value
+})
+watch(drawer, value => { if (value) nextTick(() => drawerClose.value?.focus()) })
+watch(alarmOpen, value => { if (value) nextTick(() => alarmClose.value?.focus()) })
 
 function serviceName(id: SvcId) {
   return SERVICES.find(item => item.id === id)?.name || ''
@@ -254,127 +447,99 @@ function serviceName(id: SvcId) {
 function pointLoc(id: string) {
   return structurePoint(id).loc
 }
-
-watch(() => props.pointId, id => {
-  if (!id || id === activeId.value) return
-  activeId.value = structurePoint(id).id
-  if (view.value === 'alarm' && selectedAlarm.value && selectedAlarm.value.pid !== activeId.value) {
-    view.value = 'current'
-    alarmId.value = null
-    resetRange()
-  }
-})
-
-watch([tFrom, tTo], () => {
-  draftFrom.value = tFrom.value
-  draftTo.value = tTo.value
-})
-
-watch(modal, value => {
-  if (value) nextTick(() => closeBtn.value?.focus())
-})
-
 function showToast(message: string) {
   toast.value = message
   window.clearTimeout(toastTimer)
   toastTimer = window.setTimeout(() => { toast.value = '' }, 1800)
 }
-
-function resetRange() {
-  tFrom.value = CUR_FROM
-  tTo.value = CUR_TO
-  queried.value = false
-  queryHint.value = ''
-}
-
 function pick(id: string) {
   if (id === activeId.value) return
-  if (view.value === 'alarm' && selectedAlarm.value && selectedAlarm.value.pid !== id) {
-    view.value = 'current'
+  if (alarmId.value && selectedAlarm.value && selectedAlarm.value.pid !== id) {
     alarmId.value = null
-    resetRange()
-    showToast('已切换点位，并退出报警回看，回到当前数据')
+    alarmFrom.value = ''
+    alarmTo.value = ''
+    alarmHint.value = ''
+    showToast('已切换点位，并退出报警回看')
   }
   activeId.value = id
   emit('select', id)
 }
-
 function onPointChange(event: Event) {
   pick((event.target as HTMLSelectElement).value)
 }
-
-function openService(id: SvcId, keepRange = false) {
-  modal.value = id
-  if (!keepRange && !(view.value === 'alarm' && alarmId.value)) {
-    view.value = 'current'
-    alarmId.value = null
-    if (!queried.value) resetRange()
-  }
+function openService(id: SvcId) {
+  drawer.value = id
 }
-
+function closeDrawer() {
+  drawer.value = null
+}
 function openAlarms() {
-  view.value = 'alarm'
-  alarmId.value = null
-  openService('ae', true)
+  alarmOpen.value = true
 }
-
-function closeModal() {
-  modal.value = null
-  view.value = 'current'
+function closeAlarms() {
+  alarmOpen.value = false
   alarmId.value = null
-  resetRange()
+  alarmFrom.value = ''
+  alarmTo.value = ''
+  alarmHint.value = ''
 }
-
 function returnCurrent() {
-  view.value = 'current'
   alarmId.value = null
-  resetRange()
+  alarmFrom.value = ''
+  alarmTo.value = ''
+  alarmHint.value = ''
 }
-
-function showAlarmTab() {
-  if (!modal.value) return
-  view.value = 'alarm'
-  const alarm = selectedAlarm.value
-  if (!alarm || alarm.pid !== active.value.id || alarm.svc !== modal.value) alarmId.value = null
-}
-
 function selectAlarm(id: string) {
   const alarm = alarms.find(item => item.id === id)
   if (!alarm) return
   alarmId.value = alarm.id
-  view.value = 'alarm'
-  modal.value = alarm.svc
-  tFrom.value = alarm.from
-  tTo.value = alarm.to
-  queried.value = false
-  queryHint.value = ''
+  alarmFrom.value = alarm.from
+  alarmTo.value = alarm.to
+  alarmHint.value = ''
   if (activeId.value !== alarm.pid) {
     activeId.value = alarm.pid
     emit('select', alarm.pid)
   }
 }
-
-function runQuery() {
-  if (!draftFrom.value || !draftTo.value) {
-    queryHint.value = '请填写开始和结束时间'
+function runAlarmQuery() {
+  if (!alarmDraftFrom.value || !alarmDraftTo.value) {
+    alarmHint.value = '请填写开始和结束时间'
     return
   }
-  if (parseDT(draftFrom.value) >= parseDT(draftTo.value)) {
-    queryHint.value = '开始时间必须早于结束时间'
+  if (parseDT(alarmDraftFrom.value) >= parseDT(alarmDraftTo.value)) {
+    alarmHint.value = '开始时间必须早于结束时间'
     return
   }
-  if (parseDT(draftTo.value) - parseDT(draftFrom.value) > 16 * 86400000) {
-    queryHint.value = '示意数据窗口最长 16 天'
+  if (parseDT(alarmDraftTo.value) - parseDT(alarmDraftFrom.value) > 16 * 86400000) {
+    alarmHint.value = '证据曲线窗口最长 16 天'
     return
   }
-  tFrom.value = draftFrom.value
-  tTo.value = draftTo.value
-  queried.value = true
-  queryHint.value = ''
+  alarmFrom.value = alarmDraftFrom.value
+  alarmTo.value = alarmDraftTo.value
+  alarmHint.value = ''
 }
-
+function setGrain(next: ServiceGrain) {
+  grain.value = next
+  rangeHint.value = ''
+}
+function applyCustom() {
+  if (customFrom.value < SERVICE_FROM || customTo.value > SERVICE_TO) {
+    rangeHint.value = '演示曲线只覆盖 2026-01-01 至 2026-11-16'
+    return
+  }
+  if (customFrom.value >= customTo.value) {
+    rangeHint.value = '开始日期必须早于结束日期'
+    return
+  }
+  appliedFrom.value = customFrom.value
+  appliedTo.value = customTo.value
+  grain.value = 'custom'
+  rangeHint.value = ''
+}
 function onKey(event: KeyboardEvent) {
-  if (event.key === 'Escape' && modal.value) closeModal()
+  if (event.key !== 'Escape') return
+  if (alarmOpen.value) closeAlarms()
+  else if (drawer.value) closeDrawer()
 }
 
 onMounted(() => window.addEventListener('keydown', onKey))

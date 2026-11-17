@@ -162,6 +162,66 @@ export function evidenceFor(svc: SvcId, point: StructurePoint, from: string, to:
   }
 }
 
+export function categoryOption(labels: string[], values: number[], color: string, name: string, unit: string, digits = 1, extra?: { min?: number; max?: number; mark?: { value: number; label: string; color: string } }): EChartsOption {
+  return {
+    animation: false,
+    grid: { left: 58, right: 16, top: 28, bottom: 32 },
+    tooltip: {
+      trigger: 'axis',
+      formatter: (params: unknown) => {
+        const row = (Array.isArray(params) ? params[0] : params) as { axisValue?: string; value?: number }
+        if (!row || row.value == null) return ''
+        return `${row.axisValue}<br/>${name} ${Number(row.value).toFixed(digits)}${unit ? ` ${unit}` : ''}`
+      }
+    },
+    xAxis: {
+      type: 'category',
+      data: labels,
+      axisLabel: { color: '#6b7280', fontSize: 11, hideOverlap: true },
+      axisLine: { lineStyle: { color: '#d1d5db' } }
+    },
+    yAxis: {
+      type: 'value',
+      min: extra?.min,
+      max: extra?.max,
+      axisLabel: { color: '#6b7280', fontSize: 11 },
+      splitLine: { lineStyle: { color: '#eef0f3' } },
+      scale: extra?.min == null
+    },
+    series: [{
+      type: 'line',
+      name,
+      data: values,
+      showSymbol: values.length < 20,
+      symbolSize: 6,
+      smooth: 0.15,
+      lineStyle: { width: 1.8, color },
+      itemStyle: { color },
+      areaStyle: { color, opacity: 0.08 },
+      markLine: extra?.mark ? {
+        symbol: 'none',
+        data: [{
+          yAxis: extra.mark.value,
+          label: { formatter: extra.mark.label, color: extra.mark.color, fontSize: 11, position: 'insideEndTop' },
+          lineStyle: { type: 'dashed' as const, color: extra.mark.color, width: 1.5 }
+        }]
+      } : undefined
+    }]
+  }
+}
+
+export function alarmEvidence(point: StructurePoint, from: string, to: string, alarm: AlarmRecord) {
+  const query: SeriesQuery = { view: 'alarm', alarm, modal: 'ae' }
+  const series = aeSeries(point, from, to, query)
+  const option = lineOption(series, '#7c3aed', query, {
+    ymin: 0,
+    ymax: Math.max(60, ...series.y, 40) + 4,
+    yfmt: value => value.toFixed(0),
+    thresholds: [{ v: 40, label: '示意阈值 40 dB', color: '#d97706' }]
+  })
+  return { series, option }
+}
+
 export function recordNote(row: DemoRecord) {
   return row.extra || (row.hit ? '超过示意阈值 40 dB' : '')
 }
