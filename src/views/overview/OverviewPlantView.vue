@@ -39,20 +39,20 @@
       </template>
     </aside>
     <main class="ov-main">
-      <section class="ov-section-head">
+      <section class="ov-section-head ov-plant-head">
         <div class="ov-scope">
           <nav aria-label="位置">{{ crumb }}</nav>
           <h1>{{ scopeName }}</h1>
+        </div>
+        <div class="ov-toggle ov-lens" role="group" aria-label="概览口径">
+          <button type="button" :class="{ active: lens !== 'risk' }" @click="setLens('health')">健康监测</button>
+          <button type="button" :class="{ active: lens === 'risk' }" @click="setLens('risk')">风险监测</button>
         </div>
         <div class="ov-tools">
           <label class="ov-search">
             <span class="ov-sr">搜索设备编号或位置</span>
             <input v-model="q" type="search" placeholder="设备编号 / 位置" />
           </label>
-          <div class="ov-toggle" role="group" aria-label="概览口径">
-            <button type="button" :class="{ active: lens !== 'risk' }" @click="setLens('health')">健康监测</button>
-            <button type="button" :class="{ active: lens === 'risk' }" @click="setLens('risk')">风险监测</button>
-          </div>
           <div class="ov-toggle" role="group" aria-label="显示方式">
             <button type="button" :class="{ active: view === 'cards' }" @click="view = 'cards'">卡片</button>
             <button type="button" :class="{ active: view === 'plan' }" @click="view = 'plan'">厂区平面图</button>
@@ -287,4 +287,9 @@ function openRisk(id: string) {
 <style scoped>
 .ov-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 .ov-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.ov-plant-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 16px; row-gap: 10px; }
+.ov-plant-head .ov-tools { grid-column: 2; grid-row: 1; }
+.ov-lens { grid-column: 1; grid-row: 2; width: fit-content; }
+.ov-lens button { height: 36px; padding: 0 16px; font-size: 14px; font-weight: 600; }
+.ov-lens button.active { font-weight: 700; }
 </style>
