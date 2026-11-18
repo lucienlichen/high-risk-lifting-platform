@@ -8,6 +8,13 @@ export function demoRiskScore(card: Pick<OverviewCard, 'id' | 'code'>) {
   return 20 + (hash % 61)
 }
 
+/** 演示色带，只方便阅读降序，不是风险等级，也不读取健康报警灯。分值范围 20–80。 */
+export function demoRiskBand(score: number): 'high' | 'mid' | 'low' {
+  if (score >= 60) return 'high'
+  if (score >= 40) return 'mid'
+  return 'low'
+}
+
 export const DEVICE_MENUS = [
   { key: 'health', label: '健康监测' },
   { key: 'safety', label: '安全监控' },
