@@ -61,6 +61,18 @@
             <div class="hint">点击模型点位或左侧表格可切换 · 点位颜色表示全局状态（正常 / 异常 / 报警）</div>
           </div>
         </section>
+        <section class="spd-card spd-raw">
+          <div class="spd-mid-hd">
+            <span class="spd-title">当前点位监测数据</span>
+            <div class="spd-seg" aria-label="原始数据">
+              <button type="button" :class="{ on: rawTab === 'stress' }" @click="rawTab = 'stress'">应力时程</button>
+              <button type="button" :class="{ on: rawTab === 'ae' }" @click="rawTab = 'ae'">声发射</button>
+              <button type="button" :class="{ on: rawTab === 'eddy' }" @click="rawTab = 'eddy'">柔性涡流</button>
+            </div>
+          </div>
+          <p v-if="rawTab === 'eddy'" class="spd-empty">柔性涡流原始波形暂无本点绑定数据。判别结论仍为未发现裂纹。</p>
+          <SchemeChart v-else class="spd-cg spd-raw-chart" :option="rawOption" />
+        </section>
       </section>
 
       <aside class="spd-right" aria-label="分析服务">
@@ -115,7 +127,7 @@
         </header>
         <div class="spd-drawer-body">
           <template v-if="drawer === 'health' || drawer === 'crack'">
-            <p class="spd-scope">范围是当前选中点位。结构模型用页面中部的双梁示意，点位序号已标注，这里不再另做模型。下方排序把 16 个演示点按 A梁 / B梁 归类，便于对照算法 PPT 的测点与部件排序，不是新的整机页面。</p>
+            <p class="spd-scope">范围是当前选中点位。结构模型用页面中部的双梁示意，点位序号已标注，这里不再另做模型。跨点位和 A梁 / B梁 比较在结构整体表，不在本抽屉。</p>
             <div class="spd-grain" role="group" aria-label="时间范围">
               <button type="button" :class="{ on: grain === 'year' }" @click="setGrain('year')">年度</button>
               <button type="button" :class="{ on: grain === 'month' }" @click="setGrain('month')">月度</button>
@@ -154,7 +166,7 @@
                   </tbody>
                 </table>
               </div>
-              <p class="spd-scope">应力谱系数是本点演示常数。来源列为「统一点」，因为当前演示点已不再区分实测与孪生。曲线随年度 / 月度 / 自定义窗口变化；当前损伤度和排序用截至 2026-11-16 的结果。</p>
+              <p class="spd-scope">应力谱系数是本点演示常数。来源列为「统一点」，因为当前演示点已不再区分实测与孪生。跨点比较在结构整体表，不在本抽屉。</p>
               <div class="spd-chart-grid">
                 <article class="spd-chartblock">
                   <div class="spd-ctitle">载荷谱历程<span class="spd-demo">演示数据</span></div>
@@ -167,39 +179,15 @@
                   <SchemeChart class="spd-cg" :option="stressOption" />
                 </article>
                 <article class="spd-chartblock">
-                  <div class="spd-ctitle">循环次数<span class="spd-demo">演示数据</span></div>
-                  <div class="spd-cdesc">已发生循环次数的累积值。</div>
-                  <SchemeChart class="spd-cg" :option="cycleOption" />
+                  <div class="spd-ctitle">应力幅—循环次数分布<span class="spd-demo">演示数据</span></div>
+                  <div class="spd-cdesc">横轴是应力幅（MPa），纵轴是落在该幅值的循环次数，不是按时间累积。</div>
+                  <SchemeChart class="spd-cg" :option="distributionOption" />
                 </article>
                 <article class="spd-chartblock">
                   <div class="spd-ctitle">累积损伤度<span class="spd-demo">演示数据</span></div>
                   <div class="spd-cdesc">累积损伤度 D。0.7 只是阅读参考，不是报警线。</div>
                   <SchemeChart class="spd-cg" :option="damageOption" />
                 </article>
-              </div>
-              <div class="spd-rank">
-                <section>
-                  <h3>结构部件健康状态排序</h3>
-                  <table class="spd-grid">
-                    <thead><tr><th>部件</th><th>代表点</th><th>当前 D</th><th>健康状态</th></tr></thead>
-                    <tbody>
-                      <tr v-for="row in healthRank.components" :key="row.loc" :class="{ hit: row.beam === active.beam }">
-                        <td>{{ row.loc }}</td><td>{{ row.id }}</td><td>{{ row.value }}</td><td><span class="spd-status" :class="row.tone">{{ row.grade }}</span></td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </section>
-                <section>
-                  <h3>点位健康状态排序</h3>
-                  <table class="spd-grid">
-                    <thead><tr><th>序号</th><th>名称</th><th>部件</th><th>当前 D</th><th>健康状态</th></tr></thead>
-                    <tbody>
-                      <tr v-for="row in healthRank.points" :key="row.id" :class="{ hit: row.id === active.id }">
-                        <td>{{ row.id }}</td><td>{{ row.loc }}</td><td>{{ row.beam }}</td><td>{{ row.value }}</td><td><span class="spd-status" :class="row.tone">{{ row.grade }}</span></td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </section>
               </div>
             </template>
             <template v-else>
@@ -231,30 +219,6 @@
                   <div class="spd-cdesc">年度、月度或自定义窗口的期末剩余损伤度，不是剩余年限曲线。</div>
                   <SchemeChart class="spd-cg" :option="remainDamageOption" />
                 </article>
-              </div>
-              <div class="spd-rank">
-                <section>
-                  <h3>结构部件剩余年限排序</h3>
-                  <table class="spd-grid">
-                    <thead><tr><th>部件</th><th>最短点</th><th>剩余年限</th></tr></thead>
-                    <tbody>
-                      <tr v-for="row in crackRank.components" :key="row.loc" :class="{ hit: row.beam === active.beam }">
-                        <td>{{ row.loc }}</td><td>{{ row.grade }}</td><td>{{ row.value }}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </section>
-                <section>
-                  <h3>点位剩余年限排序</h3>
-                  <table class="spd-grid">
-                    <thead><tr><th>序号</th><th>名称</th><th>部件</th><th>剩余年限</th><th>剩余损伤度</th></tr></thead>
-                    <tbody>
-                      <tr v-for="row in crackRank.points" :key="row.id" :class="{ hit: row.id === active.id }">
-                        <td>{{ row.id }}</td><td>{{ row.loc }}</td><td>{{ row.beam }}</td><td>{{ row.value }}</td><td>{{ row.grade }}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </section>
               </div>
             </template>
           </template>
@@ -359,10 +323,10 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import SchemeChart from '@/components/pointScheme/SchemeChart.vue'
 import StructureCraneModel from '@/components/pointScheme/StructureCraneModel.vue'
-import { alarmEvidence, categoryOption, recordNote } from '@/components/pointScheme/structureCharts'
+import { alarmEvidence, barOption, categoryOption, recordNote } from '@/components/pointScheme/structureCharts'
 import {
   ALARMS, SERVICE_FROM, SERVICE_TO, SERVICES, STRUCTURE_POINTS, TZ,
-  aeConclusion, crackRanks, crackTable, fmtDT, fmtRange, groupedPoints, healthRanks, healthTable,
+  CUR_FROM, CUR_TO, aeConclusion, aeSeries, amplitudeDistribution, crackTable, fmtDT, fmtRange, groupedPoints, healthTable, stressSeries,
   parseDT, pointSummary, serviceBuckets, serviceCards, statusName, structurePoint,
   type ServiceGrain, type SvcId, type ModelMode
 } from '@/mock/structurePointDetail'
@@ -398,8 +362,7 @@ const points = STRUCTURE_POINTS
 const alarms = ALARMS
 const tz = TZ
 const summary = pointSummary()
-const healthRank = healthRanks()
-const crackRank = crackRanks()
+const rawTab = ref<'stress' | 'ae' | 'eddy'>('stress')
 const active = computed(() => structurePoint(activeId.value))
 const groups = computed(() => groupedPoints(query.value, onlyBad.value))
 const cards = computed(() => serviceCards(active.value))
@@ -411,7 +374,21 @@ const crack = computed(() => crackTable(active.value, buckets.value))
 const grainLabel = computed(() => grain.value === 'year' ? '缺省：2026-01-01 至 2026-11-16，按月' : grain.value === 'month' ? '2026-11-01 至 2026-11-16，按日' : `${appliedFrom.value} 至 ${appliedTo.value}`)
 const loadOption = computed(() => categoryOption(labels.value, buckets.value.map(item => item.load), '#1677ff', '载荷', 't', 1))
 const stressOption = computed(() => categoryOption(labels.value, buckets.value.map(item => item.stressMax), '#0f766e', '应力幅', 'MPa', 1))
-const cycleOption = computed(() => categoryOption(labels.value, buckets.value.map(item => item.cycles), '#1677ff', '累计循环次数', '次', 0, { min: 0 }))
+const distribution = computed(() => amplitudeDistribution(active.value))
+const distributionOption = computed(() => barOption(distribution.value.map(item => item.label), distribution.value.map(item => item.cycles), '应力幅 / MPa', '循环次数'))
+const rawOption = computed(() => {
+  const query = { view: 'current' as const, alarm: null, modal: rawTab.value === 'ae' ? 'ae' as const : 'health' as const }
+  const series = rawTab.value === 'ae' ? aeSeries(active.value, CUR_FROM, CUR_TO, query) : stressSeries(active.value, CUR_FROM, CUR_TO, query)
+  const step = Math.max(1, Math.floor(series.x.length / 48))
+  const labels: string[] = []
+  const values: number[] = []
+  series.x.forEach((time, index) => {
+    if (index % step) return
+    labels.push(fmtDT(time, false).slice(11, 16))
+    values.push(series.y[index])
+  })
+  return categoryOption(labels, values, rawTab.value === 'ae' ? '#7c3aed' : '#1677ff', rawTab.value === 'ae' ? '幅值' : '应力', rawTab.value === 'ae' ? 'dB' : 'MPa', 1)
+})
 const damageOption = computed(() => categoryOption(labels.value, buckets.value.map(item => item.damage), '#7c3aed', '累积损伤度 D', '', 2, {
   min: 0,
   max: Math.max(0.85, ...buckets.value.map(item => item.damage)),

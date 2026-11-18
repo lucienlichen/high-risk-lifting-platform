@@ -51,6 +51,17 @@
             <div class="hint">点位颜色对应全局状态。频谱与特征值在右侧服务抽屉中打开。</div>
           </div>
         </section>
+        <section class="spd-card spd-raw">
+          <div class="spd-mid-hd">
+            <span class="spd-title">当前点位监测数据</span>
+            <div class="spd-seg" aria-label="原始数据">
+              <button type="button" :class="{ on: rawTab === 'vibration' }" @click="rawTab = 'vibration'">振动</button>
+              <button type="button" :class="{ on: rawTab === 'rpm' }" @click="rawTab = 'rpm'">转速</button>
+            </div>
+          </div>
+          <p class="spd-scope">只显示当前测点。转速采集项仅明确写了电机输出轴；其他点的转速曲线标明为该轴演示速度。</p>
+          <SchemeChart class="spd-cg spd-raw-chart" :option="rawOption" />
+        </section>
       </section>
 
       <aside class="spd-right" aria-label="机构服务">
@@ -281,6 +292,7 @@ const assessStart = ref('2026-11-15T22:00')
 const assessHours = ref(6)
 const diagStart = ref('2026-11-16T02:00')
 const diagSeconds = ref(5)
+const rawTab = ref<'vibration' | 'rpm'>('vibration')
 const panel = ref<FeatureKey[]>(['kurtosis', 'severity', 'rms'])
 let toastTimer = 0
 
@@ -356,6 +368,12 @@ const rmsOption = computed(() => {
   return featureOption(series.labels, series.values, 'rms', false)
 })
 const selectedAlarm = computed(() => alarms.find(item => item.id === alarmId.value) || null)
+const rawOption = computed(() => {
+  const data = capture(active.value, 5)
+  return rawTab.value === 'rpm'
+    ? xyOption(data.time, data.rpm, '时间 / s', 'r/min', '#1677ff', false)
+    : xyOption(data.time, data.signal, '时间 / s', 'g', '#1677ff', false)
+})
 const alarmOption = computed(() => {
   const alarm = selectedAlarm.value
   if (!alarm || !alarmFrom.value || !alarmTo.value) return featureOption([], [], 'severity')

@@ -1,10 +1,10 @@
 import type { EChartsOption } from 'echarts'
 import { FEATURES, type FeatureKey } from '@/mock/mechanismPointDetail'
 
-export function xyOption(x: number[], y: number[], xName: string, yName: string, color: string): EChartsOption {
+export function xyOption(x: number[], y: number[], xName: string, yName: string, color: string, zoom = true): EChartsOption {
   return {
     animation: false,
-    grid: { left: 54, right: 12, top: 28, bottom: 48 },
+    grid: { left: 54, right: 16, top: 28, bottom: zoom ? 52 : 36 },
     tooltip: { trigger: 'axis' },
     xAxis: {
       type: 'value',
@@ -22,7 +22,7 @@ export function xyOption(x: number[], y: number[], xName: string, yName: string,
       splitLine: { lineStyle: { color: '#eef0f3' } },
       scale: true
     },
-    dataZoom: [{ type: 'slider', height: 14, bottom: 4 }, { type: 'inside' }],
+    ...(zoom ? { dataZoom: [{ type: 'slider' as const, height: 14, bottom: 4 }, { type: 'inside' as const }] } : {}),
     series: [{
       type: 'line',
       data: x.map((value, index) => [value, y[index]]),

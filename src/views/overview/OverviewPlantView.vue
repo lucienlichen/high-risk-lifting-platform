@@ -49,6 +49,10 @@
             <span class="ov-sr">搜索设备编号或位置</span>
             <input v-model="q" type="search" placeholder="设备编号 / 位置" />
           </label>
+          <div class="ov-toggle" role="group" aria-label="概览口径">
+            <button type="button" :class="{ active: lens !== 'risk' }" @click="setLens('health')">健康监测</button>
+            <button type="button" :class="{ active: lens === 'risk' }" @click="setLens('risk')">风险监测</button>
+          </div>
           <div class="ov-toggle" role="group" aria-label="显示方式">
             <button type="button" :class="{ active: view === 'cards' }" @click="view = 'cards'">卡片</button>
             <button type="button" :class="{ active: view === 'plan' }" @click="view = 'plan'">厂区平面图</button>
@@ -56,7 +60,25 @@
         </div>
       </section>
 
-      <template v-if="view === 'cards'">
+      <template v-if="lens === 'risk'">
+        <section class="ov-table-wrap">
+          <table class="ov-table">
+            <thead><tr><th>排名</th><th>设备编号</th><th>名称</th><th>位置</th><th>设备状态</th><th>风险值（示意）</th></tr></thead>
+            <tbody>
+              <tr v-for="(item, index) in riskRows" :key="item.id" class="ov-risk-row" @click="openRisk(item.id)">
+                <td>{{ index + 1 }}</td>
+                <td>{{ item.code }}</td>
+                <td>{{ item.name }}</td>
+                <td>{{ item.location }}</td>
+                <td>{{ item.lamp === 'red' ? '报警' : item.lamp === 'yellow' ? '异常' : '正常' }}</td>
+                <td>{{ demoRiskScore(item) }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="ov-footnote">同一批设备按示意分值降序。分值不由报警灯生成，也不由单机矩阵回算，不定义风险等级。</p>
+        </section>
+      </template>
+      <template v-else-if="view === 'cards'">
         <section class="ov-grid" aria-label="设备卡片">
           <OverviewDeviceCard v-for="card in visible" :key="card.id" :card="card" @open="open(card.id)" />
         </section>
@@ -98,7 +120,7 @@
         </div>
         <p class="ov-footnote">示意布局：每一行是台账里的一个使用地点，竖条是该地点的起重机。没有坐标，不能当成厂区 CAD。</p>
       </section>
-      <p class="ov-footnote">卡片颜色是六项服务里最严重的一盏灯：报警、异常或正常。停机不改变颜色。离线设备仍用最近一次灯色，卡片上不另标离线。悬停编号可看类型和位置。</p>
+      <p v-if="lens !== 'risk'" class="ov-footnote">卡片颜色是六项服务里最严重的一盏灯：报警、异常或正常。停机不改变颜色。离线设备仍用最近一次灯色，卡片上不另标离线。悬停编号可看类型和位置。</p>
     </main>
   </div>
 </template>
@@ -118,6 +140,7 @@ import {
   worstUnit,
   type OverviewCard
 } from '@/mock/overviewDemo'
+import { demoRiskScore } from '@/mock/deviceMenus'
 import { overviewAccessOf, useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
@@ -153,7 +176,7 @@ watch([enterprise, unit, access], () => {
   const queryUnit = String(route.query.unit || '')
   const nextUnit = unit.value || worstUnit(allowed.value, enterprise.value)
   if (queryEnterprise !== enterprise.value || (access.value.kind === 'factory' && queryUnit !== unit.value) || (!queryUnit && access.value.kind !== 'factory')) {
-    router.replace({ name: 'overviewPlant', query: { enterprise: enterprise.value, unit: nextUnit } })
+    router.replace({ name: 'overviewPlant', query: { ...route.query, enterprise: enterprise.value, unit: nextUnit } })
   }
 }, { immediate: true })
 
@@ -226,7 +249,7 @@ function select(nextEnterprise: string, nextUnit: string) {
   openGroups.value = new Set(openGroups.value).add(nextEnterprise)
   selectedId.value = ''
   limit.value = 40
-  router.push({ name: 'overviewPlant', query: { enterprise: nextEnterprise, unit: nextUnit } })
+  router.push({ name: 'overviewPlant', query: { ...route.query, enterprise: nextEnterprise, unit: nextUnit } })
 }
 function craneTone(card: OverviewCard) {
   if (card.lamp === 'red') return 'is-red'
@@ -245,8 +268,19 @@ function craneStyle(index: number, count: number) {
 function bayPop(bay: { cards: OverviewCard[] }) {
   return bay.cards.find(card => card.id === selectedId.value) || null
 }
+const lens = computed(() => route.query.lens === 'risk' ? 'risk' : 'health')
+const riskRows = computed(() => [...searched.value].sort((a, b) => demoRiskScore(b) - demoRiskScore(a) || a.code.localeCompare(b.code, 'zh-CN')))
+function setLens(next: 'health' | 'risk') {
+  const nextQuery = { ...route.query }
+  if (next === 'risk') nextQuery.lens = 'risk'
+  else delete nextQuery.lens
+  router.replace({ query: nextQuery })
+}
 function open(id: string) {
   router.push({ name: 'overviewParts', params: { id }, query: { enterprise: enterprise.value, unit: unit.value } })
+}
+function openRisk(id: string) {
+  router.push({ name: 'overviewSection', params: { id, key: 'risk' }, query: { enterprise: enterprise.value, unit: unit.value } })
 }
 </script>
 

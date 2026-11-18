@@ -675,3 +675,16 @@ export function crackRanks(): { points: RankRow[]; components: RankRow[] } {
   }).sort((a, b) => Number.parseFloat(a.value) - Number.parseFloat(b.value))
   return { points, components }
 }
+
+/** 应力幅分布：横轴为应力幅（MPa），纵轴为落在该幅值的循环次数，不是时间累积。 */
+export function amplitudeDistribution(point: StructurePoint) {
+  const bins = [10, 20, 30, 40, 50, 60, 70, 80]
+  const total = occurredTotal(point)
+  const center = point.s * 0.55
+  const weights = bins.map(amp => Math.exp(-(((amp - center) / 18) ** 2)))
+  const sum = weights.reduce((totalWeight, weight) => totalWeight + weight, 0) || 1
+  return bins.map((amp, index) => ({
+    label: String(amp),
+    cycles: Math.max(1, Math.round(total * weights[index] / sum))
+  }))
+}

@@ -222,6 +222,17 @@ export function alarmEvidence(point: StructurePoint, from: string, to: string, a
   return { series, option }
 }
 
+export function barOption(labels: string[], values: number[], xName: string, yName: string): EChartsOption {
+  return {
+    animation: false,
+    grid: { left: 64, right: 16, top: 36, bottom: 40 },
+    tooltip: { trigger: 'axis' },
+    xAxis: { type: 'category', name: xName, nameLocation: 'middle', nameGap: 24, data: labels, axisLabel: { fontSize: 11, color: '#6b7280' } },
+    yAxis: { type: 'value', name: yName, min: 0, nameTextStyle: { fontSize: 11, color: '#6b7280' }, axisLabel: { fontSize: 11, color: '#6b7280', formatter: (value: number) => String(Math.round(value)) }, splitLine: { lineStyle: { color: '#eef0f3' } } },
+    series: [{ type: 'bar', data: values, barMaxWidth: 28, itemStyle: { color: '#1677ff' } }]
+  }
+}
+
 export function recordNote(row: DemoRecord) {
   return row.extra || (row.hit ? '超过示意阈值 40 dB' : '')
 }

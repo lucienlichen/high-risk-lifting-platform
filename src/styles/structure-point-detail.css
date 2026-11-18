@@ -34,16 +34,13 @@
 .spd select:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 
 .spd-note {
-  min-height: 32px;
   flex: none;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  margin: 0;
   padding: 6px 16px;
   background: #f8fafc;
   border-bottom: 1px solid var(--spd-line);
-  font-size: 11px;
-  line-height: 16px;
+  font-size: 12px;
+  line-height: 18px;
   color: var(--spd-muted);
 }
 .spd-note b { font-weight: 600; color: #475569; }
@@ -59,6 +56,7 @@
 .spd-left,
 .spd-mid,
 .spd-right { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.spd-mid { overflow: auto; }
 .spd-right { gap: 10px; }
 
 .spd-card {
@@ -72,7 +70,9 @@
   overflow: hidden;
 }
 .spd-table { flex: 1; }
-.spd-model { flex: 1; }
+.spd-model { flex: 1.15; min-height: 220px; }
+.spd-raw { flex: 0.85; min-height: 200px; }
+.spd-raw-chart.ps-echart { height: 200px; }
 
 .spd-hd { padding: 10px 12px 8px; display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid #f0f1f3; flex: none; }
 .spd-hd-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
