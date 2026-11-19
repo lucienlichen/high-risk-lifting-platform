@@ -104,21 +104,52 @@
         </section>
       </template>
       <template v-else-if="lens === 'risk'">
-        <section class="ov-table-wrap">
-          <table class="ov-table">
-            <thead><tr><th>排名</th><th>设备编号</th><th>名称</th><th>位置</th><th>设备状态</th><th>风险值（示意）</th></tr></thead>
-            <tbody>
-              <tr v-for="(item, index) in riskRows" :key="item.card.id" class="ov-risk-row" :class="`is-${item.band}`" @click="openRisk(item.card.id)">
-                <td>{{ index + 1 }}</td>
-                <td>{{ item.card.code }}</td>
-                <td>{{ item.card.name }}</td>
-                <td>{{ item.card.location }}</td>
-                <td>{{ item.card.lamp === 'red' ? '报警' : item.card.lamp === 'yellow' ? '异常' : '正常' }}</td>
-                <td><b class="ov-risk-score" :class="item.band">{{ item.score }}</b></td>
-              </tr>
-            </tbody>
-          </table>
-          <p class="ov-footnote">同一批设备按示意分值降序。色带只按分值分段：≥60 示意高，40–59 示意中，≤39 示意低。色带不由报警灯生成，也不由单机矩阵回算，不定义风险等级。</p>
+        <section class="risk-board">
+          <div class="risk-filters">
+            <el-input v-model="riskName" placeholder="设备名称" clearable size="small" style="width:160px" />
+            <el-select v-model="riskRun" placeholder="设备运行状态" clearable size="small" style="width:140px">
+              <el-option v-for="item in riskRuns" :key="item" :label="item" :value="item" />
+            </el-select>
+            <el-select v-model="riskType" placeholder="设备类型" clearable size="small" style="width:160px">
+              <el-option v-for="item in riskTypes" :key="item" :label="item" :value="item" />
+            </el-select>
+            <el-button size="small" type="primary" @click="applyRiskFilter">查询</el-button>
+            <el-button size="small" @click="resetRiskFilter">重置</el-button>
+            <span class="risk-count">共 {{ riskFiltered.length }} 条记录</span>
+          </div>
+          <el-table :data="riskPaged" style="width:100%" @row-click="(row: RiskListRow) => openRisk(row.card.id)">
+            <el-table-column prop="rank" label="风险排名" width="88" align="center" fixed="left" />
+            <el-table-column label="设备编号" min-width="140" fixed="left" show-overflow-tooltip>
+              <template #default="{ row }">{{ row.card.code }}</template>
+            </el-table-column>
+            <el-table-column label="设备名称" min-width="150" show-overflow-tooltip>
+              <template #default="{ row }">{{ row.card.name }}</template>
+            </el-table-column>
+            <el-table-column label="使用地点" min-width="160" show-overflow-tooltip>
+              <template #default="{ row }">{{ row.card.location }}</template>
+            </el-table-column>
+            <el-table-column label="风险评估值" width="112" align="center">
+              <template #default="{ row }"><b class="ov-risk-score" :class="row.band">{{ row.score }}</b></template>
+            </el-table-column>
+            <el-table-column prop="indicator" label="主要风险指标" min-width="160" show-overflow-tooltip />
+            <el-table-column label="操作" width="120" align="center" fixed="right">
+              <template #default="{ row }">
+                <el-button size="small" type="primary" link @click.stop="openRisk(row.card.id)">查看风险评价</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+          <div class="risk-pager">
+            <el-pagination
+              v-model:current-page="riskPage"
+              v-model:page-size="riskPageSize"
+              :total="riskFiltered.length"
+              :page-sizes="[20, 50, 100]"
+              layout="total, sizes, prev, pager, next, jumper"
+              background
+              small
+            />
+          </div>
+          <p class="ov-footnote">排序值是示意分，不由报警灯或 15 项矩阵回算，也不定义风险等级。色带：≥60 示意高，40–59 示意中，≤39 示意低。主要风险指标取该机演示矩阵里选中等级最高的一项。</p>
         </section>
       </template>
       <template v-else-if="view === 'cards'">
@@ -148,7 +179,7 @@ import {
   worstUnit,
   type OverviewCard
 } from '@/mock/overviewDemo'
-import { demoRiskBand, demoRiskScore } from '@/mock/deviceMenus'
+import { RISK_NAMES, demoRiskBand, demoRiskLevels, demoRiskScore } from '@/mock/deviceMenus'
 import { overviewAccessOf, useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
@@ -280,10 +311,50 @@ function bayPop(bay: { cards: OverviewCard[] }) {
   return bay.cards.find(card => card.id === selectedId.value) || null
 }
 const lens = computed(() => route.query.lens === 'risk' ? 'risk' : 'health')
+const riskName = ref('')
+const riskRun = ref('')
+const riskType = ref('')
+const riskQuery = ref({ name: '', run: '', type: '' })
+const riskPage = ref(1)
+const riskPageSize = ref(20)
+interface RiskListRow { card: OverviewCard; score: number; band: 'high' | 'mid' | 'low'; rank: number; indicator: string }
 const riskRows = computed(() => searched.value.map(card => {
   const score = demoRiskScore(card)
   return { card, score, band: demoRiskBand(score) }
 }).sort((a, b) => b.score - a.score || a.card.code.localeCompare(b.card.code, 'zh-CN')))
+const riskRuns = computed(() => [...new Set(riskRows.value.map(row => row.card.workLabel))])
+const riskTypes = computed(() => [...new Set(riskRows.value.map(row => row.card.type).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'zh-CN')))
+function mainIndicator(id: string) {
+  const levels = demoRiskLevels(id)
+  let best = 0
+  let name = RISK_NAMES[0]
+  levels.forEach((level, index) => {
+    if (level > best) { best = level; name = RISK_NAMES[index] }
+  })
+  return name
+}
+const riskFiltered = computed<RiskListRow[]>(() => riskRows.value.filter(row => {
+  const query = riskQuery.value
+  if (query.name && !`${row.card.name}${row.card.code}`.includes(query.name.trim())) return false
+  if (query.run && row.card.workLabel !== query.run) return false
+  if (query.type && row.card.type !== query.type) return false
+  return true
+}).map((row, index) => ({ ...row, rank: index + 1, indicator: mainIndicator(row.card.id) })))
+const riskPaged = computed(() => {
+  const start = (riskPage.value - 1) * riskPageSize.value
+  return riskFiltered.value.slice(start, start + riskPageSize.value)
+})
+function applyRiskFilter() {
+  riskQuery.value = { name: riskName.value, run: riskRun.value, type: riskType.value }
+  riskPage.value = 1
+}
+function resetRiskFilter() {
+  riskName.value = ''
+  riskRun.value = ''
+  riskType.value = ''
+  applyRiskFilter()
+}
+watch(searched, () => { riskPage.value = 1 })
 function setLens(next: 'health' | 'risk') {
   const nextQuery = { ...route.query }
   if (next === 'risk') nextQuery.lens = 'risk'
@@ -306,10 +377,11 @@ function openRisk(id: string) {
 .ov-lens { width: fit-content; }
 .ov-lens button { height: 36px; padding: 0 16px; font-size: 14px; font-weight: 600; }
 .ov-lens button.active { font-weight: 700; }
-.ov-risk-row.is-high td:first-child { box-shadow: inset 3px 0 0 var(--color-danger); }
-.ov-risk-row.is-mid td:first-child { box-shadow: inset 3px 0 0 var(--color-warning); }
-.ov-risk-row.is-low td:first-child { box-shadow: inset 3px 0 0 var(--color-success); }
-.ov-risk-score { font-variant-numeric: tabular-nums; }
+.risk-board { background: #fff; border: 1px solid var(--color-card-border, #e8edf3); border-radius: 10px; }
+.risk-filters { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 10px 12px; border-bottom: 1px solid var(--color-border-light, #f0f4f8); }
+.risk-count { margin-left: auto; color: var(--color-text-secondary, #475569); font-size: 13px; }
+.risk-pager { display: flex; justify-content: flex-end; padding: 10px 12px; }
+.ov-risk-score { font-variant-numeric: tabular-nums; font-weight: 800; }
 .ov-risk-score.high { color: var(--color-danger); }
 .ov-risk-score.mid { color: var(--color-warning); }
 .ov-risk-score.low { color: var(--color-success); }

@@ -71,8 +71,13 @@
 }
 .spd-table { flex: 1; }
 .spd-model { flex: 1.15; min-height: 220px; }
-.spd-raw { flex: 0.85; min-height: 200px; }
-.spd-raw-chart.ps-echart { height: 200px; }
+.spd-raw { flex: 0.85; min-height: 248px; }
+.spd-raw-row { display: flex; flex-direction: row; flex-wrap: nowrap; gap: 8px; overflow-x: auto; overflow-y: hidden; padding: 8px; min-height: 0; flex: 1; }
+.spd-raw-pane { flex: 1 0 300px; min-width: 300px; display: flex; flex-direction: column; border: 1px solid #edf0f4; border-radius: 6px; background: #fff; overflow: hidden; }
+.spd-raw-pane > header { height: 32px; flex: none; display: flex; align-items: center; padding: 0 10px; font-size: 13px; font-weight: 700; border-bottom: 1px solid #edf0f4; }
+.spd-raw-pane .spd-scope { padding: 6px 10px 0; }
+.spd-raw-pane .spd-empty { margin: auto 0; }
+.spd-raw-chart.ps-echart { height: 188px; }
 
 .spd-hd { padding: 10px 12px 8px; display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid #f0f1f3; flex: none; }
 .spd-hd-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }

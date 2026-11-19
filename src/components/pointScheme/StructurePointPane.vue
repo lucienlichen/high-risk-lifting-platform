@@ -64,14 +64,22 @@
         <section class="spd-card spd-raw">
           <div class="spd-mid-hd">
             <span class="spd-title">当前点位监测数据</span>
-            <div class="spd-seg" aria-label="原始数据">
-              <button type="button" :class="{ on: rawTab === 'stress' }" @click="rawTab = 'stress'">应力时程</button>
-              <button type="button" :class="{ on: rawTab === 'ae' }" @click="rawTab = 'ae'">声发射</button>
-              <button type="button" :class="{ on: rawTab === 'eddy' }" @click="rawTab = 'eddy'">柔性涡流</button>
-            </div>
+            <span class="sub">只显示当前点位，三类同时展开</span>
           </div>
-          <p v-if="rawTab === 'eddy'" class="spd-empty">柔性涡流原始波形暂无本点绑定数据。判别结论仍为未发现裂纹。</p>
-          <SchemeChart v-else class="spd-cg spd-raw-chart" :option="rawOption" />
+          <div class="spd-raw-row">
+            <article class="spd-raw-pane">
+              <header>应力时程</header>
+              <SchemeChart class="spd-cg spd-raw-chart" :option="stressRawOption" />
+            </article>
+            <article class="spd-raw-pane">
+              <header>声发射</header>
+              <SchemeChart class="spd-cg spd-raw-chart" :option="aeRawOption" />
+            </article>
+            <article class="spd-raw-pane">
+              <header>柔性涡流</header>
+              <p class="spd-empty">柔性涡流原始波形暂无本点绑定数据。判别结论仍为未发现裂纹。</p>
+            </article>
+          </div>
         </section>
       </section>
 
@@ -362,7 +370,6 @@ const points = STRUCTURE_POINTS
 const alarms = ALARMS
 const tz = TZ
 const summary = pointSummary()
-const rawTab = ref<'stress' | 'ae' | 'eddy'>('stress')
 const active = computed(() => structurePoint(activeId.value))
 const groups = computed(() => groupedPoints(query.value, onlyBad.value))
 const cards = computed(() => serviceCards(active.value))
@@ -376,9 +383,9 @@ const loadOption = computed(() => categoryOption(labels.value, buckets.value.map
 const stressOption = computed(() => categoryOption(labels.value, buckets.value.map(item => item.stressMax), '#0f766e', '应力幅', 'MPa', 1))
 const distribution = computed(() => amplitudeDistribution(active.value))
 const distributionOption = computed(() => barOption(distribution.value.map(item => item.label), distribution.value.map(item => item.cycles), '应力幅 / MPa', '循环次数'))
-const rawOption = computed(() => {
-  const query = { view: 'current' as const, alarm: null, modal: rawTab.value === 'ae' ? 'ae' as const : 'health' as const }
-  const series = rawTab.value === 'ae' ? aeSeries(active.value, CUR_FROM, CUR_TO, query) : stressSeries(active.value, CUR_FROM, CUR_TO, query)
+function rawSeriesOption(kind: 'stress' | 'ae') {
+  const query = { view: 'current' as const, alarm: null, modal: kind === 'ae' ? 'ae' as const : 'health' as const }
+  const series = kind === 'ae' ? aeSeries(active.value, CUR_FROM, CUR_TO, query) : stressSeries(active.value, CUR_FROM, CUR_TO, query)
   const step = Math.max(1, Math.floor(series.x.length / 48))
   const labels: string[] = []
   const values: number[] = []
@@ -387,8 +394,10 @@ const rawOption = computed(() => {
     labels.push(fmtDT(time, false).slice(11, 16))
     values.push(series.y[index])
   })
-  return categoryOption(labels, values, rawTab.value === 'ae' ? '#7c3aed' : '#1677ff', rawTab.value === 'ae' ? '幅值' : '应力', rawTab.value === 'ae' ? 'dB' : 'MPa', 1)
-})
+  return categoryOption(labels, values, kind === 'ae' ? '#7c3aed' : '#1677ff', kind === 'ae' ? '幅值' : '应力', kind === 'ae' ? 'dB' : 'MPa', 1)
+}
+const stressRawOption = computed(() => rawSeriesOption('stress'))
+const aeRawOption = computed(() => rawSeriesOption('ae'))
 const damageOption = computed(() => categoryOption(labels.value, buckets.value.map(item => item.damage), '#7c3aed', '累积损伤度 D', '', 2, {
   min: 0,
   max: Math.max(0.85, ...buckets.value.map(item => item.damage)),

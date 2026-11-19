@@ -26,19 +26,48 @@
         </ul>
       </template>
       <template v-else-if="menu === 'risk'">
-        <p class="section-note">概览排序分 <b>{{ score }}</b> 只用于设备列表降序，不由本矩阵计算，也不定义高/低风险等级。下列 15 项 × 4 级是旧口径条件，选中格是界面样例。</p>
-        <div class="ov-table-wrap">
-          <table class="ov-table risk-table">
-            <thead><tr><th>序号</th><th>评估指标</th><th>1 级</th><th>2 级</th><th>3 级</th><th>4 级</th></tr></thead>
-            <tbody>
-              <tr v-for="(name, index) in RISK_NAMES" :key="name">
-                <td>{{ index + 1 }}</td>
-                <td>{{ name }}</td>
-                <td v-for="(band, level) in RISK_BANDS[index]" :key="band" :class="{ chosen: levels[index] === level + 1 }">{{ band }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <section class="risk-detail">
+          <header class="risk-detail-bar">
+            <b>风险定量监测</b>
+            <span>本机 {{ card.code }} · {{ card.name }}</span>
+            <em>演示界面，没有逐机评估日期</em>
+          </header>
+          <div class="risk-status">
+            <div><small>所在位置</small><b>{{ card.location || '—' }}</b></div>
+            <div><small>工作状态</small><b>{{ card.workLabel }}</b></div>
+            <div><small>实时振动</small><b>未绑定本机监测</b></div>
+            <div><small>列表示意分</small><b class="ov-risk-score" :class="band">{{ score }}</b></div>
+          </div>
+          <div class="risk-matrix-panel">
+            <div class="risk-matrix-head">
+              <b>风险评估指标</b><span>共 {{ RISK_NAMES.length }} 项</span>
+              <div class="risk-legend"><i class="g1"></i>1级<i class="g2"></i>2级<i class="g3"></i>3级<i class="g4"></i>4级</div>
+            </div>
+            <div class="risk-matrix-wrap">
+              <table class="risk-matrix">
+                <thead>
+                  <tr>
+                    <th>序号</th><th>评估指标</th>
+                    <th><i class="g1"></i>1级</th><th><i class="g2"></i>2级</th><th><i class="g3"></i>3级</th><th><i class="g4"></i>4级</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(name, index) in RISK_NAMES" :key="name">
+                    <td><span class="risk-no">{{ index + 1 }}</span></td>
+                    <td>{{ name }}</td>
+                    <td v-for="(text, level) in RISK_BANDS[index]" :key="text">
+                      <div class="risk-cell" :class="[{ on: levels[index] === level + 1 }, `g${level + 1}`]">
+                        <span>{{ text }}</span>
+                        <i v-if="levels[index] === level + 1"></i>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <p class="section-note">选中格是本机演示样例，随设备变化。列表示意分 {{ score }} 只用于排序上色，不是 15 项等级之和，也不对应高/低风险等级。证据里出现过「综合评分 /80」和「低风险」，但没有给出分母和等级界限，这里不套用。</p>
+        </section>
       </template>
       <template v-else-if="menu === 'basic'">
         <p class="section-note">单机四组模拟档案。没有照搬群体台账统计。</p>
@@ -73,7 +102,7 @@ import { computed, ref } from 'vue'
 import DeviceMenuBar from '@/components/overview/DeviceMenuBar.vue'
 import DeviceStrip from '@/components/DeviceStrip.vue'
 import { usePartsDevice } from '@/composables/usePartsDevice'
-import { INSPECTION_CATEGORIES, RISK_BANDS, RISK_NAMES, SAFETY_PARAMS, SAFETY_STATES, SUPPLY_CATEGORIES, demoRiskLevels, demoRiskScore, type DeviceMenuKey } from '@/mock/deviceMenus'
+import { INSPECTION_CATEGORIES, RISK_BANDS, RISK_NAMES, SAFETY_PARAMS, SAFETY_STATES, SUPPLY_CATEGORIES, demoRiskBand, demoRiskLevels, demoRiskScore, type DeviceMenuKey } from '@/mock/deviceMenus'
 import { statusLabels } from '@/mock/partsPoint'
 
 const { card, query, route, router, tone } = usePartsDevice()
@@ -84,6 +113,7 @@ const menu = computed(() => {
   return (['safety', 'risk', 'inspection', 'basic', 'supply'].includes(key) ? key : 'safety') as DeviceMenuKey
 })
 const score = computed(() => card.value ? demoRiskScore(card.value) : 0)
+const band = computed(() => demoRiskBand(score.value))
 const levels = computed(() => demoRiskLevels(String(route.params.id || '')))
 const categories = computed(() => menu.value === 'inspection' ? INSPECTION_CATEGORIES : SUPPLY_CATEGORIES)
 const archive = computed(() => {
@@ -117,7 +147,35 @@ h2 { margin: 16px 0 8px; font-size: 16px; }
 .state-list b.正常 { color: #15803d; }
 .state-list b.异常 { color: #b45309; }
 .state-list b.报警, .state-list b.闭合 { color: #b91c1c; }
-.risk-table td.chosen { background: #e8f0fe; color: #0958d9; font-weight: 700; }
+.risk-detail { display: flex; flex-direction: column; gap: 12px; }
+.risk-detail-bar, .risk-status, .risk-matrix-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.risk-detail-bar { background: #fff; border: 1px solid var(--color-card-border, #e8edf3); border-radius: 10px; padding: 10px 14px; }
+.risk-detail-bar em { margin-left: auto; font-style: normal; color: #64748b; font-size: 12px; }
+.risk-status { background: #fff; border: 1px solid var(--color-card-border, #e8edf3); border-radius: 10px; padding: 12px 14px; }
+.risk-status div { display: flex; flex-direction: column; gap: 2px; min-width: 120px; }
+.risk-status small { color: #64748b; font-size: 12px; }
+.risk-matrix-panel { background: #fff; border: 1px solid var(--color-card-border, #e8edf3); border-radius: 10px; overflow: hidden; }
+.risk-matrix-head { padding: 12px 14px; border-bottom: 1px solid #f0f4f8; }
+.risk-matrix-head span { color: var(--color-primary, #1677ff); background: var(--color-primary-light, #e8f0fe); border-radius: 10px; padding: 1px 8px; font-size: 12px; }
+.risk-legend { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 12px; color: #475569; }
+.risk-legend i, .risk-matrix th i, .risk-cell i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: none; }
+.risk-legend .g1, .risk-matrix th .g1, .risk-cell.on.g1 i { background: var(--color-success); }
+.risk-legend .g2, .risk-matrix th .g2, .risk-cell.on.g2 i { background: var(--color-info); }
+.risk-legend .g3, .risk-matrix th .g3, .risk-cell.on.g3 i { background: var(--color-warning); }
+.risk-legend .g4, .risk-matrix th .g4, .risk-cell.on.g4 i { background: var(--color-danger); }
+.risk-matrix-wrap { overflow: auto; padding: 8px 12px 14px; }
+.risk-matrix { width: 100%; border-collapse: separate; border-spacing: 0 6px; font-size: 13px; }
+.risk-matrix th { text-align: left; font-size: 12px; color: #475569; font-weight: 600; padding: 4px 8px; }
+.risk-matrix td { padding: 0 6px; vertical-align: middle; }
+.risk-no { display: inline-flex; width: 22px; height: 22px; align-items: center; justify-content: center; border-radius: 6px; background: #f1f5f9; font-size: 12px; }
+.risk-cell { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 36px; padding: 6px 10px; border: 1px solid transparent; border-radius: 6px; color: #334155; background: #f8fafc; }
+.risk-cell.on.g1 { background: var(--color-success-bg); color: var(--color-success); border-color: var(--color-success); }
+.risk-cell.on.g2 { background: var(--color-info-bg); color: var(--color-info); border-color: var(--color-info); }
+.risk-cell.on.g3 { background: var(--color-warning-bg); color: var(--color-warning); border-color: var(--color-warning); }
+.risk-cell.on.g4 { background: var(--color-danger-bg); color: var(--color-danger); border-color: var(--color-danger); }
+.ov-risk-score.high { color: var(--color-danger); }
+.ov-risk-score.mid { color: var(--color-warning); }
+.ov-risk-score.low { color: var(--color-success); }
 .file-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .file-grid article { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px; }
 .file-grid header { display: flex; justify-content: space-between; gap: 8px; }
