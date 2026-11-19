@@ -66,14 +66,30 @@
             <span class="spd-title">当前点位监测数据</span>
             <span class="sub">只显示当前点位，三类同时展开</span>
           </div>
+          <div class="spd-raw-query">
+            <div class="spd-grain" role="group" aria-label="原始数据时间范围">
+              <button type="button" :class="{ on: rawPreset === 'year' }" @click="applyRawPreset('year')">年度</button>
+              <button type="button" :class="{ on: rawPreset === 'month' }" @click="applyRawPreset('month')">月度</button>
+              <button type="button" :class="{ on: rawPreset === 'custom' }" @click="rawPreset = 'custom'">自定义</button>
+              <span>已应用 {{ rawAppliedLabel }} · 演示数据</span>
+            </div>
+            <div v-if="rawPreset === 'custom'" class="spd-custom">
+              <label>开始 <input v-model="rawDraftFrom" type="datetime-local" min="2026-01-01T00:00" max="2026-11-16T23:59"></label>
+              <label>结束 <input v-model="rawDraftTo" type="datetime-local" min="2026-01-01T00:00" max="2026-11-16T23:59"></label>
+              <button type="button" @click="applyRawQuery">查询</button>
+              <span>{{ rawHint || (rawDraftFrom !== rawAppliedFrom || rawDraftTo !== rawAppliedTo ? '填写后点查询，曲线仍用上一已应用窗口' : '') }}</span>
+            </div>
+          </div>
           <div class="spd-raw-row">
             <article class="spd-raw-pane">
               <header>应力时程</header>
-              <SchemeChart class="spd-cg spd-raw-chart" :option="stressRawOption" />
+              <p v-if="!stressRaw.x.length" class="spd-empty">该窗口没有可展示的演示曲线。</p>
+              <SchemeChart v-else class="spd-cg spd-raw-chart" :option="stressRawOption" />
             </article>
             <article class="spd-raw-pane">
               <header>声发射</header>
-              <SchemeChart class="spd-cg spd-raw-chart" :option="aeRawOption" />
+              <p v-if="!aeRaw.x.length" class="spd-empty">该窗口没有可展示的演示曲线。</p>
+              <SchemeChart v-else class="spd-cg spd-raw-chart" :option="aeRawOption" />
             </article>
             <article class="spd-raw-pane">
               <header>柔性涡流</header>
@@ -363,6 +379,13 @@ const customTo = ref(SERVICE_TO)
 const appliedFrom = ref(SERVICE_FROM)
 const appliedTo = ref(SERVICE_TO)
 const rangeHint = ref('')
+const rawPreset = ref<'year' | 'month' | 'custom' | ''>('')
+const rawDraftFrom = ref(CUR_FROM)
+const rawDraftTo = ref(CUR_TO)
+const rawAppliedFrom = ref(CUR_FROM)
+const rawAppliedTo = ref(CUR_TO)
+const rawHint = ref('')
+const rawAppliedLabel = computed(() => fmtRange(rawAppliedFrom.value, rawAppliedTo.value))
 const toast = ref('')
 let toastTimer = 0
 
@@ -383,19 +406,30 @@ const loadOption = computed(() => categoryOption(labels.value, buckets.value.map
 const stressOption = computed(() => categoryOption(labels.value, buckets.value.map(item => item.stressMax), '#0f766e', '应力幅', 'MPa', 1))
 const distribution = computed(() => amplitudeDistribution(active.value))
 const distributionOption = computed(() => barOption(distribution.value.map(item => item.label), distribution.value.map(item => item.cycles), '应力幅 / MPa', '循环次数'))
-function rawSeriesOption(kind: 'stress' | 'ae') {
+function rawSeries(kind: 'stress' | 'ae') {
   const query = { view: 'current' as const, alarm: null, modal: kind === 'ae' ? 'ae' as const : 'health' as const }
-  const series = kind === 'ae' ? aeSeries(active.value, CUR_FROM, CUR_TO, query) : stressSeries(active.value, CUR_FROM, CUR_TO, query)
+  return kind === 'ae'
+    ? aeSeries(active.value, rawAppliedFrom.value, rawAppliedTo.value, query)
+    : stressSeries(active.value, rawAppliedFrom.value, rawAppliedTo.value, query)
+}
+function rawSeriesOption(kind: 'stress' | 'ae') {
+  const series = rawSeries(kind)
   const step = Math.max(1, Math.floor(series.x.length / 48))
   const labels: string[] = []
   const values: number[] = []
+  const span = (rawAppliedToMs() - rawAppliedFromMs()) > 36 * 3600 * 1000
   series.x.forEach((time, index) => {
     if (index % step) return
-    labels.push(fmtDT(time, false).slice(11, 16))
+    const text = fmtDT(time, false)
+    labels.push(span ? text.slice(5, 16) : text.slice(11, 16))
     values.push(series.y[index])
   })
   return categoryOption(labels, values, kind === 'ae' ? '#7c3aed' : '#1677ff', kind === 'ae' ? '幅值' : '应力', kind === 'ae' ? 'dB' : 'MPa', 1)
 }
+function rawAppliedFromMs() { return parseDT(rawAppliedFrom.value) }
+function rawAppliedToMs() { return parseDT(rawAppliedTo.value) }
+const stressRaw = computed(() => rawSeries('stress'))
+const aeRaw = computed(() => rawSeries('ae'))
 const stressRawOption = computed(() => rawSeriesOption('stress'))
 const aeRawOption = computed(() => rawSeriesOption('ae'))
 const damageOption = computed(() => categoryOption(labels.value, buckets.value.map(item => item.damage), '#7c3aed', '累积损伤度 D', '', 2, {
@@ -507,6 +541,34 @@ function runAlarmQuery() {
 function setGrain(next: ServiceGrain) {
   grain.value = next
   rangeHint.value = ''
+}
+function applyRawPreset(preset: 'year' | 'month') {
+  rawPreset.value = preset
+  rawHint.value = ''
+  rawAppliedFrom.value = preset === 'year' ? `${SERVICE_FROM}T00:00` : '2026-11-01T00:00'
+  rawAppliedTo.value = `${SERVICE_TO}T04:00`
+  rawDraftFrom.value = rawAppliedFrom.value
+  rawDraftTo.value = rawAppliedTo.value
+}
+function applyRawQuery() {
+  if (!rawDraftFrom.value || !rawDraftTo.value) {
+    rawHint.value = '请填写开始和结束时间'
+    return
+  }
+  if (parseDT(rawDraftFrom.value) >= parseDT(rawDraftTo.value)) {
+    rawHint.value = '开始时间必须早于结束时间'
+    return
+  }
+  const coveredFrom = parseDT(`${SERVICE_FROM}T00:00`)
+  const coveredTo = parseDT(`${SERVICE_TO}T23:59`)
+  if (parseDT(rawDraftFrom.value) < coveredFrom || parseDT(rawDraftTo.value) > coveredTo) {
+    rawHint.value = '演示曲线只覆盖 2026-01-01 至 2026-11-16'
+    return
+  }
+  rawAppliedFrom.value = rawDraftFrom.value
+  rawAppliedTo.value = rawDraftTo.value
+  rawPreset.value = 'custom'
+  rawHint.value = ''
 }
 function applyCustom() {
   if (customFrom.value < SERVICE_FROM || customTo.value > SERVICE_TO) {

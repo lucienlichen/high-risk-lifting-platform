@@ -71,7 +71,9 @@
 }
 .spd-table { flex: 1; }
 .spd-model { flex: 1.15; min-height: 220px; }
-.spd-raw { flex: 0.85; min-height: 248px; }
+.spd-raw { flex: 0.85; min-height: 280px; }
+.spd-raw-query { flex: none; display: flex; flex-direction: column; gap: 6px; padding: 8px 10px 0; }
+.spd-raw-query .spd-grain { margin: 0; }
 .spd-raw-row { display: flex; flex-direction: row; flex-wrap: nowrap; gap: 8px; overflow-x: auto; overflow-y: hidden; padding: 8px; min-height: 0; flex: 1; }
 .spd-raw-pane { flex: 1 0 300px; min-width: 300px; display: flex; flex-direction: column; border: 1px solid #edf0f4; border-radius: 6px; background: #fff; overflow: hidden; }
 .spd-raw-pane > header { height: 32px; flex: none; display: flex; align-items: center; padding: 0 10px; font-size: 13px; font-weight: 700; border-bottom: 1px solid #edf0f4; }

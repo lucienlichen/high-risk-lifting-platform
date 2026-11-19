@@ -56,6 +56,27 @@
             <span class="spd-title">当前点位监测数据</span>
             <span class="sub">只显示当前测点，振动与转速同时展开</span>
           </div>
+          <div class="spd-raw-query">
+            <div class="spd-grain" role="group" aria-label="原始数据时间范围">
+              <button type="button" :class="{ on: rawSeconds === 2 }" @click="applyRawSeconds(2)">2 秒</button>
+              <button type="button" :class="{ on: rawSeconds === 5 }" @click="applyRawSeconds(5)">5 秒</button>
+              <button type="button" :class="{ on: rawSeconds === 10 }" @click="applyRawSeconds(10)">10 秒</button>
+              <button type="button" :class="{ on: rawCustom }" @click="rawCustom = true">自定义</button>
+              <span>已应用 {{ rawSeconds }} 秒 · 起点 {{ rawStartLabel }} · 演示数据</span>
+            </div>
+            <div v-if="rawCustom" class="spd-custom">
+              <label>开始 <input v-model="rawDraftFrom" type="datetime-local"></label>
+              <label>时长
+                <select v-model.number="rawDraftSeconds">
+                  <option :value="2">2 秒</option>
+                  <option :value="5">5 秒</option>
+                  <option :value="10">10 秒</option>
+                </select>
+              </label>
+              <button type="button" @click="applyRawQuery">查询</button>
+              <span>{{ rawHint || '与故障诊断相同，只提供 2、5、10 秒。未查询前仍用已应用窗口' }}</span>
+            </div>
+          </div>
           <div class="spd-raw-row">
             <article class="spd-raw-pane">
               <header>振动</header>
@@ -269,6 +290,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import SchemeChart from '@/components/pointScheme/SchemeChart.vue'
 import SchemeModel from '@/components/pointScheme/SchemeModel.vue'
 import { featureOption, xyOption } from '@/components/pointScheme/mechanismCharts'
+import { parseDT } from '@/mock/structurePointDetail'
 import {
   BEARING_DEMO, FEATURES, MECH_ALARMS, MECH_DEVICE, MECH_ORG, MECH_POINTS, SAMPLE_RATE_NOTE,
   assessConclusion, capture, diagnosisConclusion, featureBase, featureSeries, lifeConclusion,
@@ -297,6 +319,14 @@ const toast = ref('')
 const assessStart = ref('2026-11-15T22:00')
 const assessHours = ref(6)
 const diagStart = ref('2026-11-16T02:00')
+const RAW_ORIGIN = '2026-11-16T02:00'
+const rawSeconds = ref<2 | 5 | 10>(5)
+const rawStart = ref(RAW_ORIGIN)
+const rawCustom = ref(false)
+const rawDraftFrom = ref(RAW_ORIGIN)
+const rawDraftSeconds = ref<2 | 5 | 10>(5)
+const rawHint = ref('')
+const rawStartLabel = computed(() => rawStart.value.replace('T', ' '))
 const diagSeconds = ref(5)
 const panel = ref<FeatureKey[]>(['kurtosis', 'severity', 'rms'])
 let toastTimer = 0
@@ -373,7 +403,7 @@ const rmsOption = computed(() => {
   return featureOption(series.labels, series.values, 'rms', false)
 })
 const selectedAlarm = computed(() => alarms.find(item => item.id === alarmId.value) || null)
-const rawWave = computed(() => capture(active.value, 5))
+const rawWave = computed(() => capture(active.value, rawSeconds.value))
 const vibrationOption = computed(() => xyOption(rawWave.value.time, rawWave.value.signal, '时间 / s', 'g', '#1677ff', false))
 const rpmOption = computed(() => xyOption(rawWave.value.time, rawWave.value.rpm, '时间 / s', 'r/min', '#1677ff', false))
 const alarmOption = computed(() => {
@@ -448,6 +478,34 @@ function selectAlarm(id: string) {
     activeId.value = alarm.pid
     emit('select', alarm.pid)
   }
+}
+function applyRawSeconds(seconds: 2 | 5 | 10) {
+  if (rawCustom.value && !rawDraftFrom.value) {
+    rawHint.value = '请填写开始时间'
+    return
+  }
+  rawSeconds.value = seconds
+  rawStart.value = rawDraftFrom.value || RAW_ORIGIN
+  rawDraftSeconds.value = seconds
+  rawHint.value = ''
+}
+function applyRawQuery() {
+  if (!rawDraftFrom.value) {
+    rawHint.value = '请填写开始时间'
+    return
+  }
+  if (rawDraftSeconds.value !== 2 && rawDraftSeconds.value !== 5 && rawDraftSeconds.value !== 10) {
+    rawHint.value = '机构原始采集只提供 2、5、10 秒'
+    return
+  }
+  const end = rawDraftFrom.value
+  if (!end || Number.isNaN(parseDT(rawDraftFrom.value))) {
+    rawHint.value = '请填写开始时间'
+    return
+  }
+  rawStart.value = rawDraftFrom.value
+  rawSeconds.value = rawDraftSeconds.value
+  rawHint.value = '已应用。演示波形只随时长变化，不随钟点改形。'
 }
 function runAlarmQuery() {
   if (!alarmDraftFrom.value || !alarmDraftTo.value || alarmDraftFrom.value >= alarmDraftTo.value) {
