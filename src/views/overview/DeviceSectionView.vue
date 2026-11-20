@@ -20,37 +20,41 @@
             </ul>
           </section>
           <section class="safety-col safety-model">
-            <header>
-              <b>整机模型</b>
-              <span>模型示意 · 演示</span>
-              <div class="spd-seg" aria-label="模型显示">
-                <button type="button" :class="{ on: safetyMode === 'model' }" @click="safetyMode = 'model'">模型</button>
-                <button type="button" :class="{ on: safetyMode === 'cloud' }" @click="safetyMode = 'cloud'">应力云图</button>
-              </div>
-            </header>
-            <StructureCraneModel :mode="safetyMode" :point-id="safetyPoint" />
-            <p>{{ activeCycle ? `第 ${activeCycle.seq} 次 · ${activeCycle.loadWeight.toFixed(1)} t` : '未选循环' }} · 关注 {{ safetyPoint }}。云图随循环切换，不是新的计算结果。</p>
-            <div class="cycle-head">
-              <label>工作日期 <input v-model="workDate" type="date" min="2026-10-01" max="2026-10-31"></label>
-              <button type="button" :class="{ on: showHistory }" @click="showHistory = !showHistory">历史数据</button>
+            <div class="model-stage">
+              <header>
+                <b>整机模型</b>
+                <span>模型示意 · 演示</span>
+                <div class="spd-seg" aria-label="模型显示">
+                  <button type="button" :class="{ on: safetyMode === 'model' }" @click="safetyMode = 'model'">模型</button>
+                  <button type="button" :class="{ on: safetyMode === 'cloud' }" @click="safetyMode = 'cloud'">应力云图</button>
+                </div>
+              </header>
+              <StructureCraneModel :mode="safetyMode" :point-id="safetyPoint" />
+              <p>{{ activeCycle ? `第 ${activeCycle.seq} 次 · ${activeCycle.loadWeight.toFixed(1)} t` : '未选循环' }} · 关注 {{ safetyPoint }}。云图随循环切换，不是新的计算结果。</p>
             </div>
-            <p v-if="showHistory" class="cycle-note">演示历史，由现有工作循环生成器按日期给出，不是后台档案。</p>
-            <div v-if="showHistory" class="history-row">
-              <button v-for="day in historyDates" :key="day" type="button" :class="{ on: day === workDate }" @click="workDate = day">{{ day.slice(5) }}</button>
-            </div>
-            <div class="cycle-table" role="table" aria-label="工作循环列表">
-              <div class="cycle-row head" role="row">
-                <span>循环次数</span><span>开始时间</span><span>停止时间</span><span>工作时长</span><span>吊重重量</span>
+            <div class="cycle-block">
+              <div class="cycle-head">
+                <label>工作日期 <input v-model="workDate" type="date" min="2026-10-01" max="2026-10-31"></label>
+                <button type="button" :class="{ on: showHistory }" @click="showHistory = !showHistory">历史数据</button>
               </div>
-              <div class="cycle-body">
-                <p v-if="!cycles.length" class="cycle-note">该日没有演示工作循环。</p>
-                <button v-for="item in cycles" :key="item.id" type="button" class="cycle-row" :class="{ on: item.id === cycleId }" @click="selectCycle(item.id)">
-                  <span>{{ item.seq }} 次</span>
-                  <span>{{ timeOf(item.startTime) }}</span>
-                  <span>{{ timeOf(item.stopTime) }}</span>
-                  <span>{{ item.liftDuration }} min</span>
-                  <span>{{ item.loadWeight.toFixed(1) }} t</span>
-                </button>
+              <p v-if="showHistory" class="cycle-note">演示历史，由现有工作循环生成器按日期给出，不是后台档案。</p>
+              <div v-if="showHistory" class="history-row">
+                <button v-for="day in historyDates" :key="day" type="button" :class="{ on: day === workDate }" @click="workDate = day">{{ day.slice(5) }}</button>
+              </div>
+              <div class="cycle-table" role="table" aria-label="工作循环列表">
+                <div class="cycle-row head" role="row">
+                  <span>循环次数</span><span>开始时间</span><span>停止时间</span><span>工作时长</span><span>吊重重量</span>
+                </div>
+                <div class="cycle-body">
+                  <p v-if="!cycles.length" class="cycle-note">该日没有演示工作循环。</p>
+                  <button v-for="item in cycles" :key="item.id" type="button" class="cycle-row" :class="{ on: item.id === cycleId }" @click="selectCycle(item.id)">
+                    <span>{{ item.seq }} 次</span>
+                    <span>{{ timeOf(item.startTime) }}</span>
+                    <span>{{ timeOf(item.stopTime) }}</span>
+                    <span>{{ item.liftDuration }} min</span>
+                    <span>{{ item.loadWeight.toFixed(1) }} t</span>
+                  </button>
+                </div>
               </div>
             </div>
           </section>
@@ -281,14 +285,16 @@ function back() {
 .cycle-head input { height: 28px; border: 1px solid #d1d5db; border-radius: 6px; padding: 0 8px; }
 .cycle-head button, .history-row button { height: 28px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; padding: 0 10px; cursor: pointer; }
 .cycle-head button.on, .history-row button.on { background: var(--color-primary, #1677ff); border-color: var(--color-primary, #1677ff); color: #fff; }
-.cycle-note { margin: 6px 10px 0; color: #64748b; font-size: 12px; }
-.cycle-table { flex: 1 1 148px; min-height: 120px; max-height: 46%; margin: 8px 10px 10px; border: 1px solid #e5e7eb; border-radius: 6px; overflow: auto; }
+.cycle-note { margin: 6px 10px 0; color: #64748b; font-size: 12px; flex: none; }
+.model-stage { flex: 2 1 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; border-bottom: 1px solid #edf0f4; }
+.cycle-block { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; padding-top: 6px; }
+.cycle-table { flex: 1 1 auto; min-height: 0; margin: 6px 10px 10px; border: 1px solid #e5e7eb; border-radius: 6px; overflow: auto; }
 .cycle-row { display: grid; grid-template-columns: 1.1fr 1fr 1fr 1fr 1fr; gap: 4px; width: 100%; min-height: 28px; align-items: center; padding: 0 8px; border: 0; border-bottom: 1px solid #f1f5f9; background: #fff; text-align: left; font-size: 12px; cursor: pointer; }
-.cycle-row.head { position: sticky; top: 0; background: #f8fafc; color: #64748b; font-weight: 600; cursor: default; }
+.cycle-row.head { position: sticky; top: 0; z-index: 1; background: #f8fafc; color: #64748b; font-weight: 600; cursor: default; }
 .cycle-row.on { background: #e8f3ff; color: #0958d9; font-weight: 700; }
 .safety-model header { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px solid #edf0f4; flex: none; }
 .safety-model header span, .safety-model p { color: #64748b; font-size: 12px; }
-.safety-model .spd-canvas { flex: 1; min-height: 0; height: auto; }
+.model-stage .spd-canvas { flex: 1 1 auto; min-height: 0; height: auto; }
 .safety-model p { margin: 0; padding: 8px 10px 10px; flex: none; }
 .safety-side { padding: 10px; overflow: auto; }
 .spd-seg { display: flex; margin-left: auto; border: 1px solid #d1d5db; border-radius: 6px; overflow: hidden; }
