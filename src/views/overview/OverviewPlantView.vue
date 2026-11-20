@@ -42,14 +42,13 @@
       <section class="ov-section-head ov-plant-head">
         <div class="ov-scope">
           <nav aria-label="位置">{{ crumb }}</nav>
-          <h1>{{ scopeName }}</h1>
         </div>
         <div class="ov-plant-band">
           <div class="ov-toggle ov-lens" role="group" aria-label="概览口径">
             <button type="button" :class="{ active: lens !== 'risk' }" @click="setLens('health')">健康监测</button>
             <button type="button" :class="{ active: lens === 'risk' }" @click="setLens('risk')">风险监测</button>
           </div>
-          <div class="ov-tools">
+          <div v-if="lens !== 'risk'" class="ov-tools">
             <label class="ov-search">
               <span class="ov-sr">搜索设备编号或位置</span>
               <input v-model="q" type="search" placeholder="设备编号 / 位置" />
@@ -62,7 +61,7 @@
         </div>
       </section>
 
-      <template v-if="view === 'plan'">
+      <template v-if="lens !== 'risk' && view === 'plan'">
         <p v-if="!unit" class="ov-plan-need">平面图按厂区显示，请在左侧选择一个厂区</p>
         <section v-else class="ov-plan">
           <div class="ov-section-head">
@@ -104,53 +103,10 @@
         </section>
       </template>
       <template v-else-if="lens === 'risk'">
-        <section class="risk-board">
-          <div class="risk-filters">
-            <el-input v-model="riskName" placeholder="设备名称" clearable size="small" style="width:160px" />
-            <el-select v-model="riskRun" placeholder="设备运行状态" clearable size="small" style="width:140px">
-              <el-option v-for="item in riskRuns" :key="item" :label="item" :value="item" />
-            </el-select>
-            <el-select v-model="riskType" placeholder="设备类型" clearable size="small" style="width:160px">
-              <el-option v-for="item in riskTypes" :key="item" :label="item" :value="item" />
-            </el-select>
-            <el-button size="small" type="primary" @click="applyRiskFilter">查询</el-button>
-            <el-button size="small" @click="resetRiskFilter">重置</el-button>
-            <span class="risk-count">共 {{ riskFiltered.length }} 条记录</span>
-          </div>
-          <el-table :data="riskPaged" style="width:100%" @row-click="(row: RiskListRow) => openRisk(row.card.id)">
-            <el-table-column prop="rank" label="风险排名" width="88" align="center" fixed="left" />
-            <el-table-column label="设备编号" min-width="140" fixed="left" show-overflow-tooltip>
-              <template #default="{ row }">{{ row.card.code }}</template>
-            </el-table-column>
-            <el-table-column label="设备名称" min-width="150" show-overflow-tooltip>
-              <template #default="{ row }">{{ row.card.name }}</template>
-            </el-table-column>
-            <el-table-column label="使用地点" min-width="160" show-overflow-tooltip>
-              <template #default="{ row }">{{ row.card.location }}</template>
-            </el-table-column>
-            <el-table-column label="风险评估值" width="112" align="center">
-              <template #default="{ row }"><b class="ov-risk-score" :class="row.band">{{ row.score }}</b></template>
-            </el-table-column>
-            <el-table-column prop="indicator" label="主要风险指标" min-width="160" show-overflow-tooltip />
-            <el-table-column label="操作" width="120" align="center" fixed="right">
-              <template #default="{ row }">
-                <el-button size="small" type="primary" link @click.stop="openRisk(row.card.id)">查看风险评价</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-          <div class="risk-pager">
-            <el-pagination
-              v-model:current-page="riskPage"
-              v-model:page-size="riskPageSize"
-              :total="riskFiltered.length"
-              :page-sizes="[20, 50, 100]"
-              layout="total, sizes, prev, pager, next, jumper"
-              background
-              small
-            />
-          </div>
-          <p class="ov-footnote">排序值是示意分，不由报警灯或 15 项矩阵回算，也不定义风险等级。色带：≥60 示意高，40–59 示意中，≤39 示意低。主要风险指标取该机演示矩阵里选中等级最高的一项。</p>
+        <section class="ov-grid" aria-label="风险卡片">
+          <OverviewDeviceCard v-for="row in riskRows" :key="row.card.id" :card="row.card" :risk-score="row.score" :risk-band="row.band" @open="openRisk(row.card.id)" />
         </section>
+        <p class="ov-footnote">按示意分值降序。颜色只区分为 ≥60、40–59、≤39，不由报警灯或矩阵回算，也不定义风险等级。</p>
       </template>
       <template v-else-if="view === 'cards'">
         <section class="ov-grid" aria-label="设备卡片">
@@ -179,7 +135,7 @@ import {
   worstUnit,
   type OverviewCard
 } from '@/mock/overviewDemo'
-import { RISK_NAMES, demoRiskBand, demoRiskLevels, demoRiskScore } from '@/mock/deviceMenus'
+import { demoRiskBand, demoRiskScore } from '@/mock/deviceMenus'
 import { overviewAccessOf, useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
@@ -311,50 +267,10 @@ function bayPop(bay: { cards: OverviewCard[] }) {
   return bay.cards.find(card => card.id === selectedId.value) || null
 }
 const lens = computed(() => route.query.lens === 'risk' ? 'risk' : 'health')
-const riskName = ref('')
-const riskRun = ref('')
-const riskType = ref('')
-const riskQuery = ref({ name: '', run: '', type: '' })
-const riskPage = ref(1)
-const riskPageSize = ref(20)
-interface RiskListRow { card: OverviewCard; score: number; band: 'high' | 'mid' | 'low'; rank: number; indicator: string }
 const riskRows = computed(() => searched.value.map(card => {
   const score = demoRiskScore(card)
   return { card, score, band: demoRiskBand(score) }
 }).sort((a, b) => b.score - a.score || a.card.code.localeCompare(b.card.code, 'zh-CN')))
-const riskRuns = computed(() => [...new Set(riskRows.value.map(row => row.card.workLabel))])
-const riskTypes = computed(() => [...new Set(riskRows.value.map(row => row.card.type).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'zh-CN')))
-function mainIndicator(id: string) {
-  const levels = demoRiskLevels(id)
-  let best = 0
-  let name = RISK_NAMES[0]
-  levels.forEach((level, index) => {
-    if (level > best) { best = level; name = RISK_NAMES[index] }
-  })
-  return name
-}
-const riskFiltered = computed<RiskListRow[]>(() => riskRows.value.filter(row => {
-  const query = riskQuery.value
-  if (query.name && !`${row.card.name}${row.card.code}`.includes(query.name.trim())) return false
-  if (query.run && row.card.workLabel !== query.run) return false
-  if (query.type && row.card.type !== query.type) return false
-  return true
-}).map((row, index) => ({ ...row, rank: index + 1, indicator: mainIndicator(row.card.id) })))
-const riskPaged = computed(() => {
-  const start = (riskPage.value - 1) * riskPageSize.value
-  return riskFiltered.value.slice(start, start + riskPageSize.value)
-})
-function applyRiskFilter() {
-  riskQuery.value = { name: riskName.value, run: riskRun.value, type: riskType.value }
-  riskPage.value = 1
-}
-function resetRiskFilter() {
-  riskName.value = ''
-  riskRun.value = ''
-  riskType.value = ''
-  applyRiskFilter()
-}
-watch(searched, () => { riskPage.value = 1 })
 function setLens(next: 'health' | 'risk') {
   const nextQuery = { ...route.query }
   if (next === 'risk') nextQuery.lens = 'risk'

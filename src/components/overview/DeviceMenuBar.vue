@@ -24,6 +24,9 @@ function go(key: DeviceMenuKey) {
 
 <style scoped>
 .dev-menu { display: flex; gap: 2px; overflow-x: auto; background: var(--color-card-bg, #fff); border-bottom: 1px solid var(--color-border, #e5e7eb); padding: 0 12px; flex: none; }
-.dev-menu button { height: 40px; padding: 0 14px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--color-text-secondary, #475569); white-space: nowrap; cursor: pointer; font-size: 14px; }
+.dev-menu button { height: 40px; padding: 0 10px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--color-text-secondary, #475569); white-space: nowrap; cursor: pointer; font-size: 13px; }
+@media (min-width: 1600px) {
+  .dev-menu button { padding: 0 14px; font-size: 14px; }
+}
 .dev-menu button.on { color: var(--color-primary, #1677ff); border-bottom-color: var(--color-primary, #1677ff); font-weight: 700; }
 </style>

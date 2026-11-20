@@ -39,7 +39,6 @@
           </div>
           <div class="spd-foot">
             <span>生成点已统一，不再区分来源</span>
-            <button type="button" @click="openAlarms">查看报警记录（{{ alarms.length }}）</button>
           </div>
         </section>
       </aside>
@@ -50,12 +49,8 @@
             <span class="spd-title">结构模型</span>
             <span class="spd-badge">模型示意</span>
             <span class="sub">单双主梁桥机 · 非真实三维模型 · 非计算结果</span>
-            <div class="spd-seg" aria-label="模型显示">
-              <button type="button" :class="{ on: modelMode === 'model' }" @click="modelMode = 'model'">模型</button>
-              <button type="button" :class="{ on: modelMode === 'cloud' }" @click="modelMode = 'cloud'">应力云图</button>
-            </div>
           </div>
-          <StructureCraneModel ref="crane" :mode="modelMode" :point-id="active.id" @select="pick" />
+          <StructureCraneModel ref="crane" mode="model" :point-id="active.id" @select="pick" />
           <div class="spd-mid-ft">
             <div>当前点位 <span class="pn">{{ active.id }}</span>　{{ active.loc }}　状态 <span class="spd-status" :class="active.status">{{ statusName(active.status) }}</span></div>
             <div class="hint">点击模型点位或左侧表格可切换 · 点位颜色表示全局状态（正常 / 异常 / 报警）</div>
@@ -99,7 +94,8 @@
         </section>
       </section>
 
-      <aside class="spd-right" aria-label="分析服务">
+      <aside class="spd-right is-compact" aria-label="分析服务">
+        <p class="spd-cat">评估与诊断</p>
         <button
           v-for="card in cards"
           :key="card.id"
@@ -130,6 +126,17 @@
           <div class="spd-concl">{{ card.conclusion }}</div>
           <div class="spd-go">查看详情</div>
         </button>
+        <p class="spd-cat">维修与报警</p>
+        <button type="button" class="spd-svc" @click="drawer = 'predict'">
+          <div class="top"><span class="name">预知维修</span><span class="spd-status pending">演示</span></div>
+          <div class="spd-concl">{{ active.D >= 0.7 ? '建议安排复查窗口' : '维持原周期并继续观察' }}</div>
+          <div class="spd-go">查看报告</div>
+        </button>
+        <button type="button" class="spd-svc" @click="openAlarms">
+          <div class="top"><span class="name">历史报警记录</span><span class="spd-status" :class="alarms.length ? 'warn' : 'ok'">{{ alarms.length }} 条</span></div>
+          <div class="spd-concl">独立于服务结论的历史事件</div>
+          <div class="spd-go">查看记录</div>
+        </button>
       </aside>
     </div>
 
@@ -139,7 +146,7 @@
       <aside class="spd-drawer" role="dialog" aria-modal="true" :aria-labelledby="'spd-drawer-title'" @click.stop>
         <header class="spd-dhd">
           <div class="spd-dhd-copy">
-            <strong id="spd-drawer-title">{{ serviceName(drawer) }}</strong>
+            <strong id="spd-drawer-title">{{ drawer === 'predict' ? '预知维修决策' : serviceName(drawer) }}</strong>
             <span>{{ active.id }}　{{ active.loc }}　全局状态 {{ statusName(active.status) }}　·　演示数据</span>
           </div>
           <label>切点
@@ -150,7 +157,17 @@
           <button ref="drawerClose" type="button" class="spd-x" title="关闭（Esc）" @click="closeDrawer">✕</button>
         </header>
         <div class="spd-drawer-body">
-          <template v-if="drawer === 'health' || drawer === 'crack'">
+          <template v-if="drawer === 'predict'">
+            <p class="spd-scope">演示决策输出，不是正式维修方案，也不替代检验结论。</p>
+            <div class="spd-conclbox">
+              <div class="k">综合预知维修报告</div>
+              <div class="v">{{ active.id }} · D={{ active.D.toFixed(2) }} · 剩余 {{ active.L.toFixed(1) }} 年</div>
+              <div class="s">{{ aeText }} 涡流判别仍为未发现裂纹。健康状态不改全局状态。</div>
+            </div>
+            <p class="spd-scope">维护建议：{{ active.D >= 0.7 ? '把该点列入下一次焊缝复查，先核对载荷与点位安装，再决定是否补强。' : '保持现有点检周期，声发射继续观察，不因本次演示分值提前更换。' }}</p>
+            <p class="spd-scope">事故防控：不把亚健康写成停机令。若全局状态为异常，按现有报警流程复核，不新增处置算法。</p>
+          </template>
+          <template v-else-if="drawer === 'health' || drawer === 'crack'">
             <p class="spd-scope">范围是当前选中点位。结构模型用页面中部的双梁示意，点位序号已标注，这里不再另做模型。跨点位和 A梁 / B梁 比较在结构整体表，不在本抽屉。</p>
             <div class="spd-grain" role="group" aria-label="时间范围">
               <button type="button" :class="{ on: grain === 'year' }" @click="setGrain('year')">年度</button>
@@ -352,7 +369,7 @@ import {
   ALARMS, SERVICE_FROM, SERVICE_TO, SERVICES, STRUCTURE_POINTS, TZ,
   CUR_FROM, CUR_TO, aeConclusion, aeSeries, amplitudeDistribution, crackTable, fmtDT, fmtRange, groupedPoints, healthTable, stressSeries,
   parseDT, pointSummary, serviceBuckets, serviceCards, statusName, structurePoint,
-  type ServiceGrain, type SvcId, type ModelMode
+  type ServiceGrain, type SvcId
 } from '@/mock/structurePointDetail'
 
 const props = defineProps<{ pointId: string }>()
@@ -364,8 +381,7 @@ const alarmClose = ref<HTMLButtonElement | null>(null)
 const activeId = ref(props.pointId)
 const query = ref('')
 const onlyBad = ref(false)
-const modelMode = ref<ModelMode>('model')
-const drawer = ref<SvcId | null>(null)
+const drawer = ref<SvcId | 'predict' | null>(null)
 const alarmOpen = ref(false)
 const alarmId = ref<string | null>(null)
 const alarmFrom = ref('')

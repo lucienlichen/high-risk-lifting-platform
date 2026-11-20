@@ -1,5 +1,5 @@
 <template>
-  <button type="button" class="ov-card" :class="`is-${tone}`" :aria-label="`${card.code} ${toneLabel}`" :title="metaTitle" @click="emit('open')">
+  <button type="button" class="ov-card" :class="riskScore == null ? `is-${tone}` : `is-risk-${riskBand}`" :aria-label="riskScore == null ? `${card.code} ${toneLabel}` : `${card.code} 风险值 ${riskScore}`" :title="metaTitle" @click="emit('open')">
     <svg class="ov-silhouette" viewBox="0 0 64 40" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <g v-if="shape === 'gantry'">
         <path d="M16 34 V12 H48 V34" />
@@ -35,6 +35,7 @@
       </g>
     </svg>
     <span class="ov-code">{{ card.code }}</span>
+    <b v-if="riskScore != null" class="ov-risk-num" :class="riskBand">{{ riskScore }}</b>
   </button>
 </template>
 
@@ -43,7 +44,7 @@ import { computed } from 'vue'
 import { severityLabel } from '@/config/statusDict'
 import type { OverviewCard } from '@/mock/overviewDemo'
 
-const props = defineProps<{ card: OverviewCard }>()
+const props = defineProps<{ card: OverviewCard; riskScore?: number; riskBand?: 'high' | 'mid' | 'low' }>()
 const emit = defineEmits<{ open: [] }>()
 
 const tone = computed(() => props.card.lamp === 'red' ? 'red' : props.card.lamp === 'yellow' ? 'yellow' : 'green')

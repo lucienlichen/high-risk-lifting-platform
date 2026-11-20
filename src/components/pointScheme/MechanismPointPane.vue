@@ -31,7 +31,6 @@
           </div>
           <div class="spd-foot">
             <span>齿轮箱轴、电机输出轴、卷筒轴承座</span>
-            <button type="button" @click="openAlarms">查看报警记录（{{ alarms.length }}）</button>
           </div>
         </section>
       </aside>
@@ -91,8 +90,10 @@
         </section>
       </section>
 
-      <aside class="spd-right" aria-label="机构服务">
-        <button v-for="card in cards" :key="card.id" type="button" class="spd-svc" :class="{ abn: card.abnormal }" @click="drawer = card.id">
+      <aside class="spd-right is-compact" aria-label="机构服务">
+        <template v-for="group in mechGroups" :key="group.title">
+          <p class="spd-cat">{{ group.title }}</p>
+          <button v-for="card in group.items" :key="card.id" type="button" class="spd-svc" :class="{ abn: card.abnormal }" @click="drawer = card.id">
           <div class="top">
             <span class="name">{{ card.name }}</span>
             <span class="spd-status" :class="card.tone">{{ card.badge }}</span>
@@ -105,6 +106,18 @@
           </div>
           <div class="spd-concl">{{ card.conclusion }}</div>
           <div class="spd-go">查看详情</div>
+        </button>
+        </template>
+        <p class="spd-cat">维修与报警</p>
+        <button type="button" class="spd-svc" @click="drawer = 'predict'">
+          <div class="top"><span class="name">预知维修</span><span class="spd-status pending">演示</span></div>
+          <div class="spd-concl">{{ active.bearing ? '轴承按 CI 末项安排复查' : '非轴承测点不预测寿命' }}</div>
+          <div class="spd-go">查看报告</div>
+        </button>
+        <button type="button" class="spd-svc" @click="openAlarms">
+          <div class="top"><span class="name">历史报警记录</span><span class="spd-status" :class="alarms.length ? 'warn' : 'ok'">{{ alarms.length }} 条</span></div>
+          <div class="spd-concl">独立于服务结论的历史事件</div>
+          <div class="spd-go">查看记录</div>
         </button>
       </aside>
     </div>
@@ -126,7 +139,17 @@
           <button ref="drawerClose" type="button" class="spd-x" title="关闭（Esc）" @click="drawer = null">✕</button>
         </header>
         <div ref="drawerBody" class="spd-drawer-body">
-          <template v-if="drawer === 'monitor'">
+          <template v-if="drawer === 'predict'">
+            <p class="spd-scope">演示决策输出，不是正式维修方案。</p>
+            <div class="spd-conclbox">
+              <div class="k">综合预知维修报告</div>
+              <div class="v">{{ active.id }} · {{ active.name }} · {{ active.rpm }} r/min</div>
+              <div class="s">{{ assessConclusion(active) }}。{{ diagnosisConclusion(active) }}</div>
+            </div>
+            <p class="spd-scope">{{ active.bearing ? `轴承寿命只显示 CI 末项 ${bearing.ci[1]} 小时，建议按该演示值安排复查，不外推预测曲线。` : '本点不是轴承测点，不给出剩余寿命，也不借用结构损伤度安排更换。' }}</p>
+            <p class="spd-scope">事故防控：振动超过示意异常线时按现有关注流程复核。不新增停机阈值。</p>
+          </template>
+          <template v-else-if="drawer === 'monitor'">
             <p class="spd-scope">健康监测沿用页面中部的传动链示意和当前点位。这里只列各测点的状态和三个特征值，不另做岸桥总览。</p>
             <div class="spd-scrollx">
               <table class="spd-grid">
@@ -307,7 +330,7 @@ const drawerBody = ref<HTMLElement | null>(null)
 const activeId = ref(props.pointId)
 const query = ref('')
 const onlyBad = ref(false)
-const drawer = ref<'monitor' | 'assess' | 'fault' | 'life' | null>(null)
+const drawer = ref<'monitor' | 'assess' | 'fault' | 'life' | 'predict' | null>(null)
 const alarmOpen = ref(false)
 const alarmId = ref<string | null>(null)
 const alarmFrom = ref('')
@@ -412,7 +435,11 @@ const alarmOption = computed(() => {
   const series = featureSeries(mechPoint(alarm.pid), alarm.feature, alarmFrom.value, alarmTo.value)
   return featureOption(series.labels, series.values, alarm.feature)
 })
-const drawerTitle = computed(() => cards.value.find(card => card.id === drawer.value)?.name || '')
+const mechGroups = computed(() => [
+  { title: '监测诊断', items: cards.value.filter(card => card.id === 'monitor' || card.id === 'fault') },
+  { title: '评估预测', items: cards.value.filter(card => card.id === 'assess' || card.id === 'life') }
+])
+const drawerTitle = computed(() => drawer.value === 'predict' ? '预知维修决策' : cards.value.find(card => card.id === drawer.value)?.name || '')
 
 watch(() => props.pointId, id => { if (id && id !== activeId.value && points.some(point => point.id === id)) activeId.value = id })
 watch(drawer, value => { if (value) nextTick(() => drawerClose.value?.focus()) })

@@ -19,6 +19,8 @@ export const DEVICE_MENUS = [
   { key: 'health', label: '健康监测' },
   { key: 'safety', label: '安全监控' },
   { key: 'risk', label: '风险定量监测' },
+  { key: 'patrol', label: '日常点巡检数据' },
+  { key: 'repair', label: '故障维修数据' },
   { key: 'inspection', label: '检验检测' },
   { key: 'basic', label: '设备基础数据' },
   { key: 'supply', label: '设备制造供给数据' }

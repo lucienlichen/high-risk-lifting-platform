@@ -4,26 +4,57 @@
     <DeviceMenuBar :active="menu" :device-id="String(route.params.id || '')" />
     <div class="content-scrollable section-page">
       <template v-if="menu === 'safety'">
-        <div class="section-tools">
-          <label>工作循环
-            <select v-model="cycle">
-              <option value="0">第 8 次　09:15–09:23　16.0 t</option>
-              <option value="1">第 7 次　08:42–08:49　12.0 t</option>
-            </select>
-          </label>
-          <span>整机参数，不是点位数据。数值为演示参照。</span>
+        <div class="safety-3">
+          <section class="safety-col">
+            <div class="section-tools">
+              <label>工作循环
+                <select v-model="cycle">
+                  <option value="0">第 8 次　09:15–09:23　16.0 t</option>
+                  <option value="1">第 7 次　08:42–08:49　12.0 t</option>
+                </select>
+              </label>
+              <span>整机参数，不是点位数据。数值为演示参照。</span>
+            </div>
+            <div class="metric-grid">
+              <button v-for="(item, index) in SAFETY_PARAMS" :key="item[0]" type="button" class="metric-btn" :class="{ on: safetyParam === index }" @click="pickSafety(index)">
+                <span>{{ item[0] }}</span>
+                <strong>{{ index === 0 && cycle === '1' ? '12.0' : item[1] }}<small>{{ item[2] }}</small></strong>
+                <em>{{ item[3] }}</em>
+              </button>
+            </div>
+            <h2>状态监控</h2>
+            <ul class="state-list">
+              <li v-for="item in SAFETY_STATES" :key="item[0]"><span>{{ item[0] }}</span><b :class="item[1]">{{ item[1] }}</b></li>
+            </ul>
+          </section>
+          <section class="safety-col safety-model">
+            <header>
+              <b>整机模型</b>
+              <span>模型示意 · 演示</span>
+              <div class="spd-seg" aria-label="模型显示">
+                <button type="button" :class="{ on: safetyMode === 'model' }" @click="safetyMode = 'model'">模型</button>
+                <button type="button" :class="{ on: safetyMode === 'cloud' }" @click="safetyMode = 'cloud'">应力云图</button>
+              </div>
+            </header>
+            <StructureCraneModel :mode="safetyMode" :point-id="safetyPoint" />
+            <p>当前循环 {{ cycle === '1' ? '第 7 次 · 12.0 t' : '第 8 次 · 16.0 t' }} · 关注 {{ safetyPoint }}。云图随循环和参数切换，不是新的计算结果。</p>
+          </section>
+          <section class="safety-col">
+            <h2>预警与分析</h2>
+            <button type="button" class="svc-entry" @click="safetySvc = safetySvc === 'limit' ? '' : 'limit'">
+              <b>超限与联锁预警</b>
+              <span>对照 GB/T 28264 的演示条目</span>
+            </button>
+            <button type="button" class="svc-entry" @click="safetySvc = safetySvc === 'quant' ? '' : 'quant'">
+              <b>安全监控定量分析</b>
+              <span>当前循环与参数的联动说明</span>
+            </button>
+            <div v-if="safetySvc" class="svc-panel">
+              <p v-if="safetySvc === 'limit'">演示：抗风防滑为报警，同一轨道运行机构为异常。不引用正式限值条文，也不把演示灯写成检验结论。</p>
+              <p v-else>演示：第 {{ cycle === '1' ? '7' : '8' }} 次循环起重量 {{ cycle === '1' ? '12.0' : '16.0' }} t，模型关注点改为 {{ safetyPoint }}。定量分析不另设评分公式。</p>
+            </div>
+          </section>
         </div>
-        <div class="metric-grid">
-          <article v-for="(item, index) in SAFETY_PARAMS" :key="item[0]">
-            <span>{{ item[0] }}</span>
-            <strong>{{ index === 0 && cycle === '1' ? '12.0' : item[1] }}<small>{{ item[2] }}</small></strong>
-            <em>{{ item[3] }}</em>
-          </article>
-        </div>
-        <h2>状态监控</h2>
-        <ul class="state-list">
-          <li v-for="item in SAFETY_STATES" :key="item[0]"><span>{{ item[0] }}</span><b :class="item[1]">{{ item[1] }}</b></li>
-        </ul>
       </template>
       <template v-else-if="menu === 'risk'">
         <section class="risk-detail">
@@ -78,7 +109,39 @@
           </dl>
         </section>
       </template>
-      <template v-else>
+      <template v-else-if="menu === 'patrol'">
+        <p class="section-note">日常点巡检在设备级，不进测点。下列是按本机编号生成的演示统计，不是已绑定的扫描件。</p>
+        <div class="pair">
+          <article>
+            <h2>点巡检数据</h2>
+            <p>演示表 {{ patrol.formCount }} 份 · 问题 {{ patrol.totalProblems }} 条 · 涉及 {{ patrol.involvedParts }} 个部位 · 最多 {{ patrol.topPart }}</p>
+            <ul>
+              <li v-for="item in patrol.items.slice(0, 4)" :key="item.key">{{ item.name }} · {{ item.count }} 条<span v-if="item.topProblems[0]"> · {{ item.topProblems[0] }}</span></li>
+            </ul>
+          </article>
+          <article>
+            <h2>对应服务</h2>
+            <p><b>点巡检智能服务</b>：汇聚巡检记录，识别异常频次。演示。</p>
+            <p><b>故障排查服务</b>：由点巡检问题转入设备、人员与环境排查。演示，不打开未绑定的扫描原件。</p>
+          </article>
+        </div>
+      </template>
+      <template v-else-if="menu === 'repair'">
+        <p class="section-note">故障维修在设备级。记录和建议由本机编号稳定生成，标为演示，不冒充本机归档文件。</p>
+        <div class="pair">
+          <article>
+            <h2>维修数据</h2>
+            <ul>
+              <li v-for="group in repairPreview" :key="group.key">{{ group.name }} · {{ group.records.length }} 条 · {{ group.advice.topDamage }}</li>
+            </ul>
+          </article>
+          <article>
+            <h2>维修智能服务</h2>
+            <p v-for="group in repairPreview.slice(0, 3)" :key="group.key"><b>{{ group.name }}</b>：{{ group.advice.suggestTime }}。{{ group.advice.maintain }}</p>
+          </article>
+        </div>
+      </template>
+      <template v-else-if="menu === 'inspection' || menu === 'supply'">
         <p class="section-note">{{ menu === 'inspection' ? '检验检测' : '设备制造供给' }}分类已列出。旧平台文件没有确认绑定到本机，因此不把那些文件显示为本机资料。</p>
         <div class="file-grid">
           <article v-for="name in categories" :key="name">
@@ -98,19 +161,40 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import DeviceMenuBar from '@/components/overview/DeviceMenuBar.vue'
 import DeviceStrip from '@/components/DeviceStrip.vue'
+import StructureCraneModel from '@/components/pointScheme/StructureCraneModel.vue'
+import { getRepairGroups, getSpotCheckBoard } from '@/mock/serviceData'
+import type { ModelMode } from '@/mock/structurePointDetail'
 import { usePartsDevice } from '@/composables/usePartsDevice'
 import { INSPECTION_CATEGORIES, RISK_BANDS, RISK_NAMES, SAFETY_PARAMS, SAFETY_STATES, SUPPLY_CATEGORIES, demoRiskBand, demoRiskLevels, demoRiskScore, type DeviceMenuKey } from '@/mock/deviceMenus'
 import { statusLabels } from '@/mock/partsPoint'
 
 const { card, query, route, router, tone } = usePartsDevice()
 const cycle = ref('0')
+const safetyParam = ref(-1)
+const safetyMode = ref<ModelMode>('model')
+const safetyFocus = ref('')
+const safetySvc = ref('')
+const safetyPoint = computed(() => safetyFocus.value || (cycle.value === '1' ? 'ML-06' : 'ML-01'))
+const patrol = computed(() => getSpotCheckBoard(String(route.params.id || '')))
+const repairPreview = computed(() => getRepairGroups(String(route.params.id || '')).filter(group => group.records.length).slice(0, 4))
+function pickSafety(index: number) {
+  safetyParam.value = index
+  const points = ['ML-01', 'ML-02', 'ML-06', 'ML-10', 'ML-04', 'ML-08', 'ML-03', 'ML-05', 'ML-07', 'ML-09', 'ML-11', 'ML-12']
+  safetyFocus.value = points[index] || 'ML-01'
+  safetyMode.value = index <= 6 ? 'cloud' : 'model'
+}
+watch(cycle, value => {
+  safetyFocus.value = ''
+  safetyParam.value = -1
+  safetyMode.value = value === '1' ? 'cloud' : 'model'
+})
 const preview = ref('')
 const menu = computed(() => {
   const key = String(route.params.key || '')
-  return (['safety', 'risk', 'inspection', 'basic', 'supply'].includes(key) ? key : 'safety') as DeviceMenuKey
+  return (['safety', 'risk', 'patrol', 'repair', 'inspection', 'basic', 'supply'].includes(key) ? key : 'safety') as DeviceMenuKey
 })
 const score = computed(() => card.value ? demoRiskScore(card.value) : 0)
 const band = computed(() => demoRiskBand(score.value))
@@ -135,7 +219,32 @@ function back() {
 .section-note, .section-tools span { color: var(--color-text-secondary, #64748b); font-size: 13px; }
 .section-tools { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
 .section-tools select, .section-tools { font-size: 13px; }
-.metric-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.safety-3 { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(280px, .9fr) minmax(220px, .7fr); gap: 12px; align-items: start; }
+.safety-col { min-width: 0; }
+.safety-model { background: #fff; border: 1px solid var(--color-border, #e5e7eb); border-radius: 8px; overflow: hidden; }
+.safety-model header { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px solid #edf0f4; }
+.safety-model header span, .safety-model p { color: #64748b; font-size: 12px; }
+.safety-model .spd-canvas { height: 280px; }
+.safety-model p { margin: 0; padding: 8px 10px 10px; }
+.spd-seg { display: flex; margin-left: auto; border: 1px solid #d1d5db; border-radius: 6px; overflow: hidden; }
+.spd-seg button { height: 26px; padding: 0 8px; border: 0; background: #fff; font-size: 12px; cursor: pointer; }
+.spd-seg button.on { background: var(--color-primary, #1677ff); color: #fff; }
+.metric-btn { text-align: left; background: #fff; border: 1px solid var(--color-border, #e5e7eb); border-radius: 8px; padding: 12px; cursor: pointer; }
+.metric-btn.on { border-color: var(--color-primary, #1677ff); }
+.svc-entry, .svc-panel { display: block; width: 100%; text-align: left; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; margin-bottom: 8px; cursor: pointer; }
+.svc-entry b, .svc-entry span { display: block; }
+.svc-entry span { margin-top: 4px; color: #64748b; font-size: 12px; }
+.section-tools { flex-wrap: wrap; }
+.section-tools select { width: 100%; max-width: 320px; }
+.svc-panel { color: #64748b; font-size: 12px; }
+.pair { display: grid; grid-template-columns: 1.2fr .8fr; gap: 12px; }
+.pair article, .pair ul { background: #fff; }
+.pair article { border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px 14px; }
+.pair ul { margin: 8px 0 0; padding-left: 18px; }
+.metric-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 1100px) {
+  .safety-3, .pair { grid-template-columns: 1fr; }
+}
 .metric-grid article { background: var(--color-card-bg, #fff); border: 1px solid var(--color-border, #e5e7eb); border-radius: 8px; padding: 12px; }
 .metric-grid span, .metric-grid em { display: block; color: #64748b; font-size: 12px; font-style: normal; }
 .metric-grid strong { display: block; margin: 6px 0; font-size: 20px; }

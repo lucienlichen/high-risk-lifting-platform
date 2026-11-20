@@ -373,6 +373,13 @@
   overflow: hidden;
 }
 .ov-card:hover { transform: translateY(-1px); }
+.ov-card.is-risk-high { border-color: #f5222d; }
+.ov-card.is-risk-mid { border-color: #fa8c16; }
+.ov-card.is-risk-low { border-color: #52c41a; }
+.ov-risk-num { font-size: 18px; line-height: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.ov-risk-num.high { color: #f5222d; }
+.ov-risk-num.mid { color: #fa8c16; }
+.ov-risk-num.low { color: #52c41a; }
 .ov-card.is-red {
   --ov-tile-bg: #fff1f0;
   --ov-tile-bg-hot: #ffccc7;
