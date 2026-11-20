@@ -10,6 +10,7 @@ import OverviewDeviceView from '@/views/overview/OverviewDeviceView.vue'
 import OverviewPointView from '@/views/overview/OverviewPointView.vue'
 import OverviewPartsView from '@/views/overview/OverviewPartsView.vue'
 import OverviewOverallView from '@/views/overview/OverviewOverallView.vue'
+import DeviceSectionView from '@/views/overview/DeviceSectionView.vue'
 import { landingLocation, useAuthStore } from '@/stores/auth'
 
 const router = createRouter({
@@ -29,6 +30,7 @@ const router = createRouter({
             { path: 'plant', name: 'overviewPlant', component: OverviewPlantView },
             { path: 'device/:id/points', name: 'overviewPoint', component: OverviewPointView },
             { path: 'device/:id/parts', name: 'overviewParts', component: OverviewPartsView },
+            { path: 'device/:id/section/:key', name: 'overviewSection', component: DeviceSectionView },
             { path: 'device/:id/overall', name: 'overviewOverall', component: OverviewOverallView },
             { path: 'device/:id', name: 'overviewDevice', component: OverviewDeviceView }
           ]

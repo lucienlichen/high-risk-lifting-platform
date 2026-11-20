@@ -14,6 +14,7 @@
         <span v-else>全览 · 嵌套</span>
       </template>
     </DeviceStrip>
+    <DeviceMenuBar v-if="card" active="health" :device-id="String(route.params.id || '')" />
 
     <div v-if="card && scheme === 'legacy'" class="parts-scroll">
       <div class="legend-row"><span v-for="status in legend" :key="status"><i class="lg" :class="`lg-${status}`"></i>{{ statusLabels[status] }}</span><span><i class="lg lg-all"></i>专业整体（新增入口）</span><em>五列专业 · 分组聚合 / 结构点位 · 颜色取下级最差 · 底部「整体」进入专业级详情</em></div>
@@ -70,6 +71,7 @@
 <script setup lang="ts">
 import { computed, ref, watch, onBeforeUnmount, type ComponentPublicInstance } from 'vue'
 import DeviceStrip from '@/components/DeviceStrip.vue'
+import DeviceMenuBar from '@/components/overview/DeviceMenuBar.vue'
 import { usePartsDevice } from '@/composables/usePartsDevice'
 import { statusLabels, structureData, worstStatus, type PartColumn, type PartNode, type PointStatus } from '@/mock/partsPoint'
 

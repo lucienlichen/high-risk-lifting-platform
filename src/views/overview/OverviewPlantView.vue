@@ -39,66 +39,83 @@
       </template>
     </aside>
     <main class="ov-main">
-      <section class="ov-section-head">
+      <section class="ov-section-head ov-plant-head">
         <div class="ov-scope">
           <nav aria-label="位置">{{ crumb }}</nav>
-          <h1>{{ scopeName }}</h1>
         </div>
-        <div class="ov-tools">
-          <label class="ov-search">
-            <span class="ov-sr">搜索设备编号或位置</span>
-            <input v-model="q" type="search" placeholder="设备编号 / 位置" />
-          </label>
-          <div class="ov-toggle" role="group" aria-label="显示方式">
-            <button type="button" :class="{ active: view === 'cards' }" @click="view = 'cards'">卡片</button>
-            <button type="button" :class="{ active: view === 'plan' }" @click="view = 'plan'">厂区平面图</button>
+        <div class="ov-plant-band">
+          <div class="ov-toggle ov-lens" role="group" aria-label="概览口径">
+            <button type="button" :class="{ active: lens !== 'risk' }" @click="setLens('health')">健康监测</button>
+            <button type="button" :class="{ active: lens === 'risk' }" @click="setLens('risk')">风险监测</button>
+          </div>
+          <div v-if="lens !== 'risk'" class="ov-tools">
+            <label class="ov-search">
+              <span class="ov-sr">搜索设备编号或位置</span>
+              <input v-model="q" type="search" placeholder="设备编号 / 位置" />
+            </label>
+            <div class="ov-toggle" role="group" aria-label="显示方式">
+              <button type="button" :class="{ active: view === 'cards' }" @click="view = 'cards'">卡片</button>
+              <button type="button" :class="{ active: view === 'plan' }" @click="view = 'plan'">厂区平面图</button>
+            </div>
           </div>
         </div>
       </section>
 
-      <template v-if="view === 'cards'">
+      <template v-if="lens !== 'risk' && view === 'plan'">
+        <p v-if="!unit" class="ov-plan-need">平面图按厂区显示，请在左侧选择一个厂区</p>
+        <section v-else class="ov-plan">
+          <div class="ov-section-head">
+            <h2>{{ scopeName }}平面布置 · 点击起重机查看设备卡片</h2>
+            <span v-if="lens === 'risk'" class="ov-legend">
+              <span><i class="ov-swatch is-risk-high"></i> 示意高 ≥60</span>
+              <span><i class="ov-swatch is-risk-mid"></i> 示意中 40–59</span>
+              <span><i class="ov-swatch is-risk-low"></i> 示意低 ≤39</span>
+            </span>
+            <span v-else class="ov-legend">
+              <span><i class="ov-swatch" style="background:#f5222d"></i> 报警</span>
+              <span><i class="ov-swatch" style="background:#faad14"></i> 异常</span>
+              <span><i class="ov-swatch" style="background:#16a34a"></i> 正常</span>
+            </span>
+          </div>
+          <div class="ov-baybox">
+            <div v-for="bay in bays" :key="bay.name" class="ov-bay">
+              <span class="ov-bay-name"><b>{{ bay.name }}</b><span>{{ bay.cards.length }} 台</span></span>
+              <span class="ov-trackbed">
+                <span class="ov-rail top"></span>
+                <span class="ov-rail bot"></span>
+                <button
+                  v-for="(crane, index) in bay.cards"
+                  :key="crane.id"
+                  type="button"
+                  class="ov-plan-crane"
+                  :class="[lens === 'risk' ? riskMark(crane) : craneTone(crane), { dim: !match(crane), sel: selectedId === crane.id }]"
+                  :style="craneStyle(index, bay.cards.length)"
+                  :title="crane.code"
+                  @click="selectedId = selectedId === crane.id ? '' : crane.id"
+                >{{ bay.cards.length <= 18 ? crane.code.slice(-4) : '' }}</button>
+                <div v-if="bayPop(bay)" class="ov-pop">
+                  <OverviewDeviceCard :card="bayPop(bay)!" @open="open(bayPop(bay)!.id)" />
+                </div>
+              </span>
+            </div>
+          </div>
+          <p class="ov-footnote">{{ lens === 'risk' ? '竖条颜色是示意分值色带，与健康报警灯无关。' : '示意布局：每一行是台账里的一个使用地点，竖条是该地点的起重机。没有坐标，不能当成厂区 CAD。' }}</p>
+        </section>
+      </template>
+      <template v-else-if="lens === 'risk'">
+        <section class="ov-grid" aria-label="风险卡片">
+          <OverviewDeviceCard v-for="row in riskRows" :key="row.card.id" :card="row.card" :risk-score="row.score" :risk-band="row.band" @open="openRisk(row.card.id)" />
+        </section>
+        <p class="ov-footnote">按示意分值降序。颜色只区分为 ≥60、40–59、≤39，不由报警灯或矩阵回算，也不定义风险等级。</p>
+      </template>
+      <template v-else-if="view === 'cards'">
         <section class="ov-grid" aria-label="设备卡片">
           <OverviewDeviceCard v-for="card in visible" :key="card.id" :card="card" @open="open(card.id)" />
         </section>
         <button v-if="filtered.length > limit" type="button" class="ov-more" @click="limit += 40">显示更多（还有 {{ filtered.length - limit }} 台）</button>
         <p v-if="!filtered.length" class="ov-empty">没有符合条件的设备</p>
       </template>
-
-      <p v-else-if="!unit" class="ov-plan-need">平面图按厂区显示，请在左侧选择一个厂区</p>
-      <section v-else class="ov-plan">
-        <div class="ov-section-head">
-          <h2>{{ scopeName }}平面布置 · 点击起重机查看设备卡片</h2>
-          <span class="ov-legend">
-            <span><i class="ov-swatch" style="background:#f5222d"></i> 报警</span>
-            <span><i class="ov-swatch" style="background:#faad14"></i> 异常</span>
-            <span><i class="ov-swatch" style="background:#16a34a"></i> 正常</span>
-          </span>
-        </div>
-        <div class="ov-baybox">
-          <div v-for="bay in bays" :key="bay.name" class="ov-bay">
-            <span class="ov-bay-name"><b>{{ bay.name }}</b><span>{{ bay.cards.length }} 台</span></span>
-            <span class="ov-trackbed">
-              <span class="ov-rail top"></span>
-              <span class="ov-rail bot"></span>
-              <button
-                v-for="(crane, index) in bay.cards"
-                :key="crane.id"
-                type="button"
-                class="ov-plan-crane"
-                :class="[craneTone(crane), { dim: !match(crane), sel: selectedId === crane.id }]"
-                :style="craneStyle(index, bay.cards.length)"
-                :title="crane.code"
-                @click="selectedId = selectedId === crane.id ? '' : crane.id"
-              >{{ bay.cards.length <= 18 ? crane.code.slice(-4) : '' }}</button>
-              <div v-if="bayPop(bay)" class="ov-pop">
-                <OverviewDeviceCard :card="bayPop(bay)!" @open="open(bayPop(bay)!.id)" />
-              </div>
-            </span>
-          </div>
-        </div>
-        <p class="ov-footnote">示意布局：每一行是台账里的一个使用地点，竖条是该地点的起重机。没有坐标，不能当成厂区 CAD。</p>
-      </section>
-      <p class="ov-footnote">卡片颜色是六项服务里最严重的一盏灯：报警、异常或正常。停机不改变颜色。离线设备仍用最近一次灯色，卡片上不另标离线。悬停编号可看类型和位置。</p>
+      <p v-if="lens !== 'risk' && view === 'cards'" class="ov-footnote">卡片颜色是六项服务里最严重的一盏灯：报警、异常或正常。停机不改变颜色。离线设备仍用最近一次灯色，卡片上不另标离线。悬停编号可看类型和位置。</p>
     </main>
   </div>
 </template>
@@ -118,6 +135,7 @@ import {
   worstUnit,
   type OverviewCard
 } from '@/mock/overviewDemo'
+import { demoRiskBand, demoRiskScore } from '@/mock/deviceMenus'
 import { overviewAccessOf, useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
@@ -153,7 +171,7 @@ watch([enterprise, unit, access], () => {
   const queryUnit = String(route.query.unit || '')
   const nextUnit = unit.value || worstUnit(allowed.value, enterprise.value)
   if (queryEnterprise !== enterprise.value || (access.value.kind === 'factory' && queryUnit !== unit.value) || (!queryUnit && access.value.kind !== 'factory')) {
-    router.replace({ name: 'overviewPlant', query: { enterprise: enterprise.value, unit: nextUnit } })
+    router.replace({ name: 'overviewPlant', query: { ...route.query, enterprise: enterprise.value, unit: nextUnit } })
   }
 }, { immediate: true })
 
@@ -226,12 +244,15 @@ function select(nextEnterprise: string, nextUnit: string) {
   openGroups.value = new Set(openGroups.value).add(nextEnterprise)
   selectedId.value = ''
   limit.value = 40
-  router.push({ name: 'overviewPlant', query: { enterprise: nextEnterprise, unit: nextUnit } })
+  router.push({ name: 'overviewPlant', query: { ...route.query, enterprise: nextEnterprise, unit: nextUnit } })
 }
 function craneTone(card: OverviewCard) {
   if (card.lamp === 'red') return 'is-red'
   if (card.lamp === 'yellow') return 'is-yellow'
   return 'is-green'
+}
+function riskMark(card: OverviewCard) {
+  return `is-risk-${demoRiskBand(demoRiskScore(card))}`
 }
 function match(card: OverviewCard) {
   const keyword = q.value.trim()
@@ -245,12 +266,45 @@ function craneStyle(index: number, count: number) {
 function bayPop(bay: { cards: OverviewCard[] }) {
   return bay.cards.find(card => card.id === selectedId.value) || null
 }
+const lens = computed(() => route.query.lens === 'risk' ? 'risk' : 'health')
+const riskRows = computed(() => searched.value.map(card => {
+  const score = demoRiskScore(card)
+  return { card, score, band: demoRiskBand(score) }
+}).sort((a, b) => b.score - a.score || a.card.code.localeCompare(b.card.code, 'zh-CN')))
+function setLens(next: 'health' | 'risk') {
+  const nextQuery = { ...route.query }
+  if (next === 'risk') nextQuery.lens = 'risk'
+  else delete nextQuery.lens
+  router.replace({ query: nextQuery })
+}
 function open(id: string) {
   router.push({ name: 'overviewParts', params: { id }, query: { enterprise: enterprise.value, unit: unit.value } })
+}
+function openRisk(id: string) {
+  router.push({ name: 'overviewSection', params: { id, key: 'risk' }, query: { enterprise: enterprise.value, unit: unit.value } })
 }
 </script>
 
 <style scoped>
 .ov-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 .ov-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.ov-plant-head { flex-direction: column; align-items: stretch; gap: 10px; }
+.ov-plant-band { display: flex; align-items: center; justify-content: space-between; gap: 12px 16px; flex-wrap: wrap; }
+.ov-lens { width: fit-content; }
+.ov-lens button { height: 36px; padding: 0 16px; font-size: 14px; font-weight: 600; }
+.ov-lens button.active { font-weight: 700; }
+.risk-board { background: #fff; border: 1px solid var(--color-card-border, #e8edf3); border-radius: 10px; }
+.risk-filters { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 10px 12px; border-bottom: 1px solid var(--color-border-light, #f0f4f8); }
+.risk-count { margin-left: auto; color: var(--color-text-secondary, #475569); font-size: 13px; }
+.risk-pager { display: flex; justify-content: flex-end; padding: 10px 12px; }
+.ov-risk-score { font-variant-numeric: tabular-nums; font-weight: 800; }
+.ov-risk-score.high { color: var(--color-danger); }
+.ov-risk-score.mid { color: var(--color-warning); }
+.ov-risk-score.low { color: var(--color-success); }
+.ov-plan-crane.is-risk-high { background: var(--color-danger); color: var(--color-text-white); }
+.ov-plan-crane.is-risk-mid { background: var(--color-warning); color: var(--color-text-white); }
+.ov-plan-crane.is-risk-low { background: var(--color-success); color: var(--color-text-white); }
+.ov-swatch.is-risk-high { background: var(--color-danger); }
+.ov-swatch.is-risk-mid { background: var(--color-warning); }
+.ov-swatch.is-risk-low { background: var(--color-success); }
 </style>

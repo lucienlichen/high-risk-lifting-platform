@@ -226,6 +226,8 @@
 .ov-table th { padding: 10px 12px; font-weight: 600; text-align: left; background: #f8fafc; color: #475569; }
 .ov-table td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; }
 .ov-table .muted { color: #64748b; }
+.ov-risk-row { cursor: pointer; }
+.ov-risk-row:hover td { background: #f8fafc; }
 .ov-pill { padding: 1px 6px; border-radius: 4px; background: #f1f5f9; font-size: 12px; }
 
 .ov-split { flex: 1; min-height: 0; display: flex; flex-direction: row; align-items: stretch; }
@@ -371,6 +373,13 @@
   overflow: hidden;
 }
 .ov-card:hover { transform: translateY(-1px); }
+.ov-card.is-risk-high { border-color: #f5222d; }
+.ov-card.is-risk-mid { border-color: #fa8c16; }
+.ov-card.is-risk-low { border-color: #52c41a; }
+.ov-risk-num { font-size: 18px; line-height: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.ov-risk-num.high { color: #f5222d; }
+.ov-risk-num.mid { color: #fa8c16; }
+.ov-risk-num.low { color: #52c41a; }
 .ov-card.is-red {
   --ov-tile-bg: #fff1f0;
   --ov-tile-bg-hot: #ffccc7;

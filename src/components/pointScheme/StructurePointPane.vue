@@ -1,225 +1,359 @@
 <template>
-  <div class="ps-final ps-struct">
-    <div class="ps-struct-left">
-      <section class="ps-struct-card ps-struct-table">
-        <div class="ps-struct-hd">
-          <div class="ps-struct-hd-top">
-            <strong>点位表</strong>
-            <span>共 {{ summary.total }} 个 · 实时监测 {{ summary.live }} · 数字孪生生成 {{ summary.twin }} · <em class="a">报警 {{ summary.alarm }}</em> · <em class="w">异常 {{ summary.warn }}</em></span>
+  <div class="spd">
+    <p class="spd-note">
+      本页为交互示意，数值均为<b>演示数据</b>，非实时监测。时刻按 <b>America/Araguaina（UTC-3）</b> 显示。健康评估：<b>D＜0.7 健康</b>，<b>0.7≤D＜1 亚健康</b>；<b>D＝1 及以上分级待核</b>。全局状态仍为「正常 / 异常 / 报警」，与损伤度分级分开。报警记录为独立事件，不由损伤度阈值生成。
+    </p>
+    <div class="spd-main">
+      <aside class="spd-left">
+        <section class="spd-card spd-table">
+          <div class="spd-hd">
+            <div class="spd-hd-top">
+              <span class="spd-title">点位表</span>
+              <span class="spd-meta">共 {{ summary.total }} 个 · 异常 {{ summary.warn }} · 报警 {{ summary.alarm }}</span>
+            </div>
+            <div class="spd-tools">
+              <input v-model="query" type="search" placeholder="搜索编号或位置" aria-label="搜索点位">
+              <label><input v-model="onlyBad" type="checkbox">仅看异常/报警</label>
+            </div>
           </div>
-          <div class="ps-struct-hd-bot">
-            <input v-model="query" type="search" placeholder="搜索名称或编号" aria-label="搜索名称或编号">
-            <label><input v-model="alarmOnly" type="checkbox">仅看报警/异常</label>
+          <div class="spd-colhd"><span>编号</span><span>位置</span><span>状态</span></div>
+          <div class="spd-body">
+            <p v-if="!groups.length" class="spd-empty">{{ onlyBad ? '当前没有异常或报警点位' : '没有匹配的点位' }}</p>
+            <template v-for="group in groups" :key="group.beam">
+              <div class="spd-grp">{{ group.beam }} <span>{{ group.rows.length }} 个</span></div>
+              <button
+                v-for="row in group.rows"
+                :key="row.id"
+                type="button"
+                class="spd-row"
+                :class="{ sel: row.id === active.id }"
+                @click="pick(row.id)"
+                @mouseenter="crane?.applyHover(row.id)"
+                @mouseleave="crane?.applyHover(null)"
+              >
+                <span class="id">{{ row.id }}</span>
+                <span class="loc">{{ row.loc }}</span>
+                <span class="spd-status" :class="row.status">{{ statusName(row.status) }}</span>
+              </button>
+            </template>
           </div>
-        </div>
-        <div class="ps-struct-colhd"><span>类型</span><span>编号</span><span>名称</span><span>状态</span></div>
-        <div class="ps-struct-body">
-          <p v-if="alarmOnly" class="ps-struct-empty">当前没有报警/异常点位</p>
-          <template v-else>
-            <div v-for="group in groups" :key="group.key" class="ps-struct-grp" :class="group.cls">
-              <div class="gt"><span v-html="group.title"></span><small>{{ group.rows.length }} 个</small></div>
-              <div class="rows">
-                <button v-for="row in group.rows" :key="row.id" type="button" class="row" :class="{ sel: row.id === pointId }" @click="$emit('select', row.id)" @mouseenter="hoverId = row.id" @mouseleave="hoverId = ''">
-                  <span>{{ row.id }}</span>
-                  <span class="nm">{{ row.name }}</span>
-                  <span class="chip" :class="row.tone">{{ row.toneText }}</span>
-                </button>
+          <div class="spd-foot">
+            <span>生成点已统一，不再区分来源</span>
+          </div>
+        </section>
+      </aside>
+
+      <section class="spd-mid">
+        <section class="spd-card spd-model">
+          <div class="spd-mid-hd">
+            <span class="spd-title">结构模型</span>
+            <span class="spd-badge">模型示意</span>
+            <span class="sub">单双主梁桥机 · 非真实三维模型 · 非计算结果</span>
+          </div>
+          <StructureCraneModel ref="crane" mode="model" :point-id="active.id" @select="pick" />
+          <div class="spd-mid-ft">
+            <div>当前点位 <span class="pn">{{ active.id }}</span>　{{ active.loc }}　状态 <span class="spd-status" :class="active.status">{{ statusName(active.status) }}</span></div>
+            <div class="hint">点击模型点位或左侧表格可切换 · 点位颜色表示全局状态（正常 / 异常 / 报警）</div>
+          </div>
+        </section>
+        <section class="spd-card spd-raw">
+          <div class="spd-mid-hd">
+            <span class="spd-title">当前点位监测数据</span>
+            <span class="sub">只显示当前点位，三类同时展开</span>
+          </div>
+          <div class="spd-raw-query">
+            <div class="spd-grain" role="group" aria-label="原始数据时间范围">
+              <button type="button" :class="{ on: rawPreset === 'year' }" @click="applyRawPreset('year')">年度</button>
+              <button type="button" :class="{ on: rawPreset === 'month' }" @click="applyRawPreset('month')">月度</button>
+              <button type="button" :class="{ on: rawPreset === 'custom' }" @click="rawPreset = 'custom'">自定义</button>
+              <span>已应用 {{ rawAppliedLabel }} · 演示数据</span>
+            </div>
+            <div v-if="rawPreset === 'custom'" class="spd-custom">
+              <label>开始 <input v-model="rawDraftFrom" type="datetime-local" min="2026-01-01T00:00" max="2026-11-16T23:59"></label>
+              <label>结束 <input v-model="rawDraftTo" type="datetime-local" min="2026-01-01T00:00" max="2026-11-16T23:59"></label>
+              <button type="button" @click="applyRawQuery">查询</button>
+              <span>{{ rawHint || (rawDraftFrom !== rawAppliedFrom || rawDraftTo !== rawAppliedTo ? '填写后点查询，曲线仍用上一已应用窗口' : '') }}</span>
+            </div>
+          </div>
+          <div class="spd-raw-row">
+            <article class="spd-raw-pane">
+              <header>应力时程</header>
+              <p v-if="!stressRaw.x.length" class="spd-empty">该窗口没有可展示的演示曲线。</p>
+              <SchemeChart v-else class="spd-cg spd-raw-chart" :option="stressRawOption" />
+            </article>
+            <article class="spd-raw-pane">
+              <header>声发射</header>
+              <p v-if="!aeRaw.x.length" class="spd-empty">该窗口没有可展示的演示曲线。</p>
+              <SchemeChart v-else class="spd-cg spd-raw-chart" :option="aeRawOption" />
+            </article>
+            <article class="spd-raw-pane">
+              <header>柔性涡流</header>
+              <p class="spd-empty">柔性涡流原始波形暂无本点绑定数据。判别结论仍为未发现裂纹。</p>
+            </article>
+          </div>
+        </section>
+      </section>
+
+      <aside class="spd-right is-compact" aria-label="分析服务">
+        <p class="spd-cat">评估与诊断</p>
+        <button
+          v-for="card in cards"
+          :key="card.id"
+          type="button"
+          class="spd-svc"
+          :class="{ abn: card.abnormal, wait: card.pending }"
+          @click="openService(card.id)"
+        >
+          <div class="top">
+            <span class="name">{{ card.name }}</span>
+            <span class="spd-status" :class="[card.badgeTone, card.badge.length > 8 ? 'is-long' : '']">{{ card.badge }}</span>
+          </div>
+          <div class="spd-kpis">
+            <div v-for="kpi in card.kpis" :key="kpi.label" class="spd-kpi">
+              <span class="lab">{{ kpi.label }}</span>
+              <span class="val" :class="[kpi.small ? 'sm' : '', kpi.tone || '']">{{ kpi.value }}</span>
+            </div>
+          </div>
+          <div v-if="card.bar != null" class="spd-dbar" title="对照 0.7 的阅读示意，不是报警线">
+            <div class="spd-dbar-track">
+              <div class="spd-dbar-fill" :style="{ width: card.bar + '%' }"></div>
+              <div class="spd-dbar-mark"></div>
+            </div>
+            <div class="spd-dbar-labs"><span>0</span><span class="l7">0.7</span><span>1</span></div>
+            <div class="spd-dbar-note">对照 0.7 的阅读示意，不是报警线</div>
+          </div>
+          <div v-if="card.note" class="spd-ex">{{ card.note }}</div>
+          <div class="spd-concl">{{ card.conclusion }}</div>
+          <div class="spd-go">查看详情</div>
+        </button>
+        <p class="spd-cat">维修与报警</p>
+        <button type="button" class="spd-svc" @click="drawer = 'predict'">
+          <div class="top"><span class="name">预知维修</span><span class="spd-status pending">演示</span></div>
+          <div class="spd-concl">{{ active.D >= 0.7 ? '建议安排复查窗口' : '维持原周期并继续观察' }}</div>
+          <div class="spd-go">查看报告</div>
+        </button>
+        <button type="button" class="spd-svc" @click="openAlarms">
+          <div class="top"><span class="name">历史报警记录</span><span class="spd-status" :class="alarms.length ? 'warn' : 'ok'">{{ alarms.length }} 条</span></div>
+          <div class="spd-concl">独立于服务结论的历史事件</div>
+          <div class="spd-go">查看记录</div>
+        </button>
+      </aside>
+    </div>
+
+    <div v-if="toast" class="spd-toast" role="status">{{ toast }}</div>
+
+    <div v-if="drawer" class="spd-drawer-mask" @click.self="closeDrawer">
+      <aside class="spd-drawer" role="dialog" aria-modal="true" :aria-labelledby="'spd-drawer-title'" @click.stop>
+        <header class="spd-dhd">
+          <div class="spd-dhd-copy">
+            <strong id="spd-drawer-title">{{ drawer === 'predict' ? '预知维修决策' : serviceName(drawer) }}</strong>
+            <span>{{ active.id }}　{{ active.loc }}　全局状态 {{ statusName(active.status) }}　·　演示数据</span>
+          </div>
+          <label>切点
+            <select :value="active.id" aria-label="切换点位" @change="onPointChange">
+              <option v-for="point in points" :key="point.id" :value="point.id">{{ point.id }}　{{ point.loc }}</option>
+            </select>
+          </label>
+          <button ref="drawerClose" type="button" class="spd-x" title="关闭（Esc）" @click="closeDrawer">✕</button>
+        </header>
+        <div class="spd-drawer-body">
+          <template v-if="drawer === 'predict'">
+            <p class="spd-scope">演示决策输出，不是正式维修方案，也不替代检验结论。</p>
+            <div class="spd-conclbox">
+              <div class="k">综合预知维修报告</div>
+              <div class="v">{{ active.id }} · D={{ active.D.toFixed(2) }} · 剩余 {{ active.L.toFixed(1) }} 年</div>
+              <div class="s">{{ aeText }} 涡流判别仍为未发现裂纹。健康状态不改全局状态。</div>
+            </div>
+            <p class="spd-scope">维护建议：{{ active.D >= 0.7 ? '把该点列入下一次焊缝复查，先核对载荷与点位安装，再决定是否补强。' : '保持现有点检周期，声发射继续观察，不因本次演示分值提前更换。' }}</p>
+            <p class="spd-scope">事故防控：不把亚健康写成停机令。若全局状态为异常，按现有报警流程复核，不新增处置算法。</p>
+          </template>
+          <template v-else-if="drawer === 'health' || drawer === 'crack'">
+            <p class="spd-scope">范围是当前选中点位。结构模型用页面中部的双梁示意，点位序号已标注，这里不再另做模型。跨点位和 A梁 / B梁 比较在结构整体表，不在本抽屉。</p>
+            <div class="spd-grain" role="group" aria-label="时间范围">
+              <button type="button" :class="{ on: grain === 'year' }" @click="setGrain('year')">年度</button>
+              <button type="button" :class="{ on: grain === 'month' }" @click="setGrain('month')">月度</button>
+              <button type="button" :class="{ on: grain === 'custom' }" @click="grain = 'custom'">自定义</button>
+              <span>{{ grainLabel }}</span>
+            </div>
+            <div v-if="grain === 'custom'" class="spd-custom">
+              <label>开始 <input v-model="customFrom" type="date" min="2026-01-01" max="2026-11-16"></label>
+              <label>结束 <input v-model="customTo" type="date" min="2026-01-01" max="2026-11-16"></label>
+              <button type="button" @click="applyCustom">查询</button>
+              <span>{{ rangeHint }}</span>
+            </div>
+            <p v-if="!buckets.length" class="spd-empty">该窗口没有可展示的演示曲线。</p>
+            <template v-else-if="drawer === 'health'">
+              <div class="spd-conclbox">
+                <div class="k">当前结论（演示）</div>
+                <div class="v">D={{ active.D.toFixed(2) }}，{{ health.health }}</div>
+                <div class="s">会议口径：D＜0.7 健康，0.7≤D＜1 亚健康，D≥1 分级待核。不采用算法 PPT 第3页旧五级表，也不把亚健康写成报警。健康状态不改变全局状态。</div>
               </div>
+              <div class="spd-scrollx">
+                <table class="spd-grid">
+                  <thead>
+                    <tr>
+                      <th>来源</th><th>序号</th><th>名称</th><th>最大应力幅</th><th>最小应力幅</th><th>应力谱系数</th><th>已发生循环次数</th><th>窗口期末损伤度</th><th>当前损伤度 D</th><th>点位健康状态</th><th>部件</th><th>部件健康状态</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>{{ health.source }}</td><td>{{ active.id }}</td><td>{{ active.loc }}</td>
+                      <td>{{ health.stressMax }} MPa</td><td>{{ health.stressMin }} MPa</td><td>{{ health.spectrum }}</td>
+                      <td>{{ health.cycles }}</td><td>{{ health.windowDamage }}</td><td>{{ health.damage }}</td>
+                      <td><span class="spd-status" :class="health.healthTone">{{ health.health }}</span></td>
+                      <td>{{ health.component }}</td>
+                      <td><span class="spd-status" :class="health.componentTone">{{ health.componentHealth }}</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p class="spd-scope">应力谱系数是本点演示常数。来源列为「统一点」，因为当前演示点已不再区分实测与孪生。跨点比较在结构整体表，不在本抽屉。</p>
+              <div class="spd-chart-grid">
+                <article class="spd-chartblock">
+                  <div class="spd-ctitle">载荷谱历程<span class="spd-demo">演示数据</span></div>
+                  <div class="spd-cdesc">整机载荷历程，按所选粒度取区间最大载荷，单位 t。不是本点位独有测值。</div>
+                  <SchemeChart class="spd-cg" :option="loadOption" />
+                </article>
+                <article class="spd-chartblock">
+                  <div class="spd-ctitle">应力幅<span class="spd-demo">演示数据</span></div>
+                  <div class="spd-cdesc">{{ grain === 'month' ? '月度逐日应力幅。' : '年度或自定义长窗口按月取最大值。' }} 单位 MPa。</div>
+                  <SchemeChart class="spd-cg" :option="stressOption" />
+                </article>
+                <article class="spd-chartblock">
+                  <div class="spd-ctitle">应力幅—循环次数分布<span class="spd-demo">演示数据</span></div>
+                  <div class="spd-cdesc">横轴是应力幅（MPa），纵轴是落在该幅值的循环次数，不是按时间累积。</div>
+                  <SchemeChart class="spd-cg" :option="distributionOption" />
+                </article>
+                <article class="spd-chartblock">
+                  <div class="spd-ctitle">累积损伤度<span class="spd-demo">演示数据</span></div>
+                  <div class="spd-cdesc">累积损伤度 D。0.7 只是阅读参考，不是报警线。</div>
+                  <SchemeChart class="spd-cg" :option="damageOption" />
+                </article>
+              </div>
+            </template>
+            <template v-else>
+              <div class="spd-conclbox">
+                <div class="k">当前结论（演示）</div>
+                <div class="v">剩余年限 {{ active.L.toFixed(1) }} 年，剩余损伤度 {{ crack.remainDamage }}</div>
+                <div class="s">主结果仍是剩余年限。＜1 年红、＜2 年橙来自算法 PPT 第4页的示例配色，不表示全局报警。剩余年限不画成曲线。</div>
+              </div>
+              <div class="spd-scrollx">
+                <table class="spd-grid">
+                  <thead><tr><th>序号</th><th>名称</th><th>剩余损伤度</th><th>剩余循环次数</th><th>剩余年限</th></tr></thead>
+                  <tbody>
+                    <tr>
+                      <td>{{ active.id }}</td><td>{{ active.loc }}</td><td>{{ crack.remainDamage }}</td><td>{{ crack.remainCycles }}</td>
+                      <td :class="crack.yearTone">{{ crack.years }} 年</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p class="spd-scope">窗口期末剩余损伤度 {{ crack.windowRemainDamage }}。当前剩余年限和剩余损伤度与右侧卡片一致，不随窗口改写成另一套结果。曲线给出剩余循环次数，以及剩余损伤度的期末累积值。</p>
+              <div class="spd-chart-grid">
+                <article class="spd-chartblock">
+                  <div class="spd-ctitle">剩余循环次数<span class="spd-demo">演示数据</span></div>
+                  <div class="spd-cdesc">所选窗口内的剩余循环次数。</div>
+                  <SchemeChart class="spd-cg" :option="remainCycleOption" />
+                </article>
+                <article class="spd-chartblock">
+                  <div class="spd-ctitle">剩余损伤度<span class="spd-demo">演示数据</span></div>
+                  <div class="spd-cdesc">年度、月度或自定义窗口的期末剩余损伤度，不是剩余年限曲线。</div>
+                  <SchemeChart class="spd-cg" :option="remainDamageOption" />
+                </article>
+              </div>
+            </template>
+          </template>
+          <template v-else-if="drawer === 'ae'">
+            <div class="spd-conclbox">
+              <div class="k">当前结论（演示）</div>
+              <div class="v">{{ aeText }}</div>
+              <div class="s">{{ aeSub }}</div>
+            </div>
+            <div class="spd-kpis spd-drawer-kpis">
+              <div class="spd-kpi"><span class="lab">最近活性事件</span><span class="val sm">{{ aeLast }}</span></div>
+              <div class="spd-kpi"><span class="lab">近 14 日事件</span><span class="val">{{ aeCount }} 次</span></div>
+            </div>
+            <div class="spd-eddy-note">
+              <b>所附 PPT 未规定本服务的曲线</b>
+              <span>算法 PPT 与中期汇报只说明光纤声发射用于焊缝裂纹监测，没有规定幅值、撞击或谱图。这里不补画声发射曲线，结论里也不写 40 dB。</span>
+            </div>
+          </template>
+          <template v-else>
+            <div class="spd-conclbox">
+              <div class="k">当前结论（演示）</div>
+              <div class="v">该位置未发现裂纹</div>
+              <div class="s">本能力为柔性涡流阵列，用于判别裂纹长度与大小。依据：涡流监测数据（演示）。</div>
+            </div>
+            <div class="spd-kpis spd-drawer-kpis">
+              <div class="spd-kpi"><span class="lab">监测方式</span><span class="val sm">柔性涡流阵列</span></div>
+              <div class="spd-kpi"><span class="lab">判别结果</span><span class="val sm">未发现裂纹</span></div>
+            </div>
+            <div class="spd-eddy-note">
+              <b>不给出裂纹长度或大小</b>
+              <span>中期汇报第8、10页只说明柔性涡流阵列的布设位置，没有规定阻抗、相位或裂纹尺寸曲线。本抽屉不编造这些图，也不把结果写成待接入。</span>
             </div>
           </template>
         </div>
-      </section>
-      <section class="ps-struct-card ps-struct-model">
-        <div class="ps-struct-model-hd"><strong>结构模型</strong><span>单双主梁 · 立面示意 · 点位安装位置</span></div>
-        <svg class="ps-struct-beam" viewBox="0 0 640 220" @mouseleave="hoverId = ''">
-          <rect x="46" y="78" width="548" height="52" rx="3" fill="#dbeafe" stroke="#60a5fa" stroke-width="1.5" />
-          <line x1="46" y1="104" x2="594" y2="104" stroke="#93c5fd" stroke-dasharray="4 4" />
-          <rect x="14" y="130" width="56" height="20" rx="3" fill="#e2e8f0" stroke="#94a3b8" />
-          <rect x="570" y="130" width="56" height="20" rx="3" fill="#e2e8f0" stroke="#94a3b8" />
-          <text x="42" y="144" text-anchor="middle" font-size="11" fill="#475569">端梁</text>
-          <text x="598" y="144" text-anchor="middle" font-size="11" fill="#475569">端梁</text>
-          <line x1="0" y1="150" x2="640" y2="150" stroke="#cbd5e1" stroke-width="2" />
-          <text v-for="(label, index) in ['0', 'L/4', 'L/2', '3L/4', 'L']" :key="label" :x="46 + 548 * index / 4" y="188" text-anchor="middle" font-size="11" fill="#6b7280">{{ label }}</text>
-          <g v-for="mark in modelMarks" :key="mark.id" class="mk" @click="$emit('select', mark.id)" @mouseenter="hoverId = mark.id">
-            <line v-if="mark.sec !== 'web'" :x1="mark.x" :x2="mark.x" :y1="mark.sec === 'top' ? 70 : 138" :y2="mark.sec === 'top' ? 48 : 168" :stroke="mark.active ? '#1677ff' : '#cbd5e1'" :stroke-width="mark.active ? 1.5 : 1" />
-            <circle v-if="mark.active" :cx="mark.x" :cy="mark.y" r="13" fill="none" stroke="#1677ff" stroke-width="2" />
-            <circle :cx="mark.x" :cy="mark.y" r="7.5" :fill="mark.live ? '#16a34a' : '#fff'" stroke="#16a34a" stroke-width="3" />
-            <text v-if="!mark.active" :x="mark.sec === 'web' ? mark.x + 14 : mark.x" :y="mark.sec === 'web' ? mark.y + 4 : mark.sec === 'top' ? 44 : 176" :text-anchor="mark.sec === 'web' ? 'start' : 'middle'" font-size="12" font-weight="700" fill="#15803d">{{ mark.id }}</text>
-            <g v-else>
-              <line :x1="mark.x" :x2="mark.x" :y1="mark.y + (mark.sec === 'bot' ? 8 : -8)" :y2="mark.bubbleY + 28" stroke="#1677ff" stroke-width="1.5" />
-              <rect :x="mark.bubbleX" :y="mark.bubbleY" :width="mark.bubbleW" height="28" rx="14" fill="#1677ff" />
-              <text :x="mark.bubbleX + mark.bubbleW / 2" :y="mark.bubbleY + 19" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">{{ mark.bubble }}</text>
-            </g>
-          </g>
-        </svg>
-        <div class="ps-struct-legend">
-          <span><i class="solid"></i>实时监测点位</span>
-          <span><i class="hollow"></i>数字孪生生成点位</span>
-          <span>上翼缘点在梁上沿，下翼缘在下沿，腹板在中部</span>
-        </div>
-      </section>
+      </aside>
     </div>
-    <div class="ps-struct-right">
-      <section class="ps-struct-card ps-struct-sec data">
-        <nav class="ps-struct-menu">
-          <button type="button" :class="menuClass('health')" @click="dataMenu = 'health'">健康监测</button>
-          <button type="button" :class="menuClass('safety')" @click="dataMenu = 'safety'">安全监控</button>
-          <button type="button" :class="menuClass('risk')" @click="dataMenu = 'risk'">风险监测</button>
-          <button type="button" :class="menuClass('inspect')" @click="dataMenu = 'inspect'">检验检测</button>
-          <button type="button" :class="menuClass('patrol')" @click="dataMenu = 'patrol'">日常点巡检</button>
-          <span>监测数据</span>
-        </nav>
-        <div v-if="dataMenu === 'health'" class="ps-struct-grid">
-          <article class="ps-struct-box span2">
-            <div class="bh side">
-              <span class="d"><span class="bt">应力光纤监测数据</span><b>{{ stressTab === 'cloud' ? '2026-11-11' : stressDate }}</b></span>
-              <span class="r">历史数据
-                <select v-model="stressDate" :disabled="stressTab === 'cloud'">
-                  <option v-for="date in dates" :key="date" :value="date">{{ dateLabel(date) }}</option>
-                </select>
-              </span>
-            </div>
-            <div class="tabs">
-              <div class="seg">
-                <button type="button" :class="{ on: stressTab === 'ts' }" @click="stressTab = 'ts'">应力时程曲线</button>
-                <button type="button" :class="{ on: stressTab === 'cloud' }" @click="stressTab = 'cloud'">当前应力云图</button>
-              </div>
-              <span>{{ stressTab === 'cloud' ? '整机 · 当前时刻 15:30 · 点击放大' : '光纤光栅应变 · 单位 MPa' }}</span>
-            </div>
-            <div v-if="stressTab === 'ts'" class="chart"><SchemeChart :option="stressOption" /></div>
-            <div v-else class="chart cloud" @click="onCloudClick">
-              <div v-html="cloudHtml"></div>
-              <button type="button" class="zbtn" @click.stop="openModal">⤢ 放大</button>
-            </div>
-          </article>
-          <article class="ps-struct-box">
-            <div class="bh side titleline"><span class="bt">声发射监测数据</span></div>
-            <div class="bh side"><span class="d"><b>{{ aeDate }}</b></span><span class="r">历史数据
-              <select v-model="aeDate"><option v-for="date in dates" :key="date" :value="date">{{ dateLabel(date) }}</option></select>
-            </span></div>
-            <div class="tabs"><span>每次撞击幅值 · 单位 dB</span></div>
-            <div class="chart"><SchemeChart :option="aeOption" /></div>
-          </article>
-          <article class="ps-struct-box">
-            <div class="bh side titleline"><span class="bt">疲劳裂纹涡流监测数据</span></div>
-            <div class="bh side"><span class="d"><b>{{ ecDate }}</b></span><span class="r">历史数据
-              <select v-model="ecDate"><option v-for="date in dates" :key="date" :value="date">{{ dateLabel(date) }}</option></select>
-            </span></div>
-            <div class="tabs"><span>涡流信号幅值 · 单位 V</span></div>
-            <div class="chart"><SchemeChart :option="ecOption" /></div>
-          </article>
+
+    <div v-if="alarmOpen" class="spd-mask" @click.self="closeAlarms">
+      <div class="spd-modal" role="dialog" aria-modal="true" aria-labelledby="spd-alarm-title" @click.stop>
+        <div class="spd-mhd">
+          <span id="spd-alarm-title" class="mt">报警记录</span>
+          <span class="ms">独立于服务详情　·　演示数据　·　共 {{ alarms.length }} 条</span>
+          <button ref="alarmClose" type="button" class="spd-x" title="关闭（Esc）" @click="closeAlarms">✕</button>
         </div>
-        <div v-else-if="dataMenu === 'safety'" class="ps-struct-safety">
-          <div class="ps-struct-grid3">
-            <article class="ps-struct-box">
-              <div class="bh side">
-                <span class="d"><span class="bt">起升高度</span><b>{{ heightDate }}</b></span>
-                <span class="r">历史数据
-                  <select v-model="heightDate"><option v-for="date in dates" :key="date" :value="date">{{ dateLabel(date) }}</option></select>
-                </span>
+        <div class="spd-banner" :class="alarmId ? 'alarm' : 'current'">
+          <div v-if="selectedAlarm"><strong>正在回看报警记录 {{ selectedAlarm.id }}</strong>　时段 {{ fmtRange(alarmFrom, alarmTo) }}（{{ tz }}）　点位 {{ selectedAlarm.pid }}。这是历史证据，不是当前服务结果。</div>
+          <div v-else><strong>报警记录</strong>　请选择一条声发射事件，查看该时段的演示证据。这些事件不由损伤度阈值生成，也不会写进服务抽屉。</div>
+          <button v-if="alarmId" type="button" class="backnow" @click="returnCurrent">返回当前</button>
+        </div>
+        <div class="spd-mbody spd-alarm-body">
+          <aside class="spd-mside">
+            <div class="spd-alist">
+              <button v-for="alarm in alarms" :key="alarm.id" type="button" class="spd-aitem" :class="{ on: alarm.id === alarmId }" @click="selectAlarm(alarm.id)">
+                <div class="t"><span class="id">{{ alarm.id }}</span><span class="spd-status" :class="alarm.level">{{ statusName(alarm.level) }}</span></div>
+                <div class="d">{{ alarm.title }}</div>
+                <div class="m">{{ alarm.pid }}　{{ pointLoc(alarm.pid) }}　·　{{ fmtRange(alarm.from, alarm.to) }}（{{ tz }}）</div>
+              </button>
+            </div>
+            <div v-if="selectedAlarm" class="spd-qbox">
+              <div class="k">时间范围查询</div>
+              <div class="spd-hint">只过滤本弹窗里的报警证据曲线和记录，不影响服务抽屉。</div>
+              <div class="spd-qrow"><label for="alarm-from">开始</label><input id="alarm-from" v-model="alarmDraftFrom" type="datetime-local"></div>
+              <div class="spd-qrow"><label for="alarm-to">结束</label><input id="alarm-to" v-model="alarmDraftTo" type="datetime-local"></div>
+              <div class="spd-qact"><button type="button" @click="runAlarmQuery">查询</button></div>
+              <div class="spd-hint">{{ alarmHint }}</div>
+            </div>
+          </aside>
+          <div class="spd-mmain">
+            <div v-if="!selectedAlarm" class="spd-eddy-note">
+              <b>选择一条报警记录</b>
+              <span>回看后可以看到该时段的声发射幅值演示证据。服务抽屉里没有报警记录入口。</span>
+            </div>
+            <template v-else-if="alarmPack.option">
+              <article class="spd-chartblock">
+                <div class="spd-ctitle">声发射幅值证据<span class="spd-demo">演示数据</span></div>
+                <div class="spd-cdesc">{{ selectedAlarm.note }} 40 dB 只是示意阈值，不是规范，也不写入损伤活性诊断结论。</div>
+                <SchemeChart class="spd-cg" :option="alarmPack.option" />
+              </article>
+              <div class="spd-rec">
+                <div class="rh"><span>对应记录 · 按小时最大幅值</span><span>演示数据</span></div>
+                <div class="scroll">
+                  <table>
+                    <thead><tr><th>时间（{{ tz }}）</th><th>项目</th><th>数值</th><th>说明</th></tr></thead>
+                    <tbody>
+                      <tr v-for="(row, index) in alarmPack.series.recs" :key="index" :class="{ hit: row.hit }">
+                        <td>{{ fmtDT(row.t) }}</td><td>{{ row.item }}</td><td>{{ row.val }}</td><td>{{ recordNote(row) }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
-              <div class="tabs"><span class="ps-share">整机共享工况</span><span class="u">单位 m</span></div>
-              <div class="chart"><SchemeChart :option="heightOption" /></div>
-            </article>
-            <article class="ps-struct-box">
-              <div class="bh side">
-                <span class="d"><span class="bt">起升载荷</span><b>{{ loadDate }}</b></span>
-                <span class="r">历史数据
-                  <select v-model="loadDate"><option v-for="date in dates" :key="date" :value="date">{{ dateLabel(date) }}</option></select>
-                </span>
-              </div>
-              <div class="tabs"><span class="ps-share">整机共享工况</span><span class="u">单位 t</span></div>
-              <div class="chart"><SchemeChart :option="loadOption" /></div>
-            </article>
-            <article class="ps-struct-box">
-              <div class="bh side">
-                <span class="d"><span class="bt">小车位置</span><b>{{ trolleyDate }}</b></span>
-                <span class="r">历史数据
-                  <select v-model="trolleyDate"><option v-for="date in dates" :key="date" :value="date">{{ dateLabel(date) }}</option></select>
-                </span>
-              </div>
-              <div class="tabs"><span class="ps-share">整机共享工况</span><span class="u">单位 m</span></div>
-              <div class="chart"><SchemeChart :option="trolleyOption" /></div>
-            </article>
+            </template>
+            <p v-else class="spd-empty">该时段没有可展示的证据曲线。</p>
           </div>
-        </div>
-        <p v-else class="ps-struct-empty-tab">该页签示意本次未做</p>
-      </section>
-      <section class="ps-struct-card ps-struct-sec svc">
-        <template v-if="dataMenu !== 'safety'">
-        <nav class="ps-svcmenu" aria-label="服务">
-          <button type="button">健康评估</button>
-          <button type="button">裂纹预测</button>
-          <button type="button">损伤程度诊断</button>
-          <button type="button">裂纹判别</button>
-        </nav>
-        <div class="ps-struct-grid">
-          <article class="ps-struct-box">
-            <div class="tabs"><span class="left">疲劳损伤度 D · 按天</span></div>
-            <div class="chart"><SchemeChart :option="damageOption" /></div>
-            <div class="concl"><div class="big">疲劳损伤度 D = {{ point.D.toFixed(2) }}</div><div class="line2">点位健康状态：<b>健康</b></div></div>
-            <div class="basis">依据<em>应力光纤监测数据</em></div>
-          </article>
-          <article class="ps-struct-box">
-            <div class="tabs"><span class="left">裂纹萌生寿命 · 按天</span>
-              <div class="zoom">
-                <button v-for="days in [7, 14, 30]" :key="days" type="button" :class="{ on: zoom === days }" @click="zoom = days">{{ days }}天</button>
-              </div>
-            </div>
-            <div class="chart" title="滚轮可缩放天数" @wheel.prevent="onLifeWheel"><SchemeChart :option="lifeOption" /></div>
-            <div class="concl"><div class="big">裂纹萌生寿命 {{ point.L.toFixed(1) }} 年</div></div>
-            <div class="basis">依据<em>应力光纤监测数据</em></div>
-          </article>
-          <article class="ps-struct-box">
-            <div class="tabs"><span class="left">声发射幅值 · 近 7 天（每小时最大）</span></div>
-            <div class="chart"><SchemeChart :option="aeWeekOption" /></div>
-            <div class="concl"><p class="qual">当前点位声发射信号不明显，<b>暂未见明显的活性缺陷</b></p></div>
-            <div class="basis">依据<em>声发射监测数据</em></div>
-          </article>
-          <article class="ps-struct-box">
-            <div class="tabs"><span class="left">涡流阻抗平面（相位图）</span></div>
-            <div class="chart phase" v-html="phaseSvg"></div>
-            <div class="concl"><div class="big ok">该位置未发现裂纹</div></div>
-            <div class="basis">依据<em>疲劳裂纹涡流监测数据</em></div>
-          </article>
-        </div>
-        </template>
-        <div v-else class="ps-svc-tbd"><b>安全监控对应服务（待定）</b><span>服务内容待确认</span></div>
-      </section>
-    </div>
-    <div v-if="modal" class="ps-cloud-mask" @click.self="closeModal">
-      <div class="ps-cloud-modal" role="dialog" aria-label="整机当前应力云图">
-        <div class="mhd">
-          <strong>整机当前应力云图</strong>
-          <span>3G211-A2 · 2026-11-11 15:30 · 滚轮缩放，拖拽平移</span>
-          <div class="tools">
-            <button type="button" @click="zoomBy(1 / 1.25)">＋</button>
-            <em>{{ zoomText }}</em>
-            <button type="button" @click="zoomBy(1.25)">－</button>
-            <button type="button" @click="resetView">复位</button>
-            <button type="button" class="x" @click="closeModal">✕</button>
-          </div>
-        </div>
-        <div class="mbody" @wheel.prevent="onModalWheel" @mousedown="onDragStart">
-          <svg class="ps-crane" :viewBox="`${view.x} ${view.y} ${view.w} ${view.h}`" preserveAspectRatio="xMidYMid meet" @click="onModalClick" v-html="modalMarkup"></svg>
-          <div class="mtitle">
-            <b>H: 前拉杆</b>
-            <div>等效应力</div>
-            <div>Type: Equivalent (von-Mises) Stress</div>
-            <div>Unit: MPa</div>
-            <div>Time: 2026-11-11 15:30</div>
-            <p>数字孪生示意图 · 非有限元计算结果 · 当前点位 {{ point.id }} {{ point.name }}</p>
-          </div>
-          <svg class="mleg" viewBox="0 0 120 210" v-html="modalLegend"></svg>
-          <div class="mscale"><i></i><i class="w"></i><i></i><i class="w"></i><b>0</b><b>2e+04</b><b>4e+04</b><b>6e+04</b><b>8e+04 (mm)</b></div>
-          <svg class="maxis" viewBox="0 0 110 100">
-            <line x1="40" y1="70" x2="96" y2="70" stroke="#dc2626" stroke-width="3" />
-            <text x="100" y="75" font-size="14" fill="#dc2626">X</text>
-            <line x1="40" y1="70" x2="40" y2="14" stroke="#16a34a" stroke-width="3" />
-            <text x="35" y="10" font-size="14" fill="#16a34a">Y</text>
-            <line x1="40" y1="70" x2="12" y2="92" stroke="#2563eb" stroke-width="3" />
-            <text x="0" y="98" font-size="14" fill="#2563eb">Z</text>
-          </svg>
         </div>
       </div>
     </div>
@@ -227,279 +361,256 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import type { EChartsOption } from 'echarts'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import SchemeChart from '@/components/pointScheme/SchemeChart.vue'
-import { cloudSvg, legendMarkup, modalCrane } from '@/components/pointScheme/stressCloud'
+import StructureCraneModel from '@/components/pointScheme/StructureCraneModel.vue'
+import { alarmEvidence, barOption, categoryOption, recordNote } from '@/components/pointScheme/structureCharts'
 import {
-  STRUCT_DATES, STRUCT_NOW, STRUCT_PTS, aeDay, aeWeek, dateLabel, dSeries, dutyDay, ecDay, lSeries, shiftDate, stressDay, structPoint
-} from '@/components/pointScheme/structureMock'
+  ALARMS, SERVICE_FROM, SERVICE_TO, SERVICES, STRUCTURE_POINTS, TZ,
+  CUR_FROM, CUR_TO, aeConclusion, aeSeries, amplitudeDistribution, crackTable, fmtDT, fmtRange, groupedPoints, healthTable, stressSeries,
+  parseDT, pointSummary, serviceBuckets, serviceCards, statusName, structurePoint,
+  type ServiceGrain, type SvcId
+} from '@/mock/structurePointDetail'
 
 const props = defineProps<{ pointId: string }>()
 const emit = defineEmits<{ select: [id: string] }>()
 
+const crane = ref<{ applyHover: (id: string | null) => void } | null>(null)
+const drawerClose = ref<HTMLButtonElement | null>(null)
+const alarmClose = ref<HTMLButtonElement | null>(null)
+const activeId = ref(props.pointId)
 const query = ref('')
-const alarmOnly = ref(false)
-const hoverId = ref('')
-type DataMenu = 'health' | 'safety' | 'risk' | 'inspect' | 'patrol'
-const dataMenu = ref<DataMenu>('health')
-const stressTab = ref<'ts' | 'cloud'>('ts')
-const stressDate = ref(STRUCT_DATES[0])
-const aeDate = ref(STRUCT_DATES[0])
-const ecDate = ref(STRUCT_DATES[0])
-const heightDate = ref(STRUCT_DATES[0])
-const loadDate = ref(STRUCT_DATES[0])
-const trolleyDate = ref(STRUCT_DATES[0])
-const zoom = ref(7)
-const modal = ref(false)
-const dates = STRUCT_DATES
-const view0 = { x: -460, y: -30, w: 1500, h: 680 }
-const view = ref({ ...view0 })
-let drag: { x: number; y: number; vx: number; vy: number } | null = null
-let dragged = false
+const onlyBad = ref(false)
+const drawer = ref<SvcId | 'predict' | null>(null)
+const alarmOpen = ref(false)
+const alarmId = ref<string | null>(null)
+const alarmFrom = ref('')
+const alarmTo = ref('')
+const alarmDraftFrom = ref('')
+const alarmDraftTo = ref('')
+const alarmHint = ref('')
+const grain = ref<ServiceGrain>('year')
+const customFrom = ref(SERVICE_FROM)
+const customTo = ref(SERVICE_TO)
+const appliedFrom = ref(SERVICE_FROM)
+const appliedTo = ref(SERVICE_TO)
+const rangeHint = ref('')
+const rawPreset = ref<'year' | 'month' | 'custom' | ''>('')
+const rawDraftFrom = ref(CUR_FROM)
+const rawDraftTo = ref(CUR_TO)
+const rawAppliedFrom = ref(CUR_FROM)
+const rawAppliedTo = ref(CUR_TO)
+const rawHint = ref('')
+const rawAppliedLabel = computed(() => fmtRange(rawAppliedFrom.value, rawAppliedTo.value))
+const toast = ref('')
+let toastTimer = 0
 
-const point = computed(() => structPoint(props.pointId))
-const zoomText = computed(() => `${Math.round(view0.w / view.value.w * 100)}%`)
-const cloudHtml = computed(() => cloudSvg(props.pointId))
-const modalMarkup = computed(() => modalCrane(props.pointId))
-const modalLegend = computed(() => legendMarkup(2, 6, 188, 12))
-
-function withTone<T extends { id: string }>(point: T) {
-  return { ...point, tone: 'ok', toneText: '正常' }
+const points = STRUCTURE_POINTS
+const alarms = ALARMS
+const tz = TZ
+const summary = pointSummary()
+const active = computed(() => structurePoint(activeId.value))
+const groups = computed(() => groupedPoints(query.value, onlyBad.value))
+const cards = computed(() => serviceCards(active.value))
+const selectedAlarm = computed(() => alarms.find(item => item.id === alarmId.value) || null)
+const buckets = computed(() => serviceBuckets(active.value, grain.value, appliedFrom.value, appliedTo.value))
+const labels = computed(() => buckets.value.map(item => item.label))
+const health = computed(() => healthTable(active.value, buckets.value))
+const crack = computed(() => crackTable(active.value, buckets.value))
+const grainLabel = computed(() => grain.value === 'year' ? '缺省：2026-01-01 至 2026-11-16，按月' : grain.value === 'month' ? '2026-11-01 至 2026-11-16，按日' : `${appliedFrom.value} 至 ${appliedTo.value}`)
+const loadOption = computed(() => categoryOption(labels.value, buckets.value.map(item => item.load), '#1677ff', '载荷', 't', 1))
+const stressOption = computed(() => categoryOption(labels.value, buckets.value.map(item => item.stressMax), '#0f766e', '应力幅', 'MPa', 1))
+const distribution = computed(() => amplitudeDistribution(active.value))
+const distributionOption = computed(() => barOption(distribution.value.map(item => item.label), distribution.value.map(item => item.cycles), '应力幅 / MPa', '循环次数'))
+function rawSeries(kind: 'stress' | 'ae') {
+  const query = { view: 'current' as const, alarm: null, modal: kind === 'ae' ? 'ae' as const : 'health' as const }
+  return kind === 'ae'
+    ? aeSeries(active.value, rawAppliedFrom.value, rawAppliedTo.value, query)
+    : stressSeries(active.value, rawAppliedFrom.value, rawAppliedTo.value, query)
 }
-
-const summary = computed(() => {
-  const rows = STRUCT_PTS.map(withTone)
-  return {
-    total: rows.length,
-    live: rows.filter(item => item.live).length,
-    twin: rows.filter(item => !item.live).length,
-    alarm: rows.filter(item => item.tone === 'alarm').length,
-    warn: rows.filter(item => item.tone === 'warn').length
-  }
-})
-
-const groups = computed(() => {
-  const text = query.value.trim()
-  const match = (id: string, name: string) => !text || id.includes(text.toUpperCase()) || name.includes(text)
-  return [
-    { key: 'live', cls: 'g1', title: '实时监测<br>点位', rows: STRUCT_PTS.filter(item => item.live && match(item.id, item.name)).map(withTone) },
-    { key: 'twin', cls: 'g2', title: '数字孪生<br>生成点位', rows: STRUCT_PTS.filter(item => !item.live && match(item.id, item.name)).map(withTone) }
-  ].filter(group => group.rows.length)
-})
-
-const modelMarks = computed(() => STRUCT_PTS.map(item => {
-  const x = 46 + item.pos * 548
-  const y = item.sec === 'top' ? 78 : item.sec === 'bot' ? 130 : 104
-  const active = item.id === props.pointId || item.id === hoverId.value
-  const bubble = `${item.id} ${item.name} · ${item.live ? '实测' : '孪生'}`
-  const bubbleW = bubble.length * 13 + 22
-  const bubbleX = Math.max(4, Math.min(640 - bubbleW - 4, x - bubbleW / 2))
-  const bubbleY = item.sec === 'bot' ? 156 : 8
-  return { ...item, x, y, active, bubble, bubbleW, bubbleX, bubbleY }
+function rawSeriesOption(kind: 'stress' | 'ae') {
+  const series = rawSeries(kind)
+  const step = Math.max(1, Math.floor(series.x.length / 48))
+  const labels: string[] = []
+  const values: number[] = []
+  const span = (rawAppliedToMs() - rawAppliedFromMs()) > 36 * 3600 * 1000
+  series.x.forEach((time, index) => {
+    if (index % step) return
+    const text = fmtDT(time, false)
+    labels.push(span ? text.slice(5, 16) : text.slice(11, 16))
+    values.push(series.y[index])
+  })
+  return categoryOption(labels, values, kind === 'ae' ? '#7c3aed' : '#1677ff', kind === 'ae' ? '幅值' : '应力', kind === 'ae' ? 'dB' : 'MPa', 1)
+}
+function rawAppliedFromMs() { return parseDT(rawAppliedFrom.value) }
+function rawAppliedToMs() { return parseDT(rawAppliedTo.value) }
+const stressRaw = computed(() => rawSeries('stress'))
+const aeRaw = computed(() => rawSeries('ae'))
+const stressRawOption = computed(() => rawSeriesOption('stress'))
+const aeRawOption = computed(() => rawSeriesOption('ae'))
+const damageOption = computed(() => categoryOption(labels.value, buckets.value.map(item => item.damage), '#7c3aed', '累积损伤度 D', '', 2, {
+  min: 0,
+  max: Math.max(0.85, ...buckets.value.map(item => item.damage)),
+  mark: { value: 0.7, label: '0.7 阅读参考', color: '#6d28d9' }
 }))
+const remainCycleOption = computed(() => categoryOption(labels.value, buckets.value.map(item => item.remainCycles), '#0d9488', '剩余循环次数', '次', 0, { min: 0 }))
+const remainDamageOption = computed(() => categoryOption(labels.value, buckets.value.map(item => item.remainDamage), '#7c3aed', '剩余损伤度', '', 2, { min: 0, max: 1 }))
+const aeInfo = computed(() => aeConclusion(active.value))
+const aeText = computed(() => aeInfo.value.text)
+const aeLast = computed(() => aeInfo.value.lastLabel ? aeInfo.value.lastLabel.slice(5) : '无')
+const aeCount = computed(() => aeInfo.value.count)
+const aeSub = computed(() => active.value.aeActive
+  ? '这是声发射活性的演示发现，只说明该点当前有活跃扩展迹象，并给出最近一次事件时间。不改损伤度，也不另设正式等级。'
+  : '该句只描述当前声发射现象，不引用幅值门槛，也不把现象映射成损伤度或全局状态。')
+const alarmPack = computed(() => selectedAlarm.value && alarmFrom.value && alarmTo.value
+  ? alarmEvidence(structurePoint(selectedAlarm.value.pid), alarmFrom.value, alarmTo.value, selectedAlarm.value)
+  : { series: { recs: [] }, option: null })
 
-function dayOption(pairs: [number, number][], color: string, max: number, date: string, scatter = false, area = false, hours = [0, 4, 8, 12, 16, 20, 24]): EChartsOption {
-  const today = date === STRUCT_DATES[0]
-  return {
-    animation: false,
-    grid: { left: 42, right: 16, top: 22, bottom: 28 },
-    tooltip: { trigger: 'axis', formatter: (items: unknown) => {
-      const row = (items as { value: [number, number] }[])[0]
-      if (!row) return ''
-      const minute = row.value[0]
-      return `${date.slice(5)} ${Math.floor(minute / 60)}:${String(Math.round(minute % 60)).padStart(2, '0')}<br>${row.value[1]}`
-    } },
-    xAxis: { type: 'value', min: 0, max: 1440, interval: hours[1] * 60, axisLabel: { formatter: (value: number) => `${String(Math.round(value / 60)).padStart(2, '0')}:00`, fontSize: 11, color: '#6b7280' }, splitLine: { show: false } },
-    yAxis: { type: 'value', min: 0, max, axisLabel: { fontSize: 11, color: '#6b7280' }, splitLine: { lineStyle: { color: '#eef0f3' } } },
-    series: [{
-      type: scatter ? 'scatter' : 'line',
-      data: pairs,
-      symbolSize: scatter ? 4 : 0,
-      showSymbol: scatter,
-      smooth: false,
-      lineStyle: { width: 1.4, color },
-      itemStyle: { color, opacity: scatter ? 0.55 : 1 },
-      areaStyle: area ? { color, opacity: 0.08 } : undefined,
-      markLine: today ? { symbol: 'none', data: [{ xAxis: STRUCT_NOW, label: { formatter: '当前 15:30', fontSize: 11, color: '#1677ff' }, lineStyle: { type: 'dashed', color: '#1677ff' } }] } : undefined
-    }]
+watch(() => props.pointId, id => {
+  if (!id || id === activeId.value) return
+  activeId.value = structurePoint(id).id
+})
+watch([alarmFrom, alarmTo], () => {
+  alarmDraftFrom.value = alarmFrom.value
+  alarmDraftTo.value = alarmTo.value
+})
+watch(drawer, value => { if (value) nextTick(() => drawerClose.value?.focus()) })
+watch(alarmOpen, value => { if (value) nextTick(() => alarmClose.value?.focus()) })
+
+function serviceName(id: SvcId) {
+  return SERVICES.find(item => item.id === id)?.name || ''
+}
+function pointLoc(id: string) {
+  return structurePoint(id).loc
+}
+function showToast(message: string) {
+  toast.value = message
+  window.clearTimeout(toastTimer)
+  toastTimer = window.setTimeout(() => { toast.value = '' }, 1800)
+}
+function pick(id: string) {
+  if (id === activeId.value) return
+  if (alarmId.value && selectedAlarm.value && selectedAlarm.value.pid !== id) {
+    alarmId.value = null
+    alarmFrom.value = ''
+    alarmTo.value = ''
+    alarmHint.value = ''
+    showToast('已切换点位，并退出报警回看')
+  }
+  activeId.value = id
+  emit('select', id)
+}
+function onPointChange(event: Event) {
+  pick((event.target as HTMLSelectElement).value)
+}
+function openService(id: SvcId) {
+  drawer.value = id
+}
+function closeDrawer() {
+  drawer.value = null
+}
+function openAlarms() {
+  alarmOpen.value = true
+}
+function closeAlarms() {
+  alarmOpen.value = false
+  alarmId.value = null
+  alarmFrom.value = ''
+  alarmTo.value = ''
+  alarmHint.value = ''
+}
+function returnCurrent() {
+  alarmId.value = null
+  alarmFrom.value = ''
+  alarmTo.value = ''
+  alarmHint.value = ''
+}
+function selectAlarm(id: string) {
+  const alarm = alarms.find(item => item.id === id)
+  if (!alarm) return
+  alarmId.value = alarm.id
+  alarmFrom.value = alarm.from
+  alarmTo.value = alarm.to
+  alarmHint.value = ''
+  if (activeId.value !== alarm.pid) {
+    activeId.value = alarm.pid
+    emit('select', alarm.pid)
   }
 }
-
-function menuClass(key: DataMenu) {
-  if (dataMenu.value === key) return 'on'
-  return key === 'health' || key === 'safety' ? 'ok' : ''
-}
-
-function dutyOption(pairs: [number, number][], color: string, max: number, interval: number, date: string, label: string, unit: string, digits: number): EChartsOption {
-  const isToday = date === STRUCT_DATES[0]
-  return {
-    animation: false,
-    grid: { left: 42, right: 12, top: 18, bottom: 24 },
-    tooltip: {
-      trigger: 'axis',
-      confine: true,
-      formatter: (items: unknown) => {
-        const row = (items as { value: [number, number] }[])[0]
-        if (!row) return ''
-        const minute = Math.round(row.value[0])
-        const clock = `${Math.floor(minute / 60)}:${String(minute % 60).padStart(2, '0')}`
-        return `${date.slice(5)} ${clock}<br>${label} ${row.value[1].toFixed(digits)} ${unit}`
-      }
-    },
-    xAxis: {
-      type: 'value', min: 0, max: 1440, interval: 240,
-      axisLabel: { formatter: (value: number) => `${Math.round(value / 60)}:00`, fontSize: 11, color: '#6b7280' },
-      axisLine: { lineStyle: { color: '#d1d5db' } },
-      splitLine: { show: false }
-    },
-    yAxis: {
-      type: 'value', min: 0, max, interval,
-      axisLabel: { fontSize: 11, color: '#6b7280' },
-      axisLine: { lineStyle: { color: '#d1d5db' } },
-      splitLine: { lineStyle: { color: '#eef0f3' } }
-    },
-    series: [{
-      type: 'line',
-      data: pairs,
-      symbol: 'none',
-      lineStyle: { width: 1.5, color },
-      itemStyle: { color },
-      areaStyle: { color, opacity: 0.08 },
-      markLine: isToday ? {
-        symbol: 'none',
-        silent: true,
-        data: [{
-          xAxis: STRUCT_NOW,
-          label: { formatter: '当前 15:30', fontSize: 11, color: '#1677ff', position: 'insideEndTop', rotate: 0 },
-          lineStyle: { type: 'dashed', color: '#1677ff', width: 1 }
-        }]
-      } : undefined
-    }]
+function runAlarmQuery() {
+  if (!alarmDraftFrom.value || !alarmDraftTo.value) {
+    alarmHint.value = '请填写开始和结束时间'
+    return
   }
-}
-
-const heightSeries = computed(() => dutyDay(heightDate.value))
-const loadSeries = computed(() => dutyDay(loadDate.value))
-const trolleySeries = computed(() => dutyDay(trolleyDate.value))
-const heightOption = computed(() => dutyOption(heightSeries.value.height, '#1677ff', 20, 5, heightDate.value, '起升高度', 'm', 2))
-const loadOption = computed(() => dutyOption(loadSeries.value.load, '#d97706', 50, 10, loadDate.value, '起升载荷', 't', 1))
-const trolleyOption = computed(() => dutyOption(trolleySeries.value.trolley, '#0d9488', 28, 10, trolleyDate.value, '小车位置', 'm', 2))
-const stressOption = computed(() => dayOption(stressDay(point.value, stressDate.value), '#1677ff', 200, stressDate.value))
-const aeOption = computed(() => dayOption(aeDay(point.value, aeDate.value), '#7c3aed', 80, aeDate.value, true, false, [0, 6, 12, 18, 24]))
-const ecOption = computed(() => dayOption(ecDay(point.value, ecDate.value), '#0d9488', 0.3, ecDate.value, false, true, [0, 6, 12, 18, 24]))
-
-const damageOption = computed(() => {
-  const pairs = dSeries(point.value)
-  return {
-    animation: false,
-    grid: { left: 46, right: 12, top: 12, bottom: 28 },
-    xAxis: { type: 'value', min: -10, max: 0, axisLabel: { formatter: (value: number) => shiftDate(value), fontSize: 11, color: '#6b7280' } },
-    yAxis: { type: 'value', min: Math.floor((Math.min(...pairs.map(item => item[1])) - 0.01) * 100) / 100, max: Math.ceil((point.value.D + 0.006) * 100) / 100, axisLabel: { fontSize: 11, color: '#6b7280', formatter: (value: number) => value.toFixed(2) }, splitLine: { lineStyle: { color: '#eef0f3' } } },
-    series: [{ type: 'line', data: pairs, symbol: 'none', lineStyle: { width: 2, color: '#7c3aed' }, areaStyle: { color: '#7c3aed', opacity: 0.08 } }]
-  } as EChartsOption
-})
-
-const lifeOption = computed(() => {
-  const pairs = lSeries(point.value, zoom.value)
-  const step = zoom.value <= 8 ? 2 : zoom.value <= 16 ? 4 : 7
-  const min = Math.floor((point.value.L - 0.02) * 100) / 100
-  const max = Math.ceil((Math.max(...pairs.map(item => item[1])) + 0.01) * 100) / 100
-  return {
-    animation: false,
-    grid: { left: 46, right: 12, top: 12, bottom: 28 },
-    tooltip: { trigger: 'axis', formatter: (items: unknown) => { const row = (items as { value: [number, number] }[])[0]; return row ? `${shiftDate(Math.round(row.value[0]))}<br>裂纹萌生寿命 ${row.value[1].toFixed(2)} 年` : '' } },
-    xAxis: { type: 'value', min: -(zoom.value - 1), max: 0, interval: step, axisLabel: { formatter: (value: number) => shiftDate(Math.round(value)), fontSize: 11, color: '#6b7280' } },
-    yAxis: { type: 'value', min, max, interval: max - min <= 0.08 ? 0.02 : undefined, axisLabel: { fontSize: 11, color: '#6b7280', formatter: (value: number) => value.toFixed(2) }, splitLine: { lineStyle: { color: '#eef0f3' } } },
-    series: [{ type: 'line', data: pairs, symbol: 'none', lineStyle: { width: 2, color: '#0d9488' }, areaStyle: { color: '#0d9488', opacity: 0.08 } }]
-  } as EChartsOption
-})
-
-const aeWeekOption = computed(() => ({
-  animation: false,
-  grid: { left: 36, right: 12, top: 16, bottom: 28 },
-  xAxis: { type: 'value', min: -167, max: 0, axisLabel: { formatter: (value: number) => shiftDate(Math.round(value / 24)), fontSize: 11, color: '#6b7280' }, splitLine: { show: false } },
-  yAxis: { type: 'value', min: 0, max: 60, axisLabel: { fontSize: 11, color: '#6b7280' }, splitLine: { lineStyle: { color: '#eef0f3' } } },
-  series: [{
-    type: 'line', data: aeWeek(point.value), symbol: 'none', lineStyle: { width: 1.2, color: '#7c3aed' },
-    markLine: { symbol: 'none', data: [{ yAxis: 40, label: { formatter: '阈值 40 dB', color: '#d97706', fontSize: 11, position: 'insideEndTop' }, lineStyle: { type: 'dashed', color: '#d97706' } }] }
-  }]
-} as EChartsOption))
-
-const phaseSvg = computed(() => {
-  const amp = point.value.ec
-  const phase = point.value.ph * Math.PI / 180
-  let path = ''
-  for (let index = 0; index <= 80; index += 1) {
-    const turn = index / 80 * Math.PI * 2
-    const along = amp * Math.sin(turn)
-    const across = amp * 0.18 * Math.sin(2 * turn)
-    const x = 160 + (along * Math.cos(phase) - across * Math.sin(phase)) * 120
-    const y = 120 - (along * Math.sin(phase) + across * Math.cos(phase)) * 120
-    path += `${index ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`
+  if (parseDT(alarmDraftFrom.value) >= parseDT(alarmDraftTo.value)) {
+    alarmHint.value = '开始时间必须早于结束时间'
+    return
   }
-  return `<svg viewBox="0 0 320 240" class="phase-svg"><rect x="40" y="10" width="240" height="210" fill="#fff" stroke="#e5e7eb"/><line x1="40" y1="115" x2="280" y2="115" stroke="#d1d5db"/><line x1="160" y1="10" x2="160" y2="220" stroke="#d1d5db"/><path d="M${160 + 60 * Math.cos(40 * Math.PI / 180)},${115 - 60 * Math.sin(40 * Math.PI / 180)} L${160 + 110 * Math.cos(40 * Math.PI / 180)},${115 - 110 * Math.sin(40 * Math.PI / 180)} A110,110 0 0 0 ${160 + 110 * Math.cos(140 * Math.PI / 180)},${115 - 110 * Math.sin(140 * Math.PI / 180)} L${160 + 60 * Math.cos(140 * Math.PI / 180)},${115 - 60 * Math.sin(140 * Math.PI / 180)} A60,60 0 0 1 ${160 + 60 * Math.cos(40 * Math.PI / 180)},${115 - 60 * Math.sin(40 * Math.PI / 180)}Z" fill="#fee2e2" fill-opacity=".7"/><text x="160" y="28" text-anchor="middle" font-size="11" fill="#c62828">裂纹判别区</text><circle cx="160" cy="115" r="60" fill="none" stroke="#e5484d" stroke-dasharray="6 4"/><text x="214" y="168" font-size="11" fill="#c62828">阈值 0.5 V</text><path d="${path}" fill="none" stroke="#0d9488" stroke-width="2"/><text x="270" y="110" text-anchor="end" font-size="10" fill="#6b7280">实部</text><text x="166" y="24" font-size="10" fill="#6b7280">虚部</text><text x="48" y="208" font-size="11" fill="#0f766e">幅值 ${amp.toFixed(2)} V · 相位 ${point.value.ph}°</text></svg>`
-})
+  if (parseDT(alarmDraftTo.value) - parseDT(alarmDraftFrom.value) > 16 * 86400000) {
+    alarmHint.value = '证据曲线窗口最长 16 天'
+    return
+  }
+  alarmFrom.value = alarmDraftFrom.value
+  alarmTo.value = alarmDraftTo.value
+  alarmHint.value = ''
+}
+function setGrain(next: ServiceGrain) {
+  grain.value = next
+  rangeHint.value = ''
+}
+function applyRawPreset(preset: 'year' | 'month') {
+  rawPreset.value = preset
+  rawHint.value = ''
+  rawAppliedFrom.value = preset === 'year' ? `${SERVICE_FROM}T00:00` : '2026-11-01T00:00'
+  rawAppliedTo.value = `${SERVICE_TO}T04:00`
+  rawDraftFrom.value = rawAppliedFrom.value
+  rawDraftTo.value = rawAppliedTo.value
+}
+function applyRawQuery() {
+  if (!rawDraftFrom.value || !rawDraftTo.value) {
+    rawHint.value = '请填写开始和结束时间'
+    return
+  }
+  if (parseDT(rawDraftFrom.value) >= parseDT(rawDraftTo.value)) {
+    rawHint.value = '开始时间必须早于结束时间'
+    return
+  }
+  const coveredFrom = parseDT(`${SERVICE_FROM}T00:00`)
+  const coveredTo = parseDT(`${SERVICE_TO}T23:59`)
+  if (parseDT(rawDraftFrom.value) < coveredFrom || parseDT(rawDraftTo.value) > coveredTo) {
+    rawHint.value = '演示曲线只覆盖 2026-01-01 至 2026-11-16'
+    return
+  }
+  rawAppliedFrom.value = rawDraftFrom.value
+  rawAppliedTo.value = rawDraftTo.value
+  rawPreset.value = 'custom'
+  rawHint.value = ''
+}
+function applyCustom() {
+  if (customFrom.value < SERVICE_FROM || customTo.value > SERVICE_TO) {
+    rangeHint.value = '演示曲线只覆盖 2026-01-01 至 2026-11-16'
+    return
+  }
+  if (customFrom.value >= customTo.value) {
+    rangeHint.value = '开始日期必须早于结束日期'
+    return
+  }
+  appliedFrom.value = customFrom.value
+  appliedTo.value = customTo.value
+  grain.value = 'custom'
+  rangeHint.value = ''
+}
+function onKey(event: KeyboardEvent) {
+  if (event.key !== 'Escape') return
+  if (alarmOpen.value) closeAlarms()
+  else if (drawer.value) closeDrawer()
+}
 
-function onLifeWheel(event: WheelEvent) {
-  zoom.value = Math.max(4, Math.min(30, zoom.value + (event.deltaY > 0 ? 2 : -2)))
-}
-function openModal() {
-  modal.value = true
-  view.value = { ...view0 }
-}
-function closeModal() { modal.value = false }
-function onCloudClick(event: MouseEvent) {
-  const node = (event.target as Element).closest('[data-pid]')
-  if (node) emit('select', node.getAttribute('data-pid') || props.pointId)
-  else openModal()
-}
-function zoomBy(factor: number) {
-  const centerX = view.value.x + view.value.w / 2
-  const centerY = view.value.y + view.value.h / 2
-  zoomAt(centerX, centerY, factor)
-}
-function zoomAt(centerX: number, centerY: number, factor: number) {
-  const next = Math.max(view0.w / 6, Math.min(view0.w * 1.5, view.value.w * factor))
-  const ratio = next / view.value.w
-  view.value = { x: centerX - (centerX - view.value.x) * ratio, y: centerY - (centerY - view.value.y) * ratio, w: next, h: view.value.h * ratio }
-}
-function resetView() { view.value = { ...view0 } }
-function onModalWheel(event: WheelEvent) {
-  const target = event.currentTarget as HTMLElement
-  const bounds = target.getBoundingClientRect()
-  const scale = Math.max(view.value.w / bounds.width, view.value.h / bounds.height)
-  zoomAt(view.value.x + view.value.w / 2 + (event.clientX - bounds.left - bounds.width / 2) * scale, view.value.y + view.value.h / 2 + (event.clientY - bounds.top - bounds.height / 2) * scale, event.deltaY > 0 ? 1.15 : 1 / 1.15)
-}
-function onDragStart(event: MouseEvent) {
-  drag = { x: event.clientX, y: event.clientY, vx: view.value.x, vy: view.value.y }
-  dragged = false
-}
-function onDragMove(event: MouseEvent) {
-  if (!drag || !modal.value) return
-  const bounds = document.querySelector('.ps-cloud-modal .mbody')?.getBoundingClientRect()
-  if (!bounds) return
-  const scale = Math.max(view.value.w / bounds.width, view.value.h / bounds.height)
-  const dx = event.clientX - drag.x
-  const dy = event.clientY - drag.y
-  if (Math.abs(dx) + Math.abs(dy) > 3) dragged = true
-  view.value = { ...view.value, x: drag.vx - dx * scale, y: drag.vy - dy * scale }
-}
-function onDragEnd() { drag = null }
-function onModalClick(event: MouseEvent) {
-  if (dragged) return
-  const node = (event.target as Element).closest('[data-pid]')
-  if (node) emit('select', node.getAttribute('data-pid') || props.pointId)
-}
-function onKey(event: KeyboardEvent) { if (event.key === 'Escape') closeModal() }
-onMounted(() => {
-  window.addEventListener('keydown', onKey)
-  window.addEventListener('mousemove', onDragMove)
-  window.addEventListener('mouseup', onDragEnd)
-})
+onMounted(() => window.addEventListener('keydown', onKey))
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKey)
-  window.removeEventListener('mousemove', onDragMove)
-  window.removeEventListener('mouseup', onDragEnd)
+  window.clearTimeout(toastTimer)
 })
 </script>
+
+<style src="@/styles/structure-point-detail.css"></style>
