@@ -5,27 +5,43 @@
     <div class="content-scrollable section-page">
       <template v-if="menu === 'safety'">
         <div class="safety-3">
-          <section class="safety-col">
-            <div class="section-tools">
-              <label>工作循环
-                <select v-model="cycle">
-                  <option value="0">第 8 次　09:15–09:23　16.0 t</option>
-                  <option value="1">第 7 次　08:42–08:49　12.0 t</option>
-                </select>
-              </label>
-              <span>整机参数，不是点位数据。数值为演示参照。</span>
+          <section class="safety-col safety-data">
+            <div class="cycle-head">
+              <label>工作日期 <input v-model="workDate" type="date" min="2026-10-01" max="2026-10-31"></label>
+              <button type="button" :class="{ on: showHistory }" @click="showHistory = !showHistory">历史数据</button>
             </div>
-            <div class="metric-grid">
-              <button v-for="(item, index) in SAFETY_PARAMS" :key="item[0]" type="button" class="metric-btn" :class="{ on: safetyParam === index }" @click="pickSafety(index)">
-                <span>{{ item[0] }}</span>
-                <strong>{{ index === 0 && cycle === '1' ? '12.0' : item[1] }}<small>{{ item[2] }}</small></strong>
-                <em>{{ item[3] }}</em>
-              </button>
+            <p v-if="showHistory" class="cycle-note">演示历史，由现有工作循环生成器按日期给出，不是后台档案。</p>
+            <div v-if="showHistory" class="history-row">
+              <button v-for="day in historyDates" :key="day" type="button" :class="{ on: day === workDate }" @click="workDate = day">{{ day.slice(5) }}</button>
             </div>
-            <h2>状态监控</h2>
-            <ul class="state-list">
-              <li v-for="item in SAFETY_STATES" :key="item[0]"><span>{{ item[0] }}</span><b :class="item[1]">{{ item[1] }}</b></li>
-            </ul>
+            <div class="cycle-table" role="table" aria-label="工作循环列表">
+              <div class="cycle-row head" role="row">
+                <span>循环次数</span><span>开始时间</span><span>停止时间</span><span>工作时长</span><span>吊重重量</span>
+              </div>
+              <div class="cycle-body">
+                <p v-if="!cycles.length" class="cycle-note">该日没有演示工作循环。</p>
+                <button v-for="item in cycles" :key="item.id" type="button" class="cycle-row" :class="{ on: item.id === cycleId }" @click="selectCycle(item.id)">
+                  <span>{{ item.seq }} 次</span>
+                  <span>{{ timeOf(item.startTime) }}</span>
+                  <span>{{ timeOf(item.stopTime) }}</span>
+                  <span>{{ item.liftDuration }} min</span>
+                  <span>{{ item.loadWeight.toFixed(1) }} t</span>
+                </button>
+              </div>
+            </div>
+            <div class="safety-scroll">
+              <div class="metric-grid">
+                <button v-for="(item, index) in SAFETY_PARAMS" :key="item[0]" type="button" class="metric-btn" :class="{ on: safetyParam === index }" @click="pickSafety(index)">
+                  <span>{{ item[0] }}</span>
+                  <strong>{{ paramValue(index, item[1]) }}<small>{{ item[2] }}</small></strong>
+                  <em>{{ item[3] }}</em>
+                </button>
+              </div>
+              <h2>状态监控</h2>
+              <ul class="state-list">
+                <li v-for="item in SAFETY_STATES" :key="item[0]"><span>{{ item[0] }}</span><b :class="item[1]">{{ item[1] }}</b></li>
+              </ul>
+            </div>
           </section>
           <section class="safety-col safety-model">
             <header>
@@ -37,9 +53,9 @@
               </div>
             </header>
             <StructureCraneModel :mode="safetyMode" :point-id="safetyPoint" />
-            <p>当前循环 {{ cycle === '1' ? '第 7 次 · 12.0 t' : '第 8 次 · 16.0 t' }} · 关注 {{ safetyPoint }}。云图随循环和参数切换，不是新的计算结果。</p>
+            <p>{{ activeCycle ? `第 ${activeCycle.seq} 次 · ${activeCycle.loadWeight.toFixed(1)} t` : '未选循环' }} · 关注 {{ safetyPoint }}。云图随循环切换，不是新的计算结果。</p>
           </section>
-          <section class="safety-col">
+          <section class="safety-col safety-side">
             <h2>预警与分析</h2>
             <button type="button" class="svc-entry" @click="safetySvc = safetySvc === 'limit' ? '' : 'limit'">
               <b>超限与联锁预警</b>
@@ -51,7 +67,7 @@
             </button>
             <div v-if="safetySvc" class="svc-panel">
               <p v-if="safetySvc === 'limit'">演示：抗风防滑为报警，同一轨道运行机构为异常。不引用正式限值条文，也不把演示灯写成检验结论。</p>
-              <p v-else>演示：第 {{ cycle === '1' ? '7' : '8' }} 次循环起重量 {{ cycle === '1' ? '12.0' : '16.0' }} t，模型关注点改为 {{ safetyPoint }}。定量分析不另设评分公式。</p>
+              <p v-else>演示：{{ activeCycle ? `第 ${activeCycle.seq} 次循环起重量 ${activeCycle.loadWeight.toFixed(1)} t` : '当前没有循环' }}，模型关注点为 {{ safetyPoint }}。定量分析不另设评分公式。</p>
             </div>
           </section>
         </div>
@@ -165,6 +181,7 @@ import { computed, ref, watch } from 'vue'
 import DeviceMenuBar from '@/components/overview/DeviceMenuBar.vue'
 import DeviceStrip from '@/components/DeviceStrip.vue'
 import StructureCraneModel from '@/components/pointScheme/StructureCraneModel.vue'
+import { getWorkCycles } from '@/mock'
 import { getRepairGroups, getSpotCheckBoard } from '@/mock/serviceData'
 import type { ModelMode } from '@/mock/structurePointDetail'
 import { usePartsDevice } from '@/composables/usePartsDevice'
@@ -172,12 +189,57 @@ import { INSPECTION_CATEGORIES, RISK_BANDS, RISK_NAMES, SAFETY_PARAMS, SAFETY_ST
 import { statusLabels } from '@/mock/partsPoint'
 
 const { card, query, route, router, tone } = usePartsDevice()
-const cycle = ref('0')
+const FOCUS_POINTS = ['ML-01', 'ML-06', 'ML-02', 'ML-10', 'ML-04', 'ML-08', 'ML-03', 'ML-05', 'ML-07', 'ML-09', 'ML-11', 'ML-12', 'ML-13', 'ML-14', 'ML-15', 'ML-16']
 const safetyParam = ref(-1)
-const safetyMode = ref<ModelMode>('model')
+const safetyMode = ref<ModelMode>('cloud')
 const safetyFocus = ref('')
 const safetySvc = ref('')
-const safetyPoint = computed(() => safetyFocus.value || (cycle.value === '1' ? 'ML-06' : 'ML-01'))
+const showHistory = ref(false)
+const deviceKey = computed(() => String(route.params.id || ''))
+function ymd(date: Date) {
+  const pad = (value: number) => String(value).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+}
+function parseYmd(value: string) {
+  const [year, month, day] = value.split('-').map(Number)
+  return new Date(year, (month || 1) - 1, day || 1)
+}
+const historyDates = computed(() => {
+  const found: string[] = []
+  for (let day = 1; day <= 31 && found.length < 8; day += 1) {
+    const date = new Date(2026, 9, day)
+    if (getWorkCycles(deviceKey.value, date).length) found.push(ymd(date))
+  }
+  return found
+})
+const workDate = ref(historyDates.value[0] || '2026-10-24')
+const cycles = computed(() => getWorkCycles(deviceKey.value, parseYmd(workDate.value)))
+const cycleId = ref('')
+const activeCycle = computed(() => cycles.value.find(item => item.id === cycleId.value) || cycles.value[0] || null)
+const safetyPoint = computed(() => {
+  if (safetyFocus.value) return safetyFocus.value
+  const index = Math.max(0, cycles.value.findIndex(item => item.id === activeCycle.value?.id))
+  return FOCUS_POINTS[index % FOCUS_POINTS.length]
+})
+function timeOf(value: string) {
+  return value.slice(11, 16)
+}
+function selectCycle(id: string) {
+  cycleId.value = id
+  safetyFocus.value = ''
+  const index = Math.max(0, cycles.value.findIndex(item => item.id === id))
+  safetyMode.value = index % 2 === 0 ? 'cloud' : 'model'
+}
+function paramValue(index: number, fallback: string) {
+  if (!activeCycle.value) return fallback
+  if (index === 0) return activeCycle.value.loadWeight.toFixed(1)
+  if (index === 9) return String(activeCycle.value.liftDuration)
+  return fallback
+}
+watch(cycles, list => {
+  if (!list.some(item => item.id === cycleId.value)) selectCycle(list[0]?.id || '')
+}, { immediate: true })
+watch(workDate, () => { safetyFocus.value = '' })
 const patrol = computed(() => getSpotCheckBoard(String(route.params.id || '')))
 const repairPreview = computed(() => getRepairGroups(String(route.params.id || '')).filter(group => group.records.length).slice(0, 4))
 function pickSafety(index: number) {
@@ -186,11 +248,6 @@ function pickSafety(index: number) {
   safetyFocus.value = points[index] || 'ML-01'
   safetyMode.value = index <= 6 ? 'cloud' : 'model'
 }
-watch(cycle, value => {
-  safetyFocus.value = ''
-  safetyParam.value = -1
-  safetyMode.value = value === '1' ? 'cloud' : 'model'
-})
 const preview = ref('')
 const menu = computed(() => {
   const key = String(route.params.key || '')
@@ -215,17 +272,28 @@ function back() {
 </script>
 
 <style scoped>
-.section-page { padding: 16px 18px 28px; }
+.section-page { padding: 12px 16px 16px; }
+.section-page:has(.safety-3) { height: calc(100vh - 168px); min-height: 0; overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column; }
 .section-note, .section-tools span { color: var(--color-text-secondary, #64748b); font-size: 13px; }
 .section-tools { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
 .section-tools select, .section-tools { font-size: 13px; }
-.safety-3 { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(280px, .9fr) minmax(220px, .7fr); gap: 12px; align-items: start; }
-.safety-col { min-width: 0; }
-.safety-model { background: #fff; border: 1px solid var(--color-border, #e5e7eb); border-radius: 8px; overflow: hidden; }
-.safety-model header { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px solid #edf0f4; }
+.safety-3 { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(280px, 1fr) minmax(210px, .72fr); gap: 12px; align-items: stretch; }
+.safety-col { min-width: 0; min-height: 0; height: 100%; display: flex; flex-direction: column; background: #fff; border: 1px solid var(--color-border, #e5e7eb); border-radius: 8px; overflow: hidden; }
+.safety-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 10px; }
+.cycle-head, .history-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 10px 0; flex: none; }
+.cycle-head input { height: 28px; border: 1px solid #d1d5db; border-radius: 6px; padding: 0 8px; }
+.cycle-head button, .history-row button { height: 28px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; padding: 0 10px; cursor: pointer; }
+.cycle-head button.on, .history-row button.on { background: var(--color-primary, #1677ff); border-color: var(--color-primary, #1677ff); color: #fff; }
+.cycle-note { margin: 6px 10px 0; color: #64748b; font-size: 12px; }
+.cycle-table { flex: none; max-height: 168px; margin: 8px 10px 0; border: 1px solid #e5e7eb; border-radius: 6px; overflow: auto; }
+.cycle-row { display: grid; grid-template-columns: 1.1fr 1fr 1fr 1fr 1fr; gap: 4px; width: 100%; min-height: 28px; align-items: center; padding: 0 8px; border: 0; border-bottom: 1px solid #f1f5f9; background: #fff; text-align: left; font-size: 12px; cursor: pointer; }
+.cycle-row.head { position: sticky; top: 0; background: #f8fafc; color: #64748b; font-weight: 600; cursor: default; }
+.cycle-row.on { background: #e8f3ff; color: #0958d9; font-weight: 700; }
+.safety-model header { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px solid #edf0f4; flex: none; }
 .safety-model header span, .safety-model p { color: #64748b; font-size: 12px; }
-.safety-model .spd-canvas { height: 280px; }
-.safety-model p { margin: 0; padding: 8px 10px 10px; }
+.safety-model .spd-canvas { flex: 1; min-height: 0; height: auto; }
+.safety-model p { margin: 0; padding: 8px 10px 10px; flex: none; }
+.safety-side { padding: 10px; overflow: auto; }
 .spd-seg { display: flex; margin-left: auto; border: 1px solid #d1d5db; border-radius: 6px; overflow: hidden; }
 .spd-seg button { height: 26px; padding: 0 8px; border: 0; background: #fff; font-size: 12px; cursor: pointer; }
 .spd-seg button.on { background: var(--color-primary, #1677ff); color: #fff; }
