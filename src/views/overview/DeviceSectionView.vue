@@ -6,6 +6,30 @@
       <template v-if="menu === 'safety'">
         <div class="safety-3">
           <section class="safety-col safety-data">
+            <h2>参数监控</h2>
+            <div class="param-list">
+              <button v-for="(item, index) in SAFETY_PARAMS" :key="item[0]" type="button" class="metric-btn" :class="{ on: safetyParam === index }" @click="pickSafety(index)">
+                <span>{{ item[0] }}</span>
+                <em>{{ item[3] }}</em>
+                <strong>{{ paramValue(index, item[1]) }}<small>{{ item[2] }}</small></strong>
+              </button>
+            </div>
+            <h2>状态监控</h2>
+            <ul class="state-list">
+              <li v-for="item in SAFETY_STATES" :key="item[0]"><span>{{ item[0] }}</span><b :class="item[1]">{{ item[1] }}</b></li>
+            </ul>
+          </section>
+          <section class="safety-col safety-model">
+            <header>
+              <b>整机模型</b>
+              <span>模型示意 · 演示</span>
+              <div class="spd-seg" aria-label="模型显示">
+                <button type="button" :class="{ on: safetyMode === 'model' }" @click="safetyMode = 'model'">模型</button>
+                <button type="button" :class="{ on: safetyMode === 'cloud' }" @click="safetyMode = 'cloud'">应力云图</button>
+              </div>
+            </header>
+            <StructureCraneModel :mode="safetyMode" :point-id="safetyPoint" />
+            <p>{{ activeCycle ? `第 ${activeCycle.seq} 次 · ${activeCycle.loadWeight.toFixed(1)} t` : '未选循环' }} · 关注 {{ safetyPoint }}。云图随循环切换，不是新的计算结果。</p>
             <div class="cycle-head">
               <label>工作日期 <input v-model="workDate" type="date" min="2026-10-01" max="2026-10-31"></label>
               <button type="button" :class="{ on: showHistory }" @click="showHistory = !showHistory">历史数据</button>
@@ -29,31 +53,6 @@
                 </button>
               </div>
             </div>
-            <div class="safety-scroll">
-              <div class="metric-grid">
-                <button v-for="(item, index) in SAFETY_PARAMS" :key="item[0]" type="button" class="metric-btn" :class="{ on: safetyParam === index }" @click="pickSafety(index)">
-                  <span>{{ item[0] }}</span>
-                  <strong>{{ paramValue(index, item[1]) }}<small>{{ item[2] }}</small></strong>
-                  <em>{{ item[3] }}</em>
-                </button>
-              </div>
-              <h2>状态监控</h2>
-              <ul class="state-list">
-                <li v-for="item in SAFETY_STATES" :key="item[0]"><span>{{ item[0] }}</span><b :class="item[1]">{{ item[1] }}</b></li>
-              </ul>
-            </div>
-          </section>
-          <section class="safety-col safety-model">
-            <header>
-              <b>整机模型</b>
-              <span>模型示意 · 演示</span>
-              <div class="spd-seg" aria-label="模型显示">
-                <button type="button" :class="{ on: safetyMode === 'model' }" @click="safetyMode = 'model'">模型</button>
-                <button type="button" :class="{ on: safetyMode === 'cloud' }" @click="safetyMode = 'cloud'">应力云图</button>
-              </div>
-            </header>
-            <StructureCraneModel :mode="safetyMode" :point-id="safetyPoint" />
-            <p>{{ activeCycle ? `第 ${activeCycle.seq} 次 · ${activeCycle.loadWeight.toFixed(1)} t` : '未选循环' }} · 关注 {{ safetyPoint }}。云图随循环切换，不是新的计算结果。</p>
           </section>
           <section class="safety-col safety-side">
             <h2>预警与分析</h2>
@@ -66,7 +65,7 @@
               <span>当前循环与参数的联动说明</span>
             </button>
             <div v-if="safetySvc" class="svc-panel">
-              <p v-if="safetySvc === 'limit'">演示：抗风防滑为报警，同一轨道运行机构为异常。不引用正式限值条文，也不把演示灯写成检验结论。</p>
+              <p v-if="safetySvc === 'limit'">演示：抗风防滑为报警，同一或不同一轨道运行机构安全信号为异常。不引用正式限值条文，也不把演示灯写成检验结论。</p>
               <p v-else>演示：{{ activeCycle ? `第 ${activeCycle.seq} 次循环起重量 ${activeCycle.loadWeight.toFixed(1)} t` : '当前没有循环' }}，模型关注点为 {{ safetyPoint }}。定量分析不另设评分公式。</p>
             </div>
           </section>
@@ -231,9 +230,7 @@ function selectCycle(id: string) {
   safetyMode.value = index % 2 === 0 ? 'cloud' : 'model'
 }
 function paramValue(index: number, fallback: string) {
-  if (!activeCycle.value) return fallback
-  if (index === 0) return activeCycle.value.loadWeight.toFixed(1)
-  if (index === 9) return String(activeCycle.value.liftDuration)
+  if (index === 0 && activeCycle.value) return activeCycle.value.loadWeight.toFixed(1)
   return fallback
 }
 watch(cycles, list => {
@@ -279,13 +276,13 @@ function back() {
 .section-tools select, .section-tools { font-size: 13px; }
 .safety-3 { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(280px, 1fr) minmax(210px, .72fr); gap: 12px; align-items: stretch; }
 .safety-col { min-width: 0; min-height: 0; height: 100%; display: flex; flex-direction: column; background: #fff; border: 1px solid var(--color-border, #e5e7eb); border-radius: 8px; overflow: hidden; }
-.safety-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 10px; }
-.cycle-head, .history-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 10px 0; flex: none; }
+.safety-data { overflow: auto; }
+.cycle-head, .history-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 0 10px; flex: none; }
 .cycle-head input { height: 28px; border: 1px solid #d1d5db; border-radius: 6px; padding: 0 8px; }
 .cycle-head button, .history-row button { height: 28px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; padding: 0 10px; cursor: pointer; }
 .cycle-head button.on, .history-row button.on { background: var(--color-primary, #1677ff); border-color: var(--color-primary, #1677ff); color: #fff; }
 .cycle-note { margin: 6px 10px 0; color: #64748b; font-size: 12px; }
-.cycle-table { flex: none; max-height: 168px; margin: 8px 10px 0; border: 1px solid #e5e7eb; border-radius: 6px; overflow: auto; }
+.cycle-table { flex: 1 1 148px; min-height: 120px; max-height: 46%; margin: 8px 10px 10px; border: 1px solid #e5e7eb; border-radius: 6px; overflow: auto; }
 .cycle-row { display: grid; grid-template-columns: 1.1fr 1fr 1fr 1fr 1fr; gap: 4px; width: 100%; min-height: 28px; align-items: center; padding: 0 8px; border: 0; border-bottom: 1px solid #f1f5f9; background: #fff; text-align: left; font-size: 12px; cursor: pointer; }
 .cycle-row.head { position: sticky; top: 0; background: #f8fafc; color: #64748b; font-weight: 600; cursor: default; }
 .cycle-row.on { background: #e8f3ff; color: #0958d9; font-weight: 700; }
@@ -297,7 +294,11 @@ function back() {
 .spd-seg { display: flex; margin-left: auto; border: 1px solid #d1d5db; border-radius: 6px; overflow: hidden; }
 .spd-seg button { height: 26px; padding: 0 8px; border: 0; background: #fff; font-size: 12px; cursor: pointer; }
 .spd-seg button.on { background: var(--color-primary, #1677ff); color: #fff; }
-.metric-btn { text-align: left; background: #fff; border: 1px solid var(--color-border, #e5e7eb); border-radius: 8px; padding: 12px; cursor: pointer; }
+.param-list { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 0 8px; }
+.metric-btn { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; column-gap: 8px; align-items: center; text-align: left; background: #f8fafc; border: 1px solid var(--color-border, #e5e7eb); border-radius: 6px; padding: 4px 8px; cursor: pointer; min-height: 36px; }
+.metric-btn span, .metric-btn em { grid-column: 1; color: #64748b; font-size: 11px; font-style: normal; line-height: 14px; }
+.metric-btn strong { grid-column: 2; grid-row: 1 / span 2; font-size: 15px; font-weight: 700; }
+.metric-btn small { margin-left: 2px; font-size: 11px; font-weight: 400; color: #64748b; }
 .metric-btn.on { border-color: var(--color-primary, #1677ff); }
 .svc-entry, .svc-panel { display: block; width: 100%; text-align: left; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; margin-bottom: 8px; cursor: pointer; }
 .svc-entry b, .svc-entry span { display: block; }
@@ -317,13 +318,14 @@ function back() {
 .metric-grid span, .metric-grid em { display: block; color: #64748b; font-size: 12px; font-style: normal; }
 .metric-grid strong { display: block; margin: 6px 0; font-size: 20px; }
 .metric-grid small { margin-left: 4px; font-size: 12px; font-weight: 400; color: #64748b; }
-h2 { margin: 16px 0 8px; font-size: 16px; }
-.state-list { list-style: none; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding: 0; }
-.state-list li { display: flex; justify-content: space-between; gap: 8px; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px; font-size: 13px; }
-.state-list b { font-weight: 600; }
-.state-list b.正常 { color: #15803d; }
+h2 { margin: 8px 8px 6px; font-size: 14px; }
+.state-list { list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; padding: 0 8px 8px; margin: 0; }
+.state-list li { display: flex; justify-content: space-between; align-items: center; gap: 6px; background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 6px; padding: 4px 8px; font-size: 12px; min-height: 32px; }
+.state-list span { min-width: 0; line-height: 16px; }
+.state-list b { font-weight: 700; flex: none; }
+.state-list b.正常, .state-list b.闭合 { color: #15803d; }
 .state-list b.异常 { color: #b45309; }
-.state-list b.报警, .state-list b.闭合 { color: #b91c1c; }
+.state-list b.报警, .state-list b.故障, .state-list b.打开 { color: #b91c1c; }
 .risk-detail { display: flex; flex-direction: column; gap: 12px; }
 .risk-detail-bar, .risk-status, .risk-matrix-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .risk-detail-bar { background: #fff; border: 1px solid var(--color-card-border, #e8edf3); border-radius: 10px; padding: 10px 14px; }
@@ -358,7 +360,4 @@ h2 { margin: 16px 0 8px; font-size: 16px; }
 .file-grid header { display: flex; justify-content: space-between; gap: 8px; }
 .file-grid header span, .preview { color: #64748b; font-size: 12px; }
 .file-grid button { margin-top: 8px; border: 1px solid #d1d5db; background: #fff; color: #1677ff; border-radius: 6px; height: 28px; padding: 0 10px; cursor: pointer; }
-@media (max-width: 1280px) {
-  .metric-grid, .state-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
 </style>
